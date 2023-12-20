@@ -1,0 +1,15 @@
+# Changes here will be overwritten by Copier
+_commit: v0.3.1
+_src_path: https://gitlab.com/climate-resource/copier-core-python-repository
+email: daniel.busch@climate-resource.com
+initial_setup: true
+name: Daniel Busch
+notebook_dependencies: false
+pandas_doctests: false
+plot_dependencies: true
+project_description_short: This app visualises GHG-emissions over time based on sectors,
+    countries and entities. It is based on the Primap dataset.
+project_name_human: Primap visualisation tool
+project_name_pip: primap-visualisation-tool
+project_name_python: primap_visualisation_tool
+project_url: https://github.com/crdanielbusch/primap-visualisation-tool
