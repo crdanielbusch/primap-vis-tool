@@ -1,6 +1,8 @@
 # Notebooks
 *.ipynb
 
+*.idea
+
 # Databases
 *.db
 
