@@ -9,6 +9,8 @@ packages = [{include = "primap_visualisation_tool", from = "src"}]
 [tool.poetry.dependencies]
 python = "^3.9"
 matplotlib = { version = "^3.7.1", optional = true }
+pathlib = "^1.0.1"
+primap2 = "^0.10.0"
 
 [tool.poetry.extras]
 plots = ["matplotlib"]
