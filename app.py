@@ -24,7 +24,6 @@ combined_ds = pm.open_dataset(
     root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
 )
 
-# run app
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 # external stylesheets to use dbc classes Col and Row
 app = Dash(__name__, external_stylesheets=external_stylesheets)
