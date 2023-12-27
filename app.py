@@ -1,7 +1,7 @@
 """
 Launch plotly app.
 
-Author: Daniel Busch, Date: 21-12-2023
+Author: Daniel Busch, Date: 2023-12-21
 """
 
 from pathlib import Path
