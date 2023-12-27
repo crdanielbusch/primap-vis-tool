@@ -10,7 +10,7 @@ import primap2 as pm  # type: ignore
 
 #  define folders
 print("Reading data set")
-root_folder = Path(__file__).parent.parent.parent
+root_folder = Path(__file__).parent
 data_folder = Path("data")
 primaphist_data_folder = Path("data") / "PRIMAP-hist_data"
 
