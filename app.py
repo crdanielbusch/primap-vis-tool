@@ -25,7 +25,7 @@ combined_ds = pm.open_dataset(
 )
 
 external_stylesheets = [dbc.themes.BOOTSTRAP]
-# external stylesheets to use dbc classes Col and Row
+# Tell dash that we're using bootstrap for our external stylesheets so that the Col and Row classes function properly
 app = Dash(__name__, external_stylesheets=external_stylesheets)
 
 # set a placeholder for now
