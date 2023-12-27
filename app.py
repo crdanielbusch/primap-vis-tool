@@ -25,14 +25,15 @@ combined_ds = pm.open_dataset(
 )
 
 external_stylesheets = [dbc.themes.BOOTSTRAP]
-# Tell dash that we're using bootstrap for our external stylesheets so that the Col and Row classes function properly
+# Tell dash that we're using bootstrap for our external stylesheets so
+# that the Col and Row classes function properly
 app = Dash(__name__, external_stylesheets=external_stylesheets)
 
 # set a placeholder for now
 placeholder = ["placeholder"] * 10
 
-# define grid
-grid = dag.AgGrid(id="grid")
+# define table that will show filtered data set
+table = dag.AgGrid(id="grid")
 
 # define layout
 # to be adjusted once everything is running
@@ -102,7 +103,7 @@ app.layout = dbc.Container(
                 ),
             ]
         ),
-        dbc.Row(dbc.Col(grid)),
+        dbc.Row(dbc.Col(table)),
     ]
 )
 
