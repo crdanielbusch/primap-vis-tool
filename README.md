@@ -55,6 +55,27 @@ pip install primap-visualisation-tool[plots]
 # solution yet (issue here: https://github.com/conda/conda/issues/7502)
 ```
 
+## Run the app
+
+The data file required to run the app is not included here. It can be retrieved from
+[here](https://gin.hemio.de/jguetschow/PRIMAP-hist_visualization_tool/src/master/data/combined/combined_data_v2.5_final_v2.4.2_final.nc).
+
+The file should be saved in the `data` directory.
+
+To run the app, run the following command in the root directory
+
+```bash
+poetry run python app.py
+```
+
+The same command is executed with
+
+```bash
+make run-app
+```
+
+
+
 <!--- sec-end-installation -->
 
 ### For developers

@@ -74,3 +74,7 @@ virtual-environment:  ## update virtual environment, create a new one if it does
 	poetry config virtualenvs.in-project true
 	poetry install --all-extras
 	poetry run pre-commit install
+
+.PHONY: run-app
+run-app:  ## run the app
+	poetry run python app.py
