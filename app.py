@@ -8,7 +8,6 @@ from pathlib import Path
 
 import dash_ag_grid as dag
 import dash_bootstrap_components as dbc
-import primap2 as pm  # type: ignore
 from dash import Dash, dcc, html
 
 #  define folders
@@ -20,9 +19,9 @@ primaphist_data_folder = Path("data") / "PRIMAP-hist_data"
 #  data reading
 current_version = "v2.5_final"
 old_version = "v2.4.2_final"
-combined_ds = pm.open_dataset(
-    root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
-)
+# combined_ds = pm.open_dataset(
+#     root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
+# )
 
 # run app
 external_stylesheets = [dbc.themes.BOOTSTRAP]
@@ -37,7 +36,7 @@ grid = dag.AgGrid(id="grid")
 
 # define layout
 # to be adjusted once everything is running
-app.layout = html.Div(
+app.layout = dbc.Container(
     [
         dbc.Row(
             [
@@ -85,7 +84,7 @@ app.layout = html.Div(
                 ),
             ]
         ),
-        dbc.Row(  # this row is not rendered properly because fig size is too wide
+        dbc.Row(
             [
                 dbc.Col(
                     [
