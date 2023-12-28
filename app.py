@@ -9,6 +9,8 @@ from pathlib import Path
 import dash_ag_grid as dag
 import dash_bootstrap_components as dbc
 import primap2 as pm  # type: ignore
+import pycountry
+import xarray as xr
 from dash import Dash, dcc, html
 
 #  define folders
@@ -24,7 +26,40 @@ combined_ds = pm.open_dataset(
     root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
 )
 
-external_stylesheets = [dbc.themes.BOOTSTRAP]
+
+# Dropdown options for countries
+def get_country_options(inds: xr.Dataset) -> dict[str, str]:
+    """Get ISO3 country codes.
+
+    Args:
+        - xarray dataset
+
+    Returns
+    -------
+        - dict with ISO3 codes as keys and full country name as values
+
+    """
+    all_countries = inds.coords["area (ISO3)"].to_numpy()
+    country_options = {}
+    for code in all_countries:
+        try:
+            country_options[code] = pycountry.countries.get(alpha_3=code).name
+        # use ISO3 code as name if pycountry cannot find a match
+        except Exception:
+            country_options[code] = code  # implement custom mapping later (Johannes)
+
+    return country_options
+
+
+country_options = get_country_options(combined_ds)
+
+# Dropdown options for categories
+category_options = combined_ds["category (IPCC2006_PRIMAP)"].to_numpy()
+
+# Dropdown options for entities
+entity_options = [i for i in combined_ds.data_vars]
+
+external_stylesheets = [dbc.themes.MINTY]
 # Tell dash that we're using bootstrap for our external stylesheets so
 # that the Col and Row classes function properly
 app = Dash(__name__, external_stylesheets=external_stylesheets)
@@ -49,8 +84,8 @@ app.layout = dbc.Container(
                         ),
                         html.H4(children="Country", style={"textAlign": "center"}),
                         dcc.Dropdown(
-                            options=placeholder,
-                            value=placeholder[0],
+                            options=country_options,
+                            value="DEU",
                             id="dropdown-country",
                         ),
                         html.Button(
@@ -61,7 +96,9 @@ app.layout = dbc.Container(
                         ),
                         html.H4(children="Category", style={"textAlign": "center"}),
                         dcc.Dropdown(
-                            placeholder, value=placeholder[0], id="dropdown-category"
+                            category_options,
+                            value=category_options[0],
+                            id="dropdown-category",
                         ),
                         html.Button(
                             id="prev_cat", children="prev. category", n_clicks=0
@@ -71,7 +108,9 @@ app.layout = dbc.Container(
                         ),
                         html.H4(children="Entity", style={"textAlign": "center"}),
                         dcc.Dropdown(
-                            placeholder, value=placeholder[0], id="dropdown-entity"
+                            entity_options,
+                            value=entity_options[0],
+                            id="dropdown-entity",
                         ),
                         html.Button(id="prev_gas", children="prev. gas", n_clicks=0),
                         html.Button(id="next_gas", children="next gas", n_clicks=0),
