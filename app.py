@@ -3,15 +3,21 @@ Launch plotly app.
 
 Author: Daniel Busch, Date: 2023-12-21
 """
+from __future__ import annotations
 
 from pathlib import Path
+from typing import TypeVar
 
 import dash_ag_grid as dag
 import dash_bootstrap_components as dbc
 import primap2 as pm  # type: ignore
 import pycountry
 import xarray as xr
+from attrs import define
 from dash import Dash, Input, Output, State, callback, ctx, dcc, html
+
+T = TypeVar("T")
+
 
 #  define folders
 print("Reading data set")
@@ -22,9 +28,11 @@ primaphist_data_folder = Path("data") / "PRIMAP-hist_data"
 #  data reading
 current_version = "v2.5_final"
 old_version = "v2.4.2_final"
+# Need a trimmed dataset, this is way too slow to read so iteration time is too long
 combined_ds = pm.open_dataset(
     root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
 )
+print("Finished reading data set")
 
 
 def get_country_options(inds: xr.Dataset) -> dict[str, str]:
@@ -53,10 +61,11 @@ def get_country_options(inds: xr.Dataset) -> dict[str, str]:
 
 
 country_options = get_country_options(combined_ds)
+country_dropdown_options = tuple(sorted(country_options.values()))
 
-category_options = list(combined_ds["category (IPCC2006_PRIMAP)"].to_numpy())
+category_options = tuple(combined_ds["category (IPCC2006_PRIMAP)"].to_numpy())
 
-entity_options = [i for i in combined_ds.data_vars]
+entity_options = tuple(i for i in combined_ds.data_vars)
 
 external_stylesheets = [dbc.themes.MINTY]
 # Tell dash that we're using bootstrap for our external stylesheets so
@@ -65,6 +74,92 @@ app = Dash(__name__, external_stylesheets=external_stylesheets)
 
 # define table that will show filtered data set
 table = dag.AgGrid(id="grid")
+
+
+# Define app state
+@define
+class AppState:
+    country_options: tuple[str]
+    """Options for the country drop-down"""
+
+    country: str
+    """Current country"""
+
+    country_index: int
+    """Index of current country"""
+
+    category_options: tuple[str]
+    """Options for the category drop-down"""
+
+    category: str
+    """Current category"""
+
+    category_index: int
+    """Index of the current category"""
+
+    entity_options: tuple[str]
+    """Options for the entity drop-down"""
+
+    entity: str
+    """Current entity"""
+
+    entity_index: int
+    """Index of the current entity"""
+
+    def update_country(self, n_clicks: int) -> str:
+        self.country_index, self.country = self.update_dropdown(
+            start_index=self.country_index,
+            options=self.country_options,
+            n_clicks=n_clicks,
+        )
+
+        return self.country
+
+    def update_category(self, n_clicks: int) -> str:
+        self.category_index, self.category = self.update_dropdown(
+            start_index=self.category_index,
+            options=self.category_options,
+            n_clicks=n_clicks,
+        )
+
+        return self.category
+
+    def update_entity(self, n_clicks: int) -> str:
+        self.entity_index, self.entity = self.update_dropdown(
+            start_index=self.entity_index,
+            options=self.entity_options,
+            n_clicks=n_clicks,
+        )
+
+        return self.entity
+
+    @staticmethod
+    def update_dropdown(
+        start_index: int, options: tuple[T], n_clicks: int
+    ) -> tuple[int, T]:
+        new_index = start_index + n_clicks
+
+        # Assuming that calculating length of options multiple times
+        # is not a performance issue...
+        if new_index < 0:
+            new_index = len(options) + new_index
+        elif new_index >= len(options):
+            new_index = new_index - len(options)
+
+        return new_index, options[new_index]
+
+
+app_state = AppState(
+    country_options=country_dropdown_options,
+    country=country_dropdown_options[0],
+    country_index=0,
+    category_options=category_options,
+    category=category_options[0],
+    category_index=0,
+    entity_options=entity_options,
+    entity=entity_options[0],
+    entity_index=0,
+)
 
 # define layout
 # to be adjusted once everything is running
@@ -80,36 +175,40 @@ app.layout = dbc.Container(
                         ),
                         html.H4(children="Country", style={"textAlign": "center"}),
                         dcc.Dropdown(
-                            options=country_options,
-                            value=list(country_options.keys())[0],
+                            options=app_state.country_options,
+                            value=app_state.country,
                             id="dropdown-country",
                         ),
                         html.Button(
-                            id="prev_count", children="prev. country", n_clicks=0
+                            id="prev_country", children="prev country", n_clicks=0
                         ),
                         html.Button(
-                            id="next_count", children="next country", n_clicks=0
+                            id="next_country", children="next country", n_clicks=0
                         ),
                         html.H4(children="Category", style={"textAlign": "center"}),
                         dcc.Dropdown(
-                            category_options,
-                            value=category_options[0],
+                            app_state.category_options,
+                            value=app_state.category,
                             id="dropdown-category",
                         ),
                         html.Button(
-                            id="prev_cat", children="prev. category", n_clicks=0
+                            id="prev_category", children="prev category", n_clicks=0
                         ),
                         html.Button(
-                            id="next_cat", children="next category", n_clicks=0
+                            id="next_category", children="next category", n_clicks=0
                         ),
                         html.H4(children="Entity", style={"textAlign": "center"}),
                         dcc.Dropdown(
-                            entity_options,
-                            value=entity_options[0],
+                            app_state.entity_options,
+                            value=app_state.entity,
                             id="dropdown-entity",
                         ),
-                        html.Button(id="prev_ent", children="prev. entity", n_clicks=0),
-                        html.Button(id="next_ent", children="next entity", n_clicks=0),
+                        html.Button(
+                            id="prev_entity", children="prev entity", n_clicks=0
+                        ),
+                        html.Button(
+                            id="next_entity", children="next entity", n_clicks=0
+                        ),
                     ]
                 ),
                 dbc.Col(
@@ -142,131 +241,161 @@ app.layout = dbc.Container(
     ]
 )
 
-country_options_codes = list(country_options.keys())
 
-
-def prev_dropdown_value(options: list[str], value: str) -> str:
-    """
-    Move to previous value in dropdown options.
-
-    Parameters
-    ----------
-    options
-        Input :obj:`list` a list of all possible dropdown menu options.
-    value
-        Input :obj:`str` the current value in the dropdown menu.
-
-
-    Returns
-    -------
-        :obj:`str` the previous value in the dropdown menu.
-    """
-    index = options.index(value)
-    index = index - 1
-    if index < 0:
-        index = len(options) - 1
-    return options[index]
-
-
-def next_dropdown_value(options: list[str], value: str) -> str:
-    """
-    Move to next value in dropdown options.
-
-    Parameters
-    ----------
-    options
-        Input :obj:`list` a list of all possible dropdown menu options.
-    value
-        Input :obj:`str` the current value in the dropdown menu.
-
-
-    Returns
-    -------
-        :obj:`str` the next value in the dropdown menu.
-    """
-    index = options.index(value)
-    index = index + 1
-    if index > len(options) - 1:
-        index = 0
-    return options[index]
-
-
-# A change of Input - click on thr button - triggers the callback.
-# Current value is State object, so it does not trigger
-# the callback when changed via dropdown menu.
+# TODO: rename
+# - count -> country
+# - cat -> category
+# - ent -> entity
+# We don't need short names, use full thing to avoid confusion
+# next_count reads as 'next count' rather than next country
 @callback(
-    Output("dropdown-country", "value"),
-    Output("dropdown-category", "value"),
-    Output("dropdown-entity", "value"),
+    Output(
+        "dropdown-country",
+        "value",
+        # allow_duplicate=True # this did not work hence one callback not two
+    ),
     State("dropdown-country", "value"),
-    State("dropdown-category", "value"),
-    State("dropdown-entity", "value"),
-    Input("prev_count", "n_clicks"),
-    Input("next_count", "n_clicks"),
-    Input("prev_cat", "n_clicks"),
-    Input("next_cat", "n_clicks"),
-    Input("prev_ent", "n_clicks"),
-    Input("next_ent", "n_clicks"),
+    Input("next_country", "n_clicks"),
+    Input("prev_country", "n_clicks"),
 )
-# ruff will complain about too many arguments in the next function
-# I am not sure if there is a better way to do it.
-def update_dropdown_value(  # noqa: PLR0913
-    count_in,
-    cat_in,
-    ent_in,
-    n_clicks_count_prev,
-    n_clicks_count_next,
-    n_clicks_cat_prev,
-    n_clicks_cat_next,
-    n_clicks_ent_prev,
-    n_clicks_ent_next,
-):
+def handle_country_click(
+    country_in: str,
+    n_clicks_next_country: int,
+    n_clicks_previous_country: int,
+) -> str:
     """
-    Update values in dropdown when button is clicked.
+    Handle a click on next or previous country button
 
     Parameters
     ----------
-    count_in
-        Input :obj:`str` current value for country in dropdown.
-    cat_in
-        Input :obj:`str` current value for category in dropdown.
-    ent_in
-        Input :obj:`str` current value for entity in dropdown.
-    n_clicks_count_prev
-        Input :obj:`int` number of clicks for previous country button.
-    n_clicks_count_next
-            Input :obj:`int` number of clicks for next country button.
-    n_clicks_cat_prev
-            Input :obj:`int` number of clicks for previous category button.
-    n_clicks_cat_next
-            Input :obj:`int` number of clicks for next category button.
-    n_clicks_ent_prev
-            Input :obj:`int` number of clicks for previous entity button.
-    n_clicks_ent_next
-            Input :obj:`int` number of clicks for next entity button.
+    n_clicks_next_country
+        Number of clicks on the next country button
 
+    n_clicks_previous_country
+        Number of clicks on the previous country button
+
+    country_in
+        Country dropdown value when the button is clicked
 
     Returns
     -------
-        :obj:`str` the updated value in the country dropdown menu.
-        :obj:`str` the updated value in the category dropdown menu.
-        :obj:`str` the updated value in the entity dropdown menu.
+        Value to update the country dropdown to
     """
-    count_out, cat_out, ent_out = count_in, cat_in, ent_in
-    if "prev_count" == ctx.triggered_id:
-        count_out = prev_dropdown_value(country_options_codes, count_in)
-    elif "next_count" == ctx.triggered_id:
-        count_out = next_dropdown_value(country_options_codes, count_in)
-    elif "prev_cat" == ctx.triggered_id:
-        cat_out = prev_dropdown_value(category_options, cat_in)
-    elif "next_cat" == ctx.triggered_id:
-        cat_out = next_dropdown_value(category_options, cat_in)
-    elif "prev_ent" == ctx.triggered_id:
-        ent_out = prev_dropdown_value(entity_options, ent_in)
-    elif "next_ent" == ctx.triggered_id:
-        ent_out = next_dropdown_value(entity_options, ent_in)
+    if ctx.triggered_id == "next_country":
+        # n_clicks_next_country is the number of clicks since the app started
+        # We don't wnat that, just whether we need to go forwards or backwards.
+        # We might want to do this differently in future for performance maybe.
+        return app_state.update_country(n_clicks=1)
 
-    return count_out, cat_out, ent_out
+    if ctx.triggered_id == "prev_country":
+        # As above re why -1 not n_clicks_previous_country
+        return app_state.update_country(n_clicks=-1)
+
+    if ctx.triggered_id is None:
+        # Start up, just return current state
+        return app_state.country
+
+    raise NotImplementedError(ctx.triggered_id)
+
+
+@callback(
+    Output(
+        "dropdown-category",
+        "value",
+        # allow_duplicate=True # this did not work hence one callback not two
+    ),
+    State("dropdown-category", "value"),
+    Input("next_category", "n_clicks"),
+    Input("prev_category", "n_clicks"),
+)
+def handle_category_click(
+    category_in: str,
+    n_clicks_next_category: int,
+    n_clicks_previous_category: int,
+) -> str:
+    """
+    Handle a click on next or previous category button
+
+    Parameters
+    ----------
+    n_clicks_next_category
+        Number of clicks on the next category button
+
+    n_clicks_previous_category
+        Number of clicks on the previous category button
+
+    category_in
+        Country dropdown value when the button is clicked
+
+    Returns
+    -------
+        Value to update the category dropdown to
+    """
+    if ctx.triggered_id == "next_category":
+        # n_clicks_next_category is the number of clicks since the app started
+        # We don't wnat that, just whether we need to go forwards or backwards.
+        # We might want to do this differently in future for performance maybe.
+        return app_state.update_category(n_clicks=1)
+
+    if ctx.triggered_id == "prev_category":
+        # As above re why -1 not n_clicks_previous_category
+        return app_state.update_category(n_clicks=-1)
+
+    if ctx.triggered_id is None:
+        # Start up, just return current state
+        return app_state.category
+
+    raise NotImplementedError(ctx.triggered_id)
+
+
+@callback(
+    Output(
+        "dropdown-entity",
+        "value",
+        # allow_dupliente=True # this did not work hence one callback not two
+    ),
+    State("dropdown-entity", "value"),
+    Input("next_entity", "n_clicks"),
+    Input("prev_entity", "n_clicks"),
+)
+def handle_entity_click(
+    entity_in: str,
+    n_clicks_next_entity: int,
+    n_clicks_previous_entity: int,
+) -> str:
+    """
+    Handle a click on next or previous entity button
+
+    Parameters
+    ----------
+    n_clicks_next_entity
+        Number of clicks on the next entity button
+
+    n_clicks_previous_entity
+        Number of clicks on the previous entity button
+
+    entity_in
+        Country dropdown value when the button is clicked
+
+    Returns
+    -------
+        Value to update the entity dropdown to
+    """
+    if ctx.triggered_id == "next_entity":
+        # n_clicks_next_entity is the number of clicks since the app started
+        # We don't wnat that, just whether we need to go forwards or backwards.
+        # We might want to do this differently in future for performance maybe.
+        return app_state.update_entity(n_clicks=1)
+
+    if ctx.triggered_id == "prev_entity":
+        # As above re why -1 not n_clicks_previous_entity
+        return app_state.update_entity(n_clicks=-1)
+
+    if ctx.triggered_id is None:
+        # Start up, just return current state
+        return app_state.entity
+
+    raise NotImplementedError(ctx.triggered_id)
 
 
 if __name__ == "__main__":
