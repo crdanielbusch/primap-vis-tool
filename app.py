@@ -242,12 +242,6 @@ app.layout = dbc.Container(
 )
 
 
-# TODO: rename
-# - count -> country
-# - cat -> category
-# - ent -> entity
-# We don't need short names, use full thing to avoid confusion
-# next_count reads as 'next count' rather than next country
 @callback(
     Output(
         "dropdown-country",
