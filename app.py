@@ -85,7 +85,7 @@ app.layout = dbc.Container(
                         html.H4(children="Country", style={"textAlign": "center"}),
                         dcc.Dropdown(
                             options=country_options,
-                            value="DEU",
+                            value=list(country_options.keys())[0],
                             id="dropdown-country",
                         ),
                         html.Button(
