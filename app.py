@@ -27,17 +27,18 @@ combined_ds = pm.open_dataset(
 )
 
 
-# Dropdown options for countries
 def get_country_options(inds: xr.Dataset) -> dict[str, str]:
-    """Get ISO3 country codes.
+    """
+    Get ISO3 country codes.
 
-    Args:
-        - xarray dataset
+    Parameters
+    -----------
+    inds
+        Input :obj:`xr.Dataset` from which we want to extract country names
 
     Returns
     -------
-        - dict with ISO3 codes as keys and full country name as values
-
+        :obj:`dict` with ISO3 codes as keys and full country name as values
     """
     all_countries = inds.coords["area (ISO3)"].to_numpy()
     country_options = {}
@@ -53,10 +54,8 @@ def get_country_options(inds: xr.Dataset) -> dict[str, str]:
 
 country_options = get_country_options(combined_ds)
 
-# Dropdown options for categories
 category_options = combined_ds["category (IPCC2006_PRIMAP)"].to_numpy()
 
-# Dropdown options for entities
 entity_options = [i for i in combined_ds.data_vars]
 
 external_stylesheets = [dbc.themes.MINTY]
