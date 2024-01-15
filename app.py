@@ -29,9 +29,11 @@ primaphist_data_folder = Path("data") / "PRIMAP-hist_data"
 current_version = "v2.5_final"
 old_version = "v2.4.2_final"
 # Need a trimmed dataset, this is way too slow to read so iteration time is too long
-combined_ds = pm.open_dataset(
-    root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
-)
+# combined_ds = pm.open_dataset(
+#     root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
+# )
+test_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
+combined_ds = test_ds
 print("Finished reading data set")
 
 
@@ -66,6 +68,15 @@ country_dropdown_options = tuple(sorted(country_options.values()))
 category_options = tuple(combined_ds["category (IPCC2006_PRIMAP)"].to_numpy())
 
 entity_options = tuple(i for i in combined_ds.data_vars)
+
+# TODO! why add 1970?
+min_year = (
+    combined_ds["time"].to_numpy().min().astype("datetime64[Y]").astype(int) + 1970
+)
+max_year = (
+    combined_ds["time"].to_numpy().max().astype("datetime64[Y]").astype(int) + 1970
+)
+print(min_year, max_year)
 
 external_stylesheets = [dbc.themes.MINTY]
 # Tell dash that we're using bootstrap for our external stylesheets so
@@ -301,6 +312,13 @@ app.layout = dbc.Container(
                     [
                         html.H4(children="Overview", style={"textAlign": "center"}),
                         dcc.Graph(id="graph-overview"),
+                        dcc.RangeSlider(
+                            min_year,
+                            max_year,
+                            step=1,
+                            value=[min_year, max_year],
+                            id="my-range-slider",
+                        ),
                     ]
                 ),
             ]
@@ -365,7 +383,7 @@ def handle_country_click(
         # n_clicks_next_country is the number of clicks since the app started
         # We don't wnat that, just whether we need to go forwards or backwards.
         # We might want to do this differently in future for performance maybe.
-        # For further discussion on possible future directions, 
+        # For further discussion on possible future directions,
         # see https://github.com/crdanielbusch/primap-vis-tool/pull/4#discussion_r1444363726
         return app_state.update_country(n_clicks=1)
 
