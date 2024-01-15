@@ -139,12 +139,7 @@ class AppState:
     ) -> tuple[int, T]:
         new_index = start_index + n_clicks
 
-        # Assuming that calculating length of options multiple times
-        # is not a performance issue...
-        if new_index < 0:
-            new_index = len(options) + new_index
-        elif new_index >= len(options):
-            new_index = new_index - len(options)
+        new_index = new_index % len(options)
 
         return new_index, options[new_index]
 
@@ -279,6 +274,8 @@ def handle_country_click(
         # n_clicks_next_country is the number of clicks since the app started
         # We don't wnat that, just whether we need to go forwards or backwards.
         # We might want to do this differently in future for performance maybe.
+        # For further discussion on possible future directions, 
+        # see https://github.com/crdanielbusch/primap-vis-tool/pull/4#discussion_r1444363726
         return app_state.update_country(n_clicks=1)
 
     if ctx.triggered_id == "prev_country":
