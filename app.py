@@ -79,11 +79,26 @@ table = dag.AgGrid(id="grid")
 # Define app state
 @define
 class AppState:
+    """Contains all input parameters for dashboard.
+
+    Attributes
+    ----------
+    country_options : str
+        All `countries` that may be selected.
+    country_index : int
+        The currently selected country's `country_index` in the available country options.
+    category_options : str
+        All `categories` that may be selected.
+    category_index : int
+        The currently selected category's `category_index` in the available category options.
+    entity_options : str
+        All `entities` that may be selected.
+    entity_index : int
+        The currently selected entity's `entity_index` in the available entity options.
+    """
+
     country_options: tuple[str]
     """Options for the country drop-down"""
-
-    country: str
-    """Current country"""
 
     country_index: int
     """Index of current country"""
@@ -91,23 +106,62 @@ class AppState:
     category_options: tuple[str]
     """Options for the category drop-down"""
 
-    category: str
-    """Current category"""
-
     category_index: int
     """Index of the current category"""
 
     entity_options: tuple[str]
     """Options for the entity drop-down"""
 
-    entity: str
-    """Current entity"""
-
     entity_index: int
     """Index of the current entity"""
 
+    @property
+    def country(self) -> str:
+        """
+        Get country for current index.
+
+        Returns
+        -------
+            country.
+        """
+        return self.country_options[self.country_index]
+
+    @property
+    def category(self) -> str:
+        """
+        Get category for current index.
+
+        Returns
+        -------
+            category.
+        """
+        return self.category_options[self.category_index]
+
+    @property
+    def entity(self) -> str:
+        """
+        Get entity for current index.
+
+        Returns
+        -------
+            Entity.
+        """
+        return self.entity_options[self.entity_index]
+
     def update_country(self, n_clicks: int) -> str:
-        self.country_index, self.country = self.update_dropdown(
+        """
+        Update the country in the dropdown selection.
+
+        Parameters
+        ----------
+        n_clicks
+            The number of clicks on a button. 1 is one step forward. -1 is one step back.
+
+        Returns
+        -------
+            Updated country.
+        """
+        self.country_index = self.update_dropdown(
             start_index=self.country_index,
             options=self.country_options,
             n_clicks=n_clicks,
@@ -116,7 +170,19 @@ class AppState:
         return self.country
 
     def update_category(self, n_clicks: int) -> str:
-        self.category_index, self.category = self.update_dropdown(
+        """
+        Update the category in the dropdown selection.
+
+        Parameters
+        ----------
+        n_clicks
+            The number of clicks on a button. 1 is one step forward. -1 is one step back.
+
+        Returns
+        -------
+            Updated  category.
+        """
+        self.category_index = self.update_dropdown(
             start_index=self.category_index,
             options=self.category_options,
             n_clicks=n_clicks,
@@ -125,7 +191,19 @@ class AppState:
         return self.category
 
     def update_entity(self, n_clicks: int) -> str:
-        self.entity_index, self.entity = self.update_dropdown(
+        """
+        Update the entity in the dropdown selection.
+
+        Parameters
+        ----------
+        n_clicks
+            The number of clicks on a button. 1 is one step forward. -1 is one step back.
+
+        Returns
+        -------
+            Updated Entity.
+        """
+        self.entity_index = self.update_dropdown(
             start_index=self.entity_index,
             options=self.entity_options,
             n_clicks=n_clicks,
@@ -137,22 +215,35 @@ class AppState:
     def update_dropdown(
         start_index: int, options: tuple[T], n_clicks: int
     ) -> tuple[int, T]:
+        """
+        Update the index of the dropdown options list.
+
+        Parameters
+        ----------
+        start_index
+            The current index in the dropdown selection.
+        options
+            A list of possible options for the dropdown menu.
+        n_clicks
+            The number of clicks on a button. 1 is one step forward. -1 is one step back.
+
+        Returns
+        -------
+            Updated index.
+        """
         new_index = start_index + n_clicks
 
         new_index = new_index % len(options)
 
-        return new_index, options[new_index]
+        return new_index
 
 
 app_state = AppState(
     country_options=country_dropdown_options,
-    country=country_dropdown_options[0],
     country_index=0,
     category_options=category_options,
-    category=category_options[0],
     category_index=0,
     entity_options=entity_options,
-    entity=entity_options[0],
     entity_index=0,
 )
 
