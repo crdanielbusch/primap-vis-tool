@@ -10,6 +10,7 @@ from typing import TypeVar
 
 import dash_ag_grid as dag
 import dash_bootstrap_components as dbc
+import plotly.graph_objects as go
 import primap2 as pm  # type: ignore
 import pycountry
 import xarray as xr
@@ -69,7 +70,7 @@ category_options = tuple(combined_ds["category (IPCC2006_PRIMAP)"].to_numpy())
 
 entity_options = tuple(i for i in combined_ds.data_vars)
 
-# TODO! why add 1970?
+# TODO! Is there an easier way to get the min/max year?
 min_year = (
     combined_ds["time"].to_numpy().min().astype("datetime64[Y]").astype(int) + 1970
 )
@@ -258,6 +259,47 @@ app_state = AppState(
     entity_index=0,
 )
 
+filtered = (
+    combined_ds["CO2"]
+    .pr.loc[
+        {
+            "provenance": ["measured"],
+            "category": ["0"],
+            "area (ISO3)": ["DEU"],
+            #               "SourceScen": ["PRIMAP-hist_v2.5_final_nr, HISTCR"]
+        }
+    ]
+    .squeeze()
+)
+
+filtered_pandas = filtered.to_dataframe().reset_index()
+
+source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
+
+fig = go.Figure()
+
+for source_scenario in source_scenario_options:
+    df_source_scenario = filtered_pandas.loc[
+        filtered_pandas["SourceScen"] == source_scenario
+    ]
+    fig.add_trace(
+        go.Scatter(
+            x=list(df_source_scenario["time"]),
+            y=list(df_source_scenario["CO2"]),
+            mode="lines",
+            name=source_scenario,
+        )
+    )
+
+fig.update_layout(xaxis=dict(rangeslider=dict(visible=True), type="date"))
+
+fig.update_layout(
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0)
+)
+
+fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+
+
 # define layout
 # to be adjusted once everything is running
 app.layout = dbc.Container(
@@ -276,6 +318,9 @@ app.layout = dbc.Container(
                             value=app_state.country,
                             id="dropdown-country",
                         ),
+                        # this is a line break element
+                        # (apparently bad html practice - replace with style param. later)
+                        html.Br(),
                         html.Button(
                             id="prev_country", children="prev country", n_clicks=0
                         ),
@@ -288,6 +333,7 @@ app.layout = dbc.Container(
                             value=app_state.category,
                             id="dropdown-category",
                         ),
+                        html.Br(),
                         html.Button(
                             id="prev_category", children="prev category", n_clicks=0
                         ),
@@ -300,25 +346,30 @@ app.layout = dbc.Container(
                             value=app_state.entity,
                             id="dropdown-entity",
                         ),
+                        html.Br(),
                         html.Button(
                             id="prev_entity", children="prev entity", n_clicks=0
                         ),
                         html.Button(
                             id="next_entity", children="next entity", n_clicks=0
                         ),
-                    ]
-                ),
-                dbc.Col(
-                    [
-                        html.H4(children="Overview", style={"textAlign": "center"}),
-                        dcc.Graph(id="graph-overview"),
+                        html.H4(children="Year", style={"textAlign": "center"}),
                         dcc.RangeSlider(
                             min_year,
                             max_year,
                             step=1,
+                            marks=None,
                             value=[min_year, max_year],
+                            tooltip={"placement": "bottom", "always_visible": True},
                             id="my-range-slider",
                         ),
+                    ],
+                    style={"padding": 10},
+                ),
+                dbc.Col(
+                    [
+                        html.H4(children="Overview", style={"textAlign": "center"}),
+                        dcc.Graph(figure=fig, id="graph-overview"),
                     ]
                 ),
             ]
@@ -342,7 +393,8 @@ app.layout = dbc.Container(
             ]
         ),
         dbc.Row(dbc.Col(table)),
-    ]
+    ],
+    style={"max-width": "none", "width": "100%"},
 )
 
 
