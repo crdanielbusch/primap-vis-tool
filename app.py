@@ -30,11 +30,11 @@ primaphist_data_folder = Path("data") / "PRIMAP-hist_data"
 current_version = "v2.5_final"
 old_version = "v2.4.2_final"
 # Need a trimmed dataset, this is way too slow to read so iteration time is too long
-# combined_ds = pm.open_dataset(
-#      root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
-#  )
-test_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
-combined_ds = test_ds
+combined_ds = pm.open_dataset(
+    root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
+)
+# test_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
+# combined_ds = test_ds
 print("Finished reading data set")
 
 
@@ -152,6 +152,20 @@ class AppState:
             Entity.
         """
         return self.entity_options[self.entity_index]
+
+    def update_all_indexes(self, country: str, category: str, entity: str):
+        """
+        Update all indexes based on the current selection.
+
+        Parameters
+        ----------
+        country
+        category
+        entity
+        """
+        self.country_index = self.country_options.index(country)
+        self.category_index = self.category_options.index(category)
+        self.entity_index = self.entity_options.index(entity)
 
     def update_country(self, n_steps: int) -> str:
         """
@@ -519,11 +533,10 @@ def update_graph(country: str, category: str, entity: str) -> go.Figure:
     -------
         Overview figure.
     """
-    # TODO! do nothing when someone hits x in the dropdown
+    if country not in app_state.country_options:
+        return
 
-    app_state.country_index = app_state.country_options.index(country)
-    app_state.category_index = app_state.category_options.index(category)
-    app_state.country_index = app_state.country_options.index(country)
+    app_state.update_all_indexes(country, category, entity)
 
     iso_country = country_options[country]
 
