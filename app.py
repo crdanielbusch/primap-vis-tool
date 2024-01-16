@@ -30,11 +30,11 @@ primaphist_data_folder = Path("data") / "PRIMAP-hist_data"
 current_version = "v2.5_final"
 old_version = "v2.4.2_final"
 # Need a trimmed dataset, this is way too slow to read so iteration time is too long
-# combined_ds = pm.open_dataset(
-#     root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
-# )
-test_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
-combined_ds = test_ds
+combined_ds = pm.open_dataset(
+    root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
+)
+# test_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
+# combined_ds = test_ds
 print("Finished reading data set")
 
 
@@ -353,18 +353,7 @@ app.layout = dbc.Container(
                         html.Button(
                             id="next_entity", children="next entity", n_clicks=0
                         ),
-                        html.H4(children="Year", style={"textAlign": "center"}),
-                        dcc.RangeSlider(
-                            min_year,
-                            max_year,
-                            step=1,
-                            marks=None,
-                            value=[min_year, max_year],
-                            tooltip={"placement": "bottom", "always_visible": True},
-                            id="my-range-slider",
-                        ),
                     ],
-                    style={"padding": 10},
                 ),
                 dbc.Col(
                     [
