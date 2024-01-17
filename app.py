@@ -10,6 +10,7 @@ from typing import TypeVar
 
 import dash_ag_grid as dag
 import dash_bootstrap_components as dbc
+import plotly.express as px
 import plotly.graph_objects as go
 import primap2 as pm  # type: ignore
 import pycountry
@@ -30,11 +31,11 @@ primaphist_data_folder = Path("data") / "PRIMAP-hist_data"
 current_version = "v2.5_final"
 old_version = "v2.4.2_final"
 # Need a trimmed dataset, this is way too slow to read so iteration time is too long
-combined_ds = pm.open_dataset(
-    root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
-)
-# test_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
-# combined_ds = test_ds
+# combined_ds = pm.open_dataset(
+#     root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
+# )
+test_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
+combined_ds = test_ds
 print("Finished reading data set")
 
 
@@ -319,6 +320,52 @@ class AppState:
 
         return fig
 
+    def update_category_figure(
+        self, country: str, category: str, entity: str
+    ) -> px.graph_objs._figure.Figure:
+        """
+        Update the main figure based on the input in the dropdown menus.
+
+        Parameters
+        ----------
+        country
+            Country value to use to determine the new country index
+
+        category
+            Category value to use to determine the new category index
+
+        entity
+            Entity value to use to determine the new entity index
+
+        Returns
+        -------
+            Category figure. A plotly express object.
+        """
+        filtered = (
+            combined_ds["CO2"]
+            .pr.loc[
+                {
+                    "provenance": ["measured"],
+                    #                "category": ["0"],
+                    "area (ISO3)": ["DEU"],
+                    "SourceScen": ["PRIMAP-hist_v2.5_final_nr, HISTCR"],
+                }
+            ]
+            .squeeze()
+        )
+
+        filtered_pandas = filtered.to_dataframe().reset_index()
+
+        fig = px.area(
+            filtered_pandas,
+            x="time",
+            y="CO2",
+            color="category (IPCC2006_PRIMAP)",
+            title="category split",
+        )
+
+        return fig
+
 
 app_state = AppState(
     country_options=country_dropdown_options,
@@ -580,9 +627,9 @@ def handle_entity_click(
     Input("dropdown-category", "value"),
     Input("dropdown-entity", "value"),
 )
-def update_graph(country: str, category: str, entity: str) -> go.Figure:
+def update_overview_graph(country: str, category: str, entity: str) -> go.Figure:
     """
-    Update the graphs.
+    Update the overview graph.
 
     Parameters
     ----------
@@ -597,12 +644,45 @@ def update_graph(country: str, category: str, entity: str) -> go.Figure:
     -------
         Overview figure.
     """
+    # TODO! test if it actually prevents errors
     if country not in app_state.country_options:
         return
 
     app_state.update_all_indexes(country, category, entity)
 
     return app_state.update_main_figure(country, category, entity)
+
+
+@callback(
+    Output("graph-category-split", "figure"),
+    Input("dropdown-country", "value"),
+    Input("dropdown-category", "value"),
+    Input("dropdown-entity", "value"),
+)
+def update_category_graph(country: str, category: str, entity: str) -> go.Figure:
+    """
+    Update the category graph.
+
+    Parameters
+    ----------
+    country
+        The currently selected country in the dropdown menu
+    category
+        The currently selected category in the dropdown menu
+    entity
+        The currently selected entity in the dropdown menu
+
+    Returns
+    -------
+        Category figure.
+    """
+    # TODO! test if it actually prevents errors
+    if category not in app_state.category_options:
+        return
+
+    app_state.update_all_indexes(country, category, entity)
+
+    return app_state.update_category_figure(country, category, entity)
 
 
 if __name__ == "__main__":
