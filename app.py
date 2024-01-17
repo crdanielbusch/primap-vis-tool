@@ -17,6 +17,7 @@ import pycountry
 import xarray as xr
 from attrs import define
 from dash import Dash, Input, Output, State, callback, ctx, dcc, html
+from functions import select_cat_children
 
 T = TypeVar("T")
 
@@ -31,11 +32,11 @@ primaphist_data_folder = Path("data") / "PRIMAP-hist_data"
 current_version = "v2.5_final"
 old_version = "v2.4.2_final"
 # Need a trimmed dataset, this is way too slow to read so iteration time is too long
-# combined_ds = pm.open_dataset(
-#     root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
-# )
-test_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
-combined_ds = test_ds
+combined_ds = pm.open_dataset(
+    root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
+)
+# test_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
+# combined_ds = test_ds
 print("Finished reading data set")
 
 
@@ -348,7 +349,9 @@ class AppState:
             .pr.loc[
                 {
                     "provenance": ["measured"],
-                    #                "category": ["0"],
+                    "category": select_cat_children(
+                        category, app_state.category_options
+                    ),
                     "area (ISO3)": iso_country,
                     "SourceScen": ["PRIMAP-hist_v2.5_final_nr, HISTCR"],
                 }
@@ -363,7 +366,7 @@ class AppState:
             x="time",
             y=entity,
             color="category (IPCC2006_PRIMAP)",
-            title="category split",
+            title="category split for PRIMAP-hist_v2.5_final_nr, HISTCR",
         )
 
         return fig
