@@ -10,6 +10,7 @@ from typing import TypeVar
 
 import dash_ag_grid as dag
 import dash_bootstrap_components as dbc
+import plotly.graph_objects as go
 import primap2 as pm  # type: ignore
 import pycountry
 import xarray as xr
@@ -32,6 +33,8 @@ old_version = "v2.4.2_final"
 combined_ds = pm.open_dataset(
     root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
 )
+# test_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
+# combined_ds = test_ds
 print("Finished reading data set")
 
 
@@ -52,7 +55,7 @@ def get_country_options(inds: xr.Dataset) -> dict[str, str]:
     country_options = {}
     for code in all_countries:
         try:
-            country_options[code] = pycountry.countries.get(alpha_3=code).name
+            country_options[pycountry.countries.get(alpha_3=code).name] = code
         # use ISO3 code as name if pycountry cannot find a match
         except Exception:
             country_options[code] = code  # implement custom mapping later (Johannes)
@@ -61,11 +64,13 @@ def get_country_options(inds: xr.Dataset) -> dict[str, str]:
 
 
 country_options = get_country_options(combined_ds)
-country_dropdown_options = tuple(sorted(country_options.values()))
+country_dropdown_options = tuple(sorted(country_options.keys()))
 
 category_options = tuple(combined_ds["category (IPCC2006_PRIMAP)"].to_numpy())
 
 entity_options = tuple(i for i in combined_ds.data_vars)
+
+source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
 
 external_stylesheets = [dbc.themes.MINTY]
 # Tell dash that we're using bootstrap for our external stylesheets so
@@ -148,13 +153,32 @@ class AppState:
         """
         return self.entity_options[self.entity_index]
 
-    def update_country(self, n_clicks: int) -> str:
+    def update_all_indexes(self, country: str, category: str, entity: str) -> None:
+        """
+        Update all indexes based on the current selection.
+
+        Parameters
+        ----------
+        country
+            Country value to use to determine the new country index
+
+        category
+            Category value to use to determine the new category index
+
+        entity
+            Entity value to use to determine the new entity index
+        """
+        self.country_index = self.country_options.index(country)
+        self.category_index = self.category_options.index(category)
+        self.entity_index = self.entity_options.index(entity)
+
+    def update_country(self, n_steps: int) -> str:
         """
         Update the country in the dropdown selection.
 
         Parameters
         ----------
-        n_clicks
+        n_steps
             The number of clicks on a button. 1 is one step forward. -1 is one step back.
 
         Returns
@@ -164,18 +188,18 @@ class AppState:
         self.country_index = self.update_dropdown(
             start_index=self.country_index,
             options=self.country_options,
-            n_clicks=n_clicks,
+            n_steps=n_steps,
         )
 
         return self.country
 
-    def update_category(self, n_clicks: int) -> str:
+    def update_category(self, n_steps: int) -> str:
         """
         Update the category in the dropdown selection.
 
         Parameters
         ----------
-        n_clicks
+        n_steps
             The number of clicks on a button. 1 is one step forward. -1 is one step back.
 
         Returns
@@ -185,18 +209,18 @@ class AppState:
         self.category_index = self.update_dropdown(
             start_index=self.category_index,
             options=self.category_options,
-            n_clicks=n_clicks,
+            n_steps=n_steps,
         )
 
         return self.category
 
-    def update_entity(self, n_clicks: int) -> str:
+    def update_entity(self, n_steps: int) -> str:
         """
         Update the entity in the dropdown selection.
 
         Parameters
         ----------
-        n_clicks
+        n_steps
             The number of clicks on a button. 1 is one step forward. -1 is one step back.
 
         Returns
@@ -206,14 +230,14 @@ class AppState:
         self.entity_index = self.update_dropdown(
             start_index=self.entity_index,
             options=self.entity_options,
-            n_clicks=n_clicks,
+            n_steps=n_steps,
         )
 
         return self.entity
 
     @staticmethod
     def update_dropdown(
-        start_index: int, options: tuple[T], n_clicks: int
+        start_index: int, options: tuple[T], n_steps: int
     ) -> tuple[int, T]:
         """
         Update the index of the dropdown options list.
@@ -224,18 +248,76 @@ class AppState:
             The current index in the dropdown selection.
         options
             A list of possible options for the dropdown menu.
-        n_clicks
+        n_steps
             The number of clicks on a button. 1 is one step forward. -1 is one step back.
 
         Returns
         -------
             Updated index.
         """
-        new_index = start_index + n_clicks
+        new_index = start_index + n_steps
 
         new_index = new_index % len(options)
 
         return new_index
+
+    def update_main_figure(self, country: str, category: str, entity: str) -> go.Figure:
+        """
+        Update the main figure based on the input in the dropdown menus.
+
+        Parameters
+        ----------
+        country
+            Country value to use to determine the new country index
+
+        category
+            Category value to use to determine the new category index
+
+        entity
+            Entity value to use to determine the new entity index
+
+        Returns
+        -------
+            Overview figure. A plotly graph object.
+        """
+        iso_country = country_options[country]
+
+        filtered = (
+            combined_ds[entity]
+            .pr.loc[
+                {
+                    "provenance": ["measured"],
+                    "category": category,
+                    "area (ISO3)": iso_country,
+                }
+            ]
+            .squeeze()
+        )
+
+        filtered_pandas = filtered.to_dataframe().reset_index()
+
+        fig = go.Figure()
+
+        for source_scenario in source_scenario_options:
+            df_source_scenario = filtered_pandas.loc[
+                filtered_pandas["SourceScen"] == source_scenario
+            ]
+            fig.add_trace(
+                go.Scatter(
+                    x=list(df_source_scenario["time"]),
+                    y=list(df_source_scenario[entity]),
+                    mode="lines",
+                    name=source_scenario,
+                )
+            )
+
+        fig.update_layout(
+            xaxis=dict(rangeslider=dict(visible=True), type="date"),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+            margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
+        )
+
+        return fig
 
 
 app_state = AppState(
@@ -265,6 +347,9 @@ app.layout = dbc.Container(
                             value=app_state.country,
                             id="dropdown-country",
                         ),
+                        # this is a line break element
+                        # (apparently bad html practice - replace with style param. later)
+                        html.Br(),
                         html.Button(
                             id="prev_country", children="prev country", n_clicks=0
                         ),
@@ -277,6 +362,7 @@ app.layout = dbc.Container(
                             value=app_state.category,
                             id="dropdown-category",
                         ),
+                        html.Br(),
                         html.Button(
                             id="prev_category", children="prev category", n_clicks=0
                         ),
@@ -289,19 +375,22 @@ app.layout = dbc.Container(
                             value=app_state.entity,
                             id="dropdown-entity",
                         ),
+                        html.Br(),
                         html.Button(
                             id="prev_entity", children="prev entity", n_clicks=0
                         ),
                         html.Button(
                             id="next_entity", children="next entity", n_clicks=0
                         ),
-                    ]
+                    ],
+                    width=3,  # Column will span this many of the 12 grid columns
                 ),
                 dbc.Col(
                     [
                         html.H4(children="Overview", style={"textAlign": "center"}),
                         dcc.Graph(id="graph-overview"),
-                    ]
+                    ],
+                    width=9,
                 ),
             ]
         ),
@@ -309,22 +398,27 @@ app.layout = dbc.Container(
             [
                 dbc.Col(
                     [
+                        html.Br(),
                         html.H4(
                             children="Category split", style={"textAlign": "center"}
                         ),
                         dcc.Graph(id="graph-category-split"),
-                    ]
+                    ],
+                    width=6,
                 ),
                 dbc.Col(
                     [
+                        html.Br(),
                         html.H4(children="Entity split", style={"textAlign": "center"}),
                         dcc.Graph(id="graph-entity-split"),
-                    ]
+                    ],
+                    width=6,
                 ),
             ]
         ),
         dbc.Row(dbc.Col(table)),
-    ]
+    ],
+    style={"max-width": "none", "width": "100%"},
 )
 
 
@@ -365,13 +459,13 @@ def handle_country_click(
         # n_clicks_next_country is the number of clicks since the app started
         # We don't wnat that, just whether we need to go forwards or backwards.
         # We might want to do this differently in future for performance maybe.
-        # For further discussion on possible future directions, 
+        # For further discussion on possible future directions,
         # see https://github.com/crdanielbusch/primap-vis-tool/pull/4#discussion_r1444363726
-        return app_state.update_country(n_clicks=1)
+        return app_state.update_country(n_steps=1)
 
     if ctx.triggered_id == "prev_country":
         # As above re why -1 not n_clicks_previous_country
-        return app_state.update_country(n_clicks=-1)
+        return app_state.update_country(n_steps=-1)
 
     if ctx.triggered_id is None:
         # Start up, just return current state
@@ -417,11 +511,11 @@ def handle_category_click(
         # n_clicks_next_category is the number of clicks since the app started
         # We don't wnat that, just whether we need to go forwards or backwards.
         # We might want to do this differently in future for performance maybe.
-        return app_state.update_category(n_clicks=1)
+        return app_state.update_category(n_steps=1)
 
     if ctx.triggered_id == "prev_category":
         # As above re why -1 not n_clicks_previous_category
-        return app_state.update_category(n_clicks=-1)
+        return app_state.update_category(n_steps=-1)
 
     if ctx.triggered_id is None:
         # Start up, just return current state
@@ -467,17 +561,48 @@ def handle_entity_click(
         # n_clicks_next_entity is the number of clicks since the app started
         # We don't wnat that, just whether we need to go forwards or backwards.
         # We might want to do this differently in future for performance maybe.
-        return app_state.update_entity(n_clicks=1)
+        return app_state.update_entity(n_steps=1)
 
     if ctx.triggered_id == "prev_entity":
         # As above re why -1 not n_clicks_previous_entity
-        return app_state.update_entity(n_clicks=-1)
+        return app_state.update_entity(n_steps=-1)
 
     if ctx.triggered_id is None:
         # Start up, just return current state
         return app_state.entity
 
     raise NotImplementedError(ctx.triggered_id)
+
+
+@callback(
+    Output("graph-overview", "figure"),
+    Input("dropdown-country", "value"),
+    Input("dropdown-category", "value"),
+    Input("dropdown-entity", "value"),
+)
+def update_graph(country: str, category: str, entity: str) -> go.Figure:
+    """
+    Update the graphs.
+
+    Parameters
+    ----------
+    country
+        The currently selected country in the dropdown menu
+    category
+        The currently selected category in the dropdown menu
+    entity
+        The currently selected entity in the dropdown menu
+
+    Returns
+    -------
+        Overview figure.
+    """
+    if country not in app_state.country_options:
+        return
+
+    app_state.update_all_indexes(country, category, entity)
+
+    return app_state.update_main_figure(country, category, entity)
 
 
 if __name__ == "__main__":
