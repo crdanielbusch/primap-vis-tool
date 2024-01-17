@@ -341,13 +341,15 @@ class AppState:
         -------
             Category figure. A plotly express object.
         """
+        iso_country = country_options[country]
+
         filtered = (
-            combined_ds["CO2"]
+            combined_ds[entity]
             .pr.loc[
                 {
                     "provenance": ["measured"],
                     #                "category": ["0"],
-                    "area (ISO3)": ["DEU"],
+                    "area (ISO3)": iso_country,
                     "SourceScen": ["PRIMAP-hist_v2.5_final_nr, HISTCR"],
                 }
             ]
@@ -359,7 +361,7 @@ class AppState:
         fig = px.area(
             filtered_pandas,
             x="time",
-            y="CO2",
+            y=entity,
             color="category (IPCC2006_PRIMAP)",
             title="category split",
         )
