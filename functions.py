@@ -39,6 +39,6 @@ def select_cat_children(
     ]
 
     if not output_categories:
-        return parent_category
+        return [parent_category]
 
     return output_categories

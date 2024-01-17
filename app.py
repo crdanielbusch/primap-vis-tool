@@ -344,14 +344,14 @@ class AppState:
         """
         iso_country = country_options[country]
 
+        categories_plot = select_cat_children(category, app_state.category_options)
+
         filtered = (
             combined_ds[entity]
             .pr.loc[
                 {
                     "provenance": ["measured"],
-                    "category": select_cat_children(
-                        category, app_state.category_options
-                    ),
+                    "category": categories_plot,
                     "area (ISO3)": iso_country,
                     "SourceScen": ["PRIMAP-hist_v2.5_final_nr, HISTCR"],
                 }
@@ -361,12 +361,27 @@ class AppState:
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
-        fig = px.area(
-            filtered_pandas,
-            x="time",
-            y=entity,
-            color="category (IPCC2006_PRIMAP)",
-            title="category split for PRIMAP-hist_v2.5_final_nr, HISTCR",
+        fig = go.Figure()
+
+        for category in categories_plot:
+            df_category = filtered_pandas.loc[
+                filtered_pandas["category (IPCC2006_PRIMAP)"] == category
+            ]
+            fig.add_trace(
+                go.Scatter(
+                    x=df_category["time"],
+                    y=df_category[entity],
+                    fill="tonexty",
+                    name=category,
+                    mode="lines",
+                    stackgroup="one",
+                )
+            )
+
+        fig.update_layout(
+            xaxis=dict(rangeslider=dict(visible=True), type="date"),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+            margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
 
         return fig
