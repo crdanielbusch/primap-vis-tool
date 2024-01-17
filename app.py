@@ -161,10 +161,10 @@ class AppState:
         ----------
         country
             Country value to use to determine the new country index
-            
+
         category
             Category value to use to determine the new category index
-            
+
         entity
             Entity value to use to determine the new entity index
         """
@@ -260,6 +260,64 @@ class AppState:
         new_index = new_index % len(options)
 
         return new_index
+
+    def update_main_figure(self, country: str, category: str, entity: str) -> go.Figure:
+        """
+        Update the main figure based on the input in the dropdown menus.
+
+        Parameters
+        ----------
+        country
+            Country value to use to determine the new country index
+
+        category
+            Category value to use to determine the new category index
+
+        entity
+            Entity value to use to determine the new entity index
+
+        Returns
+        -------
+            Overview figure. A plotly graph object.
+        """
+        iso_country = country_options[country]
+
+        filtered = (
+            combined_ds[entity]
+            .pr.loc[
+                {
+                    "provenance": ["measured"],
+                    "category": category,
+                    "area (ISO3)": iso_country,
+                }
+            ]
+            .squeeze()
+        )
+
+        filtered_pandas = filtered.to_dataframe().reset_index()
+
+        fig = go.Figure()
+
+        for source_scenario in source_scenario_options:
+            df_source_scenario = filtered_pandas.loc[
+                filtered_pandas["SourceScen"] == source_scenario
+            ]
+            fig.add_trace(
+                go.Scatter(
+                    x=list(df_source_scenario["time"]),
+                    y=list(df_source_scenario[entity]),
+                    mode="lines",
+                    name=source_scenario,
+                )
+            )
+
+        fig.update_layout(
+            xaxis=dict(rangeslider=dict(visible=True), type="date"),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+            margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
+        )
+
+        return fig
 
 
 app_state = AppState(
@@ -544,10 +602,7 @@ def update_graph(country: str, category: str, entity: str) -> go.Figure:
 
     app_state.update_all_indexes(country, category, entity)
 
-    # Everything that was previously here gets moved into `update_main_figure`
-    # This should make it easier as we add more figures to keep them all 
-    # updating together and in sync
-    return app_state.update_main_figure()   
+    return app_state.update_main_figure(country, category, entity)
 
 
 if __name__ == "__main__":
