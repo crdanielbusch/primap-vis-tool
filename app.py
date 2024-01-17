@@ -153,15 +153,20 @@ class AppState:
         """
         return self.entity_options[self.entity_index]
 
-    def update_all_indexes(self, country: str, category: str, entity: str):
+    def update_all_indexes(self, country: str, category: str, entity: str) -> None:
         """
         Update all indexes based on the current selection.
 
         Parameters
         ----------
         country
+            Country value to use to determine the new country index
+            
         category
+            Category value to use to determine the new category index
+            
         entity
+            Entity value to use to determine the new entity index
         """
         self.country_index = self.country_options.index(country)
         self.category_index = self.category_options.index(category)
@@ -529,6 +534,7 @@ def update_graph(country: str, category: str, entity: str) -> go.Figure:
         The currently selected category in the dropdown menu
     entity
         The currently selected entity in the dropdown menu
+
     Returns
     -------
         Overview figure.
@@ -538,44 +544,10 @@ def update_graph(country: str, category: str, entity: str) -> go.Figure:
 
     app_state.update_all_indexes(country, category, entity)
 
-    iso_country = country_options[country]
-
-    filtered = (
-        combined_ds[entity]
-        .pr.loc[
-            {
-                "provenance": ["measured"],
-                "category": category,
-                "area (ISO3)": iso_country,
-            }
-        ]
-        .squeeze()
-    )
-
-    filtered_pandas = filtered.to_dataframe().reset_index()
-
-    fig = go.Figure()
-
-    for source_scenario in source_scenario_options:
-        df_source_scenario = filtered_pandas.loc[
-            filtered_pandas["SourceScen"] == source_scenario
-        ]
-        fig.add_trace(
-            go.Scatter(
-                x=list(df_source_scenario["time"]),
-                y=list(df_source_scenario[entity]),
-                mode="lines",
-                name=source_scenario,
-            )
-        )
-
-    fig.update_layout(
-        xaxis=dict(rangeslider=dict(visible=True), type="date"),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-        margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
-    )
-
-    return fig
+    # Everything that was previously here gets moved into `update_main_figure`
+    # This should make it easier as we add more figures to keep them all 
+    # updating together and in sync
+    return app_state.update_main_figure()   
 
 
 if __name__ == "__main__":
