@@ -10,7 +10,6 @@ from typing import TypeVar
 
 import dash_ag_grid as dag
 import dash_bootstrap_components as dbc
-import plotly.express as px
 import plotly.graph_objects as go
 import primap2 as pm  # type: ignore
 import pycountry
@@ -323,7 +322,7 @@ class AppState:
 
     def update_category_figure(
         self, country: str, category: str, entity: str
-    ) -> px.graph_objs._figure.Figure:
+    ) -> go.Figure:
         """
         Update the main figure based on the input in the dropdown menus.
 
@@ -353,6 +352,7 @@ class AppState:
                     "provenance": ["measured"],
                     "category": categories_plot,
                     "area (ISO3)": iso_country,
+                    # TODO! dropdown for source/scenario in a following PR
                     "SourceScen": ["PRIMAP-hist_v2.5_final_nr, HISTCR"],
                 }
             ]
@@ -696,7 +696,7 @@ def update_category_graph(country: str, category: str, entity: str) -> go.Figure
     -------
         Category figure.
     """
-    # TODO! test if it actually prevents errors
+    # TODO! The following line does not prevent errors when clicking on "X" in the dropdown
     if category not in app_state.category_options:
         return
 
