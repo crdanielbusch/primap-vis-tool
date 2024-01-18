@@ -395,7 +395,6 @@ def get_default_app_starting_state(
 
     source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
 
-    print(country_dropdown_options)
     app_state = AppState(
         country_options=country_dropdown_options,
         country_name_iso_mapping=country_name_iso_mapping,
