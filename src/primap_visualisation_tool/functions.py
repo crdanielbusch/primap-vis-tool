@@ -3,6 +3,7 @@ Define helper functions.
 
 """
 import climate_categories as cc
+import xarray as xr
 
 
 def select_cat_children(
@@ -43,3 +44,31 @@ def select_cat_children(
         return [parent_category]
 
     return output_categories
+
+
+def apply_gwp(inp: xr.Dataset, gwp_base_unit: str) -> xr.Dataset:
+    """
+    Convert all entities to the same GWP and unit.
+
+    Parameters
+    ----------
+    inp
+        The xarray data set for the visualisation.
+    gwp_base_unit
+        The selected entity.
+
+    Returns
+    -------
+        Returns the transformed dataset.
+    """
+    unit = "Gg CO2 / year"
+    if "gwp_context" in inp[gwp_base_unit].attrs.keys():
+        entities = inp.data_vars
+        outp = inp.copy()
+        for entity in entities:
+            outp[entity] = outp[entity].pr.convert_to_gwp_like(inp[gwp_base_unit])
+            outp[entity] = outp[entity].pint.to(unit)
+
+        return outp
+    else:
+        return inp

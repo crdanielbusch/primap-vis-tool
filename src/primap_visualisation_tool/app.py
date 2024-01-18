@@ -18,7 +18,8 @@ import xarray as xr
 from attrs import define
 from dash import Dash, Input, Output, State, callback, ctx, dcc, html  # type: ignore
 
-from primap_visualisation_tool.functions import select_cat_children
+from primap_visualisation_tool.definitions import index_cols, subentities
+from primap_visualisation_tool.functions import apply_gwp, select_cat_children
 
 
 def get_country_options(inds: xr.Dataset) -> dict[str, str]:
@@ -346,6 +347,65 @@ class AppState:  # type: ignore
         self.category_graph = fig
 
         return self.category_graph
+
+    def update_entity_figure(self) -> go.Figure:  # type: ignore
+        """
+        Update the main figure based on the input in the dropdown menus.
+
+        Parameters
+        ----------
+        country
+            Country value to use to determine the new country index
+
+        category
+            Category value to use to determine the new category index
+
+        entity
+            Entity value to use to determine the new entity index
+
+        Returns
+        -------
+            Category figure. A plotly express object.
+        """
+        iso_country = self.country_name_iso_mapping[self.country]
+
+        entities_to_plot = sorted(subentities[self.entity])
+
+        if self.entity not in entities_to_plot:
+            entities_to_plot = [
+                *entities_to_plot,
+                self.entity,
+            ]  # need the parent entity for GWP conversion
+
+        filtered = self.ds[entities_to_plot].pr.loc[
+            {
+                "provenance": ["measured"],
+                "category": [self.category],
+                "area (ISO3)": [iso_country],
+                "SourceScen": ["PRIMAP-hist_v2.5_final_nr, HISTCR"],
+            }
+        ]
+
+        filtered = apply_gwp(filtered, self.entity)
+
+        stacked = filtered.pr.to_interchange_format().melt(
+            id_vars=index_cols, var_name="time", value_name="value"
+        )
+
+        fig = px.area(
+            stacked,
+            x="time",
+            y="value",
+            color="entity",
+        )
+
+        fig.update_layout(
+            xaxis=dict(rangeslider=dict(visible=True), type="date"),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+            margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
+        )
+
+        return fig
 
 
 def get_default_app_starting_state(
@@ -676,6 +736,46 @@ def update_category_graph(
     app_state.update_all_indexes(country, category, entity)
 
     return app_state.update_category_figure()
+
+
+@callback(  # type: ignore
+    Output("graph-entity-split", "figure"),
+    Input("dropdown-country", "value"),
+    Input("dropdown-category", "value"),
+    Input("dropdown-entity", "value"),
+)
+def update_entity_graph(
+    country: str,
+    category: str,
+    entity: str,
+    app_state: AppState | None = None,
+) -> go.Figure:
+    """
+    Update the entity graph.
+
+    Parameters
+    ----------
+    country
+        The currently selected country in the dropdown menu
+    category
+        The currently selected category in the dropdown menu
+    entity
+        The currently selected entity in the dropdown menu
+
+    Returns
+    -------
+        Entity figure.
+    """
+    if app_state is None:
+        app_state = APP_STATE
+
+    if any(v is None for v in (country, category, entity)):
+        # User cleared one of the selections in the dropdown, do nothing
+        return app_state.overview_graph
+
+    app_state.update_all_indexes(country, category, entity)
+
+    return app_state.update_entity_figure()
 
 
 if __name__ == "__main__":
