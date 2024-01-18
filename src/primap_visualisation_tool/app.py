@@ -339,13 +339,8 @@ class AppState:  # type: ignore
 
         entities_to_plot = sorted(SUBENTITIES[self.entity])
 
-        if self.entity not in entities_to_plot:
-            entities_to_plot = [
-                *entities_to_plot,
-                self.entity,
-            ]  # need the parent entity for GWP conversion
-
-        filtered = self.ds[entities_to_plot].pr.loc[
+        # Need the parent entity for GWP conversion
+        filtered = self.ds[[*entities_to_plot, self.entity]].pr.loc[
             {
                 "category": [self.category],
                 "area (ISO3)": [iso_country],
@@ -354,6 +349,10 @@ class AppState:  # type: ignore
         ]
 
         filtered = apply_gwp(filtered, self.entity)
+
+        # Drop the parent entity out before plotting (as otherwise the
+        # area plot doesn't make sense)
+        filtered = filtered[entities_to_plot]
 
         stacked = filtered.pr.to_interchange_format().melt(
             id_vars=index_cols, var_name="time", value_name="value"
