@@ -60,6 +60,9 @@ class AppState:  # type: ignore
     country_options: tuple[str, ...]
     """Options for the country drop-down"""
 
+    country_name_iso_mapping: dict[str, str]
+    """Mapping between country names and their ISO codes"""
+
     country_index: int
     """Index of current country"""
 
@@ -74,6 +77,12 @@ class AppState:  # type: ignore
 
     entity_index: int
     """Index of the current entity"""
+
+    source_scenario_options: tuple[str, ...]
+    """Options for the source-scenario drop-down"""
+
+    ds: xr.Dataset
+    """Dataset to plot from"""
 
     overview_graph: go.Figure | None = None  # type: ignore
     """Main graph"""
@@ -241,10 +250,10 @@ class AppState:  # type: ignore
         -------
             Overview figure. A plotly graph object.
         """
-        iso_country = country_options[self.country]
+        iso_country = self.country_name_iso_mapping[self.country]
 
         filtered = (
-            combined_ds[self.entity]
+            self.ds[self.entity]
             .pr.loc[
                 {
                     "provenance": ["measured"],
@@ -259,7 +268,7 @@ class AppState:  # type: ignore
 
         fig = go.Figure()
 
-        for source_scenario in source_scenario_options:
+        for source_scenario in self.source_scenario_options:
             df_source_scenario = filtered_pandas.loc[
                 filtered_pandas["SourceScen"] == source_scenario
             ]
@@ -301,12 +310,12 @@ class AppState:  # type: ignore
         -------
             Category figure. A plotly express object.
         """
-        iso_country = country_options[self.country]
+        iso_country = self.country_name_iso_mapping[self.country]
 
         categories_plot = select_cat_children(self.category, self.category_options)
 
         filtered = (
-            combined_ds[self.entity]
+            self.ds[self.entity]
             .pr.loc[
                 {
                     "provenance": ["measured"],
@@ -337,6 +346,68 @@ class AppState:  # type: ignore
         self.category_graph = fig
 
         return self.category_graph
+
+
+def get_default_app_starting_state(
+    current_version: str = "v2.5_final",
+    old_version: str = "v2.4.2_final",
+    test_ds: bool = False,
+) -> AppState:
+    """
+    Get default starting state for the application
+
+    Parameters
+    ----------
+    current_version
+        Current version of PRIMAP-hist to inspect
+
+    old_version
+        Previous version of PRIMAP-hist to compare against
+
+    test_ds
+        Should we load a test dataset instead? This is much
+        faster to load.
+
+    Returns
+    -------
+        Default starting state
+    """
+    root_folder = Path(__file__).parent.parent.parent
+    data_folder = Path("data")
+
+    print("Reading data set")
+    if test_ds:
+        combined_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
+    else:
+        combined_ds = pm.open_dataset(
+            root_folder
+            / data_folder
+            / f"combined_data_{current_version}_{old_version}.nc"
+        )
+    print("Finished reading data set")
+
+    country_name_iso_mapping = get_country_options(combined_ds)
+    country_dropdown_options = tuple(sorted(country_name_iso_mapping.keys()))
+
+    category_options = tuple(combined_ds["category (IPCC2006_PRIMAP)"].to_numpy())
+
+    entity_options = tuple(i for i in combined_ds.data_vars)
+
+    source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
+
+    app_state = AppState(
+        country_options=country_dropdown_options,
+        country_name_iso_mapping=country_name_iso_mapping,
+        country_index=0,
+        category_options=category_options,
+        category_index=0,
+        entity_options=entity_options,
+        entity_index=0,
+        source_scenario_options=source_scenario_options,
+        ds=combined_ds,
+    )
+
+    return app_state
 
 
 @callback(  # type: ignore
@@ -608,48 +679,16 @@ def update_category_graph(
 
 
 if __name__ == "__main__":
-    #  define folders
-    print("Reading data set")
-    root_folder = Path(__file__).parent.parent.parent
-    data_folder = Path("data")
-    primaphist_data_folder = Path("data") / "PRIMAP-hist_data"
-
-    #  data reading
-    current_version = "v2.5_final"
-    old_version = "v2.4.2_final"
-    # Need a trimmed dataset, this is way too slow to read so iteration time is too long
-    combined_ds = pm.open_dataset(
-        root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
-    )
-    # test_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
-    # combined_ds = test_ds
-    print("Finished reading data set")
-
-    country_options = get_country_options(combined_ds)
-    country_dropdown_options = tuple(sorted(country_options.keys()))
-
-    category_options = tuple(combined_ds["category (IPCC2006_PRIMAP)"].to_numpy())
-
-    entity_options = tuple(i for i in combined_ds.data_vars)
-
-    source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
+    APP_STATE = get_default_app_starting_state(test_ds=False)
 
     external_stylesheets = [dbc.themes.MINTY]
-    # Tell dash that we're using bootstrap for our external stylesheets so
-    # that the Col and Row classes function properly
-    app = Dash(__name__, external_stylesheets=external_stylesheets)
 
     # define table that will show filtered data set
     table = dag.AgGrid(id="grid")
 
-    APP_STATE = AppState(
-        country_options=country_dropdown_options,
-        country_index=0,
-        category_options=category_options,
-        category_index=0,
-        entity_options=entity_options,
-        entity_index=0,
-    )
+    # Tell dash that we're using bootstrap for our external stylesheets so
+    # that the Col and Row classes function properly
+    app = Dash(__name__, external_stylesheets=external_stylesheets)
 
     # define layout
     # to be adjusted once everything is running
