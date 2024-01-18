@@ -17,8 +17,8 @@ dropdowns_with_null_values = pytest.mark.parametrize(
     "country, category, entity",
     (
         pytest.param(None, "1", "CH4", id="country is None"),
-        pytest.param("NZL", None, "CH4", id="category is None"),
-        pytest.param("NZL", "1", None, id="entity is None"),
+        pytest.param("New Zealand", None, "CH4", id="category is None"),
+        pytest.param("New Zealand", "1", None, id="entity is None"),
         pytest.param(None, "1", None, id="multiple values are None"),
         pytest.param(None, None, None, id="all values are None"),
     ),
@@ -29,12 +29,15 @@ def get_starting_app_state(
     category_graph: Any | None = None, overview_graph: Any | None = None
 ) -> AppState:
     app_state = AppState(
-        country_options=("AUS", "NZL"),
+        country_options=("Australia", "New Zealand"),
+        country_name_iso_mapping={"Australia": "AUS", "New Zealand": "NZL"},
         country_index=0,
         category_options=("0", "1"),
         category_index=0,
         entity_options=("CO2", "CH4"),
         entity_index=0,
+        source_scenario_options=("not used"),
+        ds="not used",
         category_graph=category_graph,
         overview_graph=overview_graph,
     )
