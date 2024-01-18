@@ -9,4 +9,6 @@ API Reference
 .. autosummary::
   :toctree: ./
 
+  primap_visualisation_tool.app
+  primap_visualisation_tool.functions
   primap_visualisation_tool.operations

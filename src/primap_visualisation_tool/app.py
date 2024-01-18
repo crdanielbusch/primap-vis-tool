@@ -51,22 +51,12 @@ def get_country_options(inds: xr.Dataset) -> dict[str, str]:
 # Define app state
 @define
 class AppState:
-    """Contains all input parameters for dashboard.
+    """
+    State of the application
 
-    Attributes
-    ----------
-    country_options : str
-        All `countries` that may be selected.
-    country_index : int
-        The currently selected country's `country_index` in the available country options.
-    category_options : str
-        All `categories` that may be selected.
-    category_index : int
-        The currently selected category's `category_index` in the available category options.
-    entity_options : str
-        All `entities` that may be selected.
-    entity_index : int
-        The currently selected entity's `entity_index` in the available entity options.
+    This object constains all of the application's state and methods to control it.
+    The application's state should only be modified by its methods to avoid
+    unintended side-effects.
     """
 
     country_options: tuple[str]
