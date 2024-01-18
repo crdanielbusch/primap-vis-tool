@@ -23,24 +23,6 @@ from primap_visualisation_tool.functions import select_cat_children
 T = TypeVar("T")
 
 
-#  define folders
-print("Reading data set")
-root_folder = Path(__file__).parent.parent.parent
-data_folder = Path("data")
-primaphist_data_folder = Path("data") / "PRIMAP-hist_data"
-
-#  data reading
-current_version = "v2.5_final"
-old_version = "v2.4.2_final"
-# Need a trimmed dataset, this is way too slow to read so iteration time is too long
-combined_ds = pm.open_dataset(
-    root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
-)
-# test_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
-# combined_ds = test_ds
-print("Finished reading data set")
-
-
 def get_country_options(inds: xr.Dataset) -> dict[str, str]:
     """
     Get ISO3 country codes.
@@ -64,24 +46,6 @@ def get_country_options(inds: xr.Dataset) -> dict[str, str]:
             country_options[code] = code  # implement custom mapping later (Johannes)
 
     return country_options
-
-
-country_options = get_country_options(combined_ds)
-country_dropdown_options = tuple(sorted(country_options.keys()))
-
-category_options = tuple(combined_ds["category (IPCC2006_PRIMAP)"].to_numpy())
-
-entity_options = tuple(i for i in combined_ds.data_vars)
-
-source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
-
-external_stylesheets = [dbc.themes.MINTY]
-# Tell dash that we're using bootstrap for our external stylesheets so
-# that the Col and Row classes function properly
-app = Dash(__name__, external_stylesheets=external_stylesheets)
-
-# define table that will show filtered data set
-table = dag.AgGrid(id="grid")
 
 
 # Define app state
@@ -377,108 +341,6 @@ class AppState:
         return fig
 
 
-app_state = AppState(
-    country_options=country_dropdown_options,
-    country_index=0,
-    category_options=category_options,
-    category_index=0,
-    entity_options=entity_options,
-    entity_index=0,
-)
-
-# define layout
-# to be adjusted once everything is running
-app.layout = dbc.Container(
-    [
-        dbc.Row(
-            [
-                dbc.Col(
-                    [
-                        html.H1(
-                            children="Primap-hist data explorer",
-                            style={"textAlign": "center"},
-                        ),
-                        html.H4(children="Country", style={"textAlign": "center"}),
-                        dcc.Dropdown(
-                            options=app_state.country_options,
-                            value=app_state.country,
-                            id="dropdown-country",
-                        ),
-                        # this is a line break element
-                        # (apparently bad html practice - replace with style param. later)
-                        html.Br(),
-                        html.Button(
-                            id="prev_country", children="prev country", n_clicks=0
-                        ),
-                        html.Button(
-                            id="next_country", children="next country", n_clicks=0
-                        ),
-                        html.H4(children="Category", style={"textAlign": "center"}),
-                        dcc.Dropdown(
-                            app_state.category_options,
-                            value=app_state.category,
-                            id="dropdown-category",
-                        ),
-                        html.Br(),
-                        html.Button(
-                            id="prev_category", children="prev category", n_clicks=0
-                        ),
-                        html.Button(
-                            id="next_category", children="next category", n_clicks=0
-                        ),
-                        html.H4(children="Entity", style={"textAlign": "center"}),
-                        dcc.Dropdown(
-                            app_state.entity_options,
-                            value=app_state.entity,
-                            id="dropdown-entity",
-                        ),
-                        html.Br(),
-                        html.Button(
-                            id="prev_entity", children="prev entity", n_clicks=0
-                        ),
-                        html.Button(
-                            id="next_entity", children="next entity", n_clicks=0
-                        ),
-                    ],
-                    width=3,  # Column will span this many of the 12 grid columns
-                ),
-                dbc.Col(
-                    [
-                        html.H4(children="Overview", style={"textAlign": "center"}),
-                        dcc.Graph(id="graph-overview"),
-                    ],
-                    width=9,
-                ),
-            ]
-        ),
-        dbc.Row(
-            [
-                dbc.Col(
-                    [
-                        html.Br(),
-                        html.H4(
-                            children="Category split", style={"textAlign": "center"}
-                        ),
-                        dcc.Graph(id="graph-category-split"),
-                    ],
-                    width=6,
-                ),
-                dbc.Col(
-                    [
-                        html.Br(),
-                        html.H4(children="Entity split", style={"textAlign": "center"}),
-                        dcc.Graph(id="graph-entity-split"),
-                    ],
-                    width=6,
-                ),
-            ]
-        ),
-        dbc.Row(dbc.Col(table)),
-    ],
-    style={"max-width": "none", "width": "100%"},
-)
-
-
 @callback(
     Output(
         "dropdown-country",
@@ -696,4 +558,141 @@ def update_category_graph(country: str, category: str, entity: str) -> go.Figure
 
 
 if __name__ == "__main__":
+    #  define folders
+    print("Reading data set")
+    root_folder = Path(__file__).parent.parent.parent
+    data_folder = Path("data")
+    primaphist_data_folder = Path("data") / "PRIMAP-hist_data"
+
+    #  data reading
+    current_version = "v2.5_final"
+    old_version = "v2.4.2_final"
+    # Need a trimmed dataset, this is way too slow to read so iteration time is too long
+    combined_ds = pm.open_dataset(
+        root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
+    )
+    # test_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
+    # combined_ds = test_ds
+    print("Finished reading data set")
+
+    country_options = get_country_options(combined_ds)
+    country_dropdown_options = tuple(sorted(country_options.keys()))
+
+    category_options = tuple(combined_ds["category (IPCC2006_PRIMAP)"].to_numpy())
+
+    entity_options = tuple(i for i in combined_ds.data_vars)
+
+    source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
+
+    external_stylesheets = [dbc.themes.MINTY]
+    # Tell dash that we're using bootstrap for our external stylesheets so
+    # that the Col and Row classes function properly
+    app = Dash(__name__, external_stylesheets=external_stylesheets)
+
+    # define table that will show filtered data set
+    table = dag.AgGrid(id="grid")
+
+    app_state = AppState(
+        country_options=country_dropdown_options,
+        country_index=0,
+        category_options=category_options,
+        category_index=0,
+        entity_options=entity_options,
+        entity_index=0,
+    )
+
+    # define layout
+    # to be adjusted once everything is running
+    app.layout = dbc.Container(
+        [
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            html.H1(
+                                children="Primap-hist data explorer",
+                                style={"textAlign": "center"},
+                            ),
+                            html.H4(children="Country", style={"textAlign": "center"}),
+                            dcc.Dropdown(
+                                options=app_state.country_options,
+                                value=app_state.country,
+                                id="dropdown-country",
+                            ),
+                            # this is a line break element
+                            # (apparently bad html practice - replace with style param. later)
+                            html.Br(),
+                            html.Button(
+                                id="prev_country", children="prev country", n_clicks=0
+                            ),
+                            html.Button(
+                                id="next_country", children="next country", n_clicks=0
+                            ),
+                            html.H4(children="Category", style={"textAlign": "center"}),
+                            dcc.Dropdown(
+                                app_state.category_options,
+                                value=app_state.category,
+                                id="dropdown-category",
+                            ),
+                            html.Br(),
+                            html.Button(
+                                id="prev_category", children="prev category", n_clicks=0
+                            ),
+                            html.Button(
+                                id="next_category", children="next category", n_clicks=0
+                            ),
+                            html.H4(children="Entity", style={"textAlign": "center"}),
+                            dcc.Dropdown(
+                                app_state.entity_options,
+                                value=app_state.entity,
+                                id="dropdown-entity",
+                            ),
+                            html.Br(),
+                            html.Button(
+                                id="prev_entity", children="prev entity", n_clicks=0
+                            ),
+                            html.Button(
+                                id="next_entity", children="next entity", n_clicks=0
+                            ),
+                        ],
+                        width=3,  # Column will span this many of the 12 grid columns
+                    ),
+                    dbc.Col(
+                        [
+                            html.H4(children="Overview", style={"textAlign": "center"}),
+                            dcc.Graph(id="graph-overview"),
+                        ],
+                        width=9,
+                    ),
+                ]
+            ),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            html.Br(),
+                            html.H4(
+                                children="Category split", style={"textAlign": "center"}
+                            ),
+                            dcc.Graph(id="graph-category-split"),
+                        ],
+                        width=6,
+                    ),
+                    dbc.Col(
+                        [
+                            html.Br(),
+                            html.H4(
+                                children="Entity split", style={"textAlign": "center"}
+                            ),
+                            dcc.Graph(id="graph-entity-split"),
+                        ],
+                        width=6,
+                    ),
+                ]
+            ),
+            dbc.Row(dbc.Col(table)),
+        ],
+        style={"max-width": "none", "width": "100%"},
+    )
+
     app.run(debug=True)
