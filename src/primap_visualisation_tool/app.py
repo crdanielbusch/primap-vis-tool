@@ -444,7 +444,6 @@ def get_default_app_starting_state(
     Output(
         "dropdown-country",
         "value",
-        # allow_duplicate=True # this did not work hence one callback not two
     ),
     State("dropdown-country", "value"),
     Input("next_country", "n_clicks"),
@@ -504,7 +503,6 @@ def handle_country_click(
     Output(
         "dropdown-category",
         "value",
-        # allow_duplicate=True # this did not work hence one callback not two
     ),
     State("dropdown-category", "value"),
     Input("next_category", "n_clicks"),
@@ -562,7 +560,6 @@ def handle_category_click(
     Output(
         "dropdown-entity",
         "value",
-        # allow_dupliente=True # this did not work hence one callback not two
     ),
     State("dropdown-entity", "value"),
     Input("next_entity", "n_clicks"),
@@ -753,7 +750,7 @@ def update_entity_graph(
 
 
 if __name__ == "__main__":
-    APP_STATE = get_default_app_starting_state(test_ds=True)
+    APP_STATE = get_default_app_starting_state(test_ds=False)
 
     external_stylesheets = [dbc.themes.MINTY]
 
