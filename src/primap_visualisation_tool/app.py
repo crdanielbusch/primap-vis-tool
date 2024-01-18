@@ -5,39 +5,20 @@ Author: Daniel Busch, Date: 2023-12-21
 """
 from __future__ import annotations
 
+from collections.abc import Sized
 from pathlib import Path
-from typing import TypeVar
 
-import dash_ag_grid as dag
-import dash_bootstrap_components as dbc
-import plotly.express as px
-import plotly.graph_objects as go
+import dash_ag_grid as dag  # type: ignore
+import dash_bootstrap_components as dbc  # type: ignore
+import plotly.express as px  # type: ignore
+import plotly.graph_objects as go  # type: ignore
 import primap2 as pm  # type: ignore
 import pycountry
 import xarray as xr
 from attrs import define
-from dash import Dash, Input, Output, State, callback, ctx, dcc, html
-from functions import select_cat_children
+from dash import Dash, Input, Output, State, callback, ctx, dcc, html  # type: ignore
 
-T = TypeVar("T")
-
-
-#  define folders
-print("Reading data set")
-root_folder = Path(__file__).parent
-data_folder = Path("data")
-primaphist_data_folder = Path("data") / "PRIMAP-hist_data"
-
-#  data reading
-current_version = "v2.5_final"
-old_version = "v2.4.2_final"
-# Need a trimmed dataset, this is way too slow to read so iteration time is too long
-combined_ds = pm.open_dataset(
-    root_folder / data_folder / f"combined_data_{current_version}_{old_version}.nc"
-)
-# test_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
-# combined_ds = test_ds
-print("Finished reading data set")
+from primap_visualisation_tool.functions import select_cat_children
 
 
 def get_country_options(inds: xr.Dataset) -> dict[str, str]:
@@ -65,62 +46,49 @@ def get_country_options(inds: xr.Dataset) -> dict[str, str]:
     return country_options
 
 
-country_options = get_country_options(combined_ds)
-country_dropdown_options = tuple(sorted(country_options.keys()))
-
-category_options = tuple(combined_ds["category (IPCC2006_PRIMAP)"].to_numpy())
-
-entity_options = tuple(i for i in combined_ds.data_vars)
-
-source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
-
-external_stylesheets = [dbc.themes.MINTY]
-# Tell dash that we're using bootstrap for our external stylesheets so
-# that the Col and Row classes function properly
-app = Dash(__name__, external_stylesheets=external_stylesheets)
-
-# define table that will show filtered data set
-table = dag.AgGrid(id="grid")
-
-
 # Define app state
 @define
-class AppState:
-    """Contains all input parameters for dashboard.
+class AppState:  # type: ignore
+    """
+    State of the application
 
-    Attributes
-    ----------
-    country_options : str
-        All `countries` that may be selected.
-    country_index : int
-        The currently selected country's `country_index` in the available country options.
-    category_options : str
-        All `categories` that may be selected.
-    category_index : int
-        The currently selected category's `category_index` in the available category options.
-    entity_options : str
-        All `entities` that may be selected.
-    entity_index : int
-        The currently selected entity's `entity_index` in the available entity options.
+    This object constains all of the application's state and methods to control it.
+    The application's state should only be modified by its methods to avoid
+    unintended side-effects.
     """
 
-    country_options: tuple[str]
+    country_options: tuple[str, ...]
     """Options for the country drop-down"""
+
+    country_name_iso_mapping: dict[str, str]
+    """Mapping between country names and their ISO codes"""
 
     country_index: int
     """Index of current country"""
 
-    category_options: tuple[str]
+    category_options: tuple[str, ...]
     """Options for the category drop-down"""
 
     category_index: int
     """Index of the current category"""
 
-    entity_options: tuple[str]
+    entity_options: tuple[str, ...]
     """Options for the entity drop-down"""
 
     entity_index: int
     """Index of the current entity"""
+
+    source_scenario_options: tuple[str, ...]
+    """Options for the source-scenario drop-down"""
+
+    ds: xr.Dataset
+    """Dataset to plot from"""
+
+    overview_graph: go.Figure | None = None  # type: ignore
+    """Main graph"""
+
+    category_graph: go.Figure | None = None  # type: ignore
+    """Graph showing breakdown within the selected category"""
 
     @property
     def country(self) -> str:
@@ -238,9 +206,7 @@ class AppState:
         return self.entity
 
     @staticmethod
-    def update_dropdown(
-        start_index: int, options: tuple[T], n_steps: int
-    ) -> tuple[int, T]:
+    def update_dropdown(start_index: int, options: Sized, n_steps: int) -> int:
         """
         Update the index of the dropdown options list.
 
@@ -248,8 +214,10 @@ class AppState:
         ----------
         start_index
             The current index in the dropdown selection.
+
         options
             A list of possible options for the dropdown menu.
+
         n_steps
             The number of clicks on a button. 1 is one step forward. -1 is one step back.
 
@@ -263,7 +231,7 @@ class AppState:
 
         return new_index
 
-    def update_main_figure(self) -> go.Figure:
+    def update_main_figure(self) -> go.Figure:  # type: ignore
         """
         Update the main figure based on the input in the dropdown menus.
 
@@ -282,10 +250,10 @@ class AppState:
         -------
             Overview figure. A plotly graph object.
         """
-        iso_country = country_options[self.country]
+        iso_country = self.country_name_iso_mapping[self.country]
 
         filtered = (
-            combined_ds[self.entity]
+            self.ds[self.entity]
             .pr.loc[
                 {
                     "provenance": ["measured"],
@@ -300,7 +268,7 @@ class AppState:
 
         fig = go.Figure()
 
-        for source_scenario in source_scenario_options:
+        for source_scenario in self.source_scenario_options:
             df_source_scenario = filtered_pandas.loc[
                 filtered_pandas["SourceScen"] == source_scenario
             ]
@@ -319,9 +287,11 @@ class AppState:
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
 
-        return fig
+        self.overview_graph = fig
 
-    def update_category_figure(self) -> go.Figure:
+        return self.overview_graph
+
+    def update_category_figure(self) -> go.Figure:  # type: ignore
         """
         Update the main figure based on the input in the dropdown menus.
 
@@ -340,12 +310,12 @@ class AppState:
         -------
             Category figure. A plotly express object.
         """
-        iso_country = country_options[self.country]
+        iso_country = self.country_name_iso_mapping[self.country]
 
-        categories_plot = select_cat_children(self.category, app_state.category_options)
+        categories_plot = select_cat_children(self.category, self.category_options)
 
         filtered = (
-            combined_ds[self.entity]
+            self.ds[self.entity]
             .pr.loc[
                 {
                     "provenance": ["measured"],
@@ -373,112 +343,74 @@ class AppState:
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
 
-        return fig
+        self.category_graph = fig
+
+        return self.category_graph
 
 
-app_state = AppState(
-    country_options=country_dropdown_options,
-    country_index=0,
-    category_options=category_options,
-    category_index=0,
-    entity_options=entity_options,
-    entity_index=0,
-)
+def get_default_app_starting_state(
+    current_version: str = "v2.5_final",
+    old_version: str = "v2.4.2_final",
+    test_ds: bool = False,
+) -> AppState:
+    """
+    Get default starting state for the application
 
-# define layout
-# to be adjusted once everything is running
-app.layout = dbc.Container(
-    [
-        dbc.Row(
-            [
-                dbc.Col(
-                    [
-                        html.H1(
-                            children="Primap-hist data explorer",
-                            style={"textAlign": "center"},
-                        ),
-                        html.H4(children="Country", style={"textAlign": "center"}),
-                        dcc.Dropdown(
-                            options=app_state.country_options,
-                            value=app_state.country,
-                            id="dropdown-country",
-                        ),
-                        # this is a line break element
-                        # (apparently bad html practice - replace with style param. later)
-                        html.Br(),
-                        html.Button(
-                            id="prev_country", children="prev country", n_clicks=0
-                        ),
-                        html.Button(
-                            id="next_country", children="next country", n_clicks=0
-                        ),
-                        html.H4(children="Category", style={"textAlign": "center"}),
-                        dcc.Dropdown(
-                            app_state.category_options,
-                            value=app_state.category,
-                            id="dropdown-category",
-                        ),
-                        html.Br(),
-                        html.Button(
-                            id="prev_category", children="prev category", n_clicks=0
-                        ),
-                        html.Button(
-                            id="next_category", children="next category", n_clicks=0
-                        ),
-                        html.H4(children="Entity", style={"textAlign": "center"}),
-                        dcc.Dropdown(
-                            app_state.entity_options,
-                            value=app_state.entity,
-                            id="dropdown-entity",
-                        ),
-                        html.Br(),
-                        html.Button(
-                            id="prev_entity", children="prev entity", n_clicks=0
-                        ),
-                        html.Button(
-                            id="next_entity", children="next entity", n_clicks=0
-                        ),
-                    ],
-                    width=3,  # Column will span this many of the 12 grid columns
-                ),
-                dbc.Col(
-                    [
-                        html.H4(children="Overview", style={"textAlign": "center"}),
-                        dcc.Graph(id="graph-overview"),
-                    ],
-                    width=9,
-                ),
-            ]
-        ),
-        dbc.Row(
-            [
-                dbc.Col(
-                    [
-                        html.Br(),
-                        html.H4(
-                            children="Category split", style={"textAlign": "center"}
-                        ),
-                        dcc.Graph(id="graph-category-split"),
-                    ],
-                    width=6,
-                ),
-                dbc.Col(
-                    [
-                        html.Br(),
-                        html.H4(children="Entity split", style={"textAlign": "center"}),
-                        dcc.Graph(id="graph-entity-split"),
-                    ],
-                    width=6,
-                ),
-            ]
-        ),
-        dbc.Row(dbc.Col(table)),
-    ],
-    style={"max-width": "none", "width": "100%"},
-)
+    Parameters
+    ----------
+    current_version
+        Current version of PRIMAP-hist to inspect
+
+    old_version
+        Previous version of PRIMAP-hist to compare against
+
+    test_ds
+        Should we load a test dataset instead? This is much
+        faster to load.
+
+    Returns
+    -------
+        Default starting state
+    """
+    root_folder = Path(__file__).parent.parent.parent
+    data_folder = Path("data")
+
+    print("Reading data set")
+    if test_ds:
+        combined_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
+    else:
+        combined_ds = pm.open_dataset(
+            root_folder
+            / data_folder
+            / f"combined_data_{current_version}_{old_version}.nc"
+        )
+    print("Finished reading data set")
+
+    country_name_iso_mapping = get_country_options(combined_ds)
+    country_dropdown_options = tuple(sorted(country_name_iso_mapping.keys()))
+
+    category_options = tuple(combined_ds["category (IPCC2006_PRIMAP)"].to_numpy())
+
+    entity_options = tuple(i for i in combined_ds.data_vars)
+
+    source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
+
+    app_state = AppState(
+        country_options=country_dropdown_options,
+        country_name_iso_mapping=country_name_iso_mapping,
+        country_index=0,
+        category_options=category_options,
+        category_index=0,
+        entity_options=entity_options,
+        entity_index=0,
+        source_scenario_options=source_scenario_options,
+        ds=combined_ds,
+    )
+
+    return app_state
 
 
-@callback(
+@callback(  # type: ignore
     Output(
         "dropdown-country",
         "value",
@@ -492,6 +424,7 @@ def handle_country_click(
     country_in: str,
     n_clicks_next_country: int,
     n_clicks_previous_country: int,
+    app_state: AppState | None = None,
 ) -> str:
     """
     Handle a click on next or previous country button
@@ -507,10 +440,17 @@ def handle_country_click(
     country_in
         Country dropdown value when the button is clicked
 
+    app_state
+        The app state to update. If not provided, we use `APP_STATE` i.e.
+        the value from the global namespace.
+
     Returns
     -------
         Value to update the country dropdown to
     """
+    if app_state is None:
+        app_state = APP_STATE
+
     if ctx.triggered_id == "next_country":
         # n_clicks_next_country is the number of clicks since the app started
         # We don't wnat that, just whether we need to go forwards or backwards.
@@ -530,7 +470,7 @@ def handle_country_click(
     raise NotImplementedError(ctx.triggered_id)
 
 
-@callback(
+@callback(  # type: ignore
     Output(
         "dropdown-category",
         "value",
@@ -544,6 +484,7 @@ def handle_category_click(
     category_in: str,
     n_clicks_next_category: int,
     n_clicks_previous_category: int,
+    app_state: AppState | None = None,
 ) -> str:
     """
     Handle a click on next or previous category button
@@ -559,10 +500,17 @@ def handle_category_click(
     category_in
         Country dropdown value when the button is clicked
 
+    app_state
+        The app state to update. If not provided, we use `APP_STATE` i.e.
+        the value from the global namespace.
+
     Returns
     -------
         Value to update the category dropdown to
     """
+    if app_state is None:
+        app_state = APP_STATE
+
     if ctx.triggered_id == "next_category":
         # n_clicks_next_category is the number of clicks since the app started
         # We don't wnat that, just whether we need to go forwards or backwards.
@@ -580,7 +528,7 @@ def handle_category_click(
     raise NotImplementedError(ctx.triggered_id)
 
 
-@callback(
+@callback(  # type: ignore
     Output(
         "dropdown-entity",
         "value",
@@ -594,6 +542,7 @@ def handle_entity_click(
     entity_in: str,
     n_clicks_next_entity: int,
     n_clicks_previous_entity: int,
+    app_state: AppState | None = None,
 ) -> str:
     """
     Handle a click on next or previous entity button
@@ -609,10 +558,17 @@ def handle_entity_click(
     entity_in
         Country dropdown value when the button is clicked
 
+    app_state
+        The app state to update. If not provided, we use `APP_STATE` i.e.
+        the value from the global namespace.
+
     Returns
     -------
         Value to update the entity dropdown to
     """
+    if app_state is None:
+        app_state = APP_STATE
+
     if ctx.triggered_id == "next_entity":
         # n_clicks_next_entity is the number of clicks since the app started
         # We don't wnat that, just whether we need to go forwards or backwards.
@@ -630,13 +586,18 @@ def handle_entity_click(
     raise NotImplementedError(ctx.triggered_id)
 
 
-@callback(
+@callback(  # type: ignore
     Output("graph-overview", "figure"),
     Input("dropdown-country", "value"),
     Input("dropdown-category", "value"),
     Input("dropdown-entity", "value"),
 )
-def update_overview_graph(country: str, category: str, entity: str) -> go.Figure:
+def update_overview_graph(
+    country: str,
+    category: str,
+    entity: str,
+    app_state: AppState | None = None,
+) -> go.Figure:
     """
     Update the overview graph.
 
@@ -644,31 +605,45 @@ def update_overview_graph(country: str, category: str, entity: str) -> go.Figure
     ----------
     country
         The currently selected country in the dropdown menu
+
     category
         The currently selected category in the dropdown menu
+
     entity
         The currently selected entity in the dropdown menu
+
+    app_state
+        The app state to update. If not provided, we use `APP_STATE` i.e.
+        the value from the global namespace.
 
     Returns
     -------
         Overview figure.
     """
-    # TODO! test if it actually prevents errors
-    if country not in app_state.country_options:
-        return
+    if app_state is None:
+        app_state = APP_STATE
+
+    if any(v is None for v in (country, category, entity)):
+        # User cleared one of the selections in the dropdown, do nothing
+        return app_state.overview_graph
 
     app_state.update_all_indexes(country, category, entity)
 
     return app_state.update_main_figure()
 
 
-@callback(
+@callback(  # type: ignore
     Output("graph-category-split", "figure"),
     Input("dropdown-country", "value"),
     Input("dropdown-category", "value"),
     Input("dropdown-entity", "value"),
 )
-def update_category_graph(country: str, category: str, entity: str) -> go.Figure:
+def update_category_graph(
+    country: str,
+    category: str,
+    entity: str,
+    app_state: AppState | None = None,
+) -> go.Figure:
     """
     Update the category graph.
 
@@ -676,18 +651,27 @@ def update_category_graph(country: str, category: str, entity: str) -> go.Figure
     ----------
     country
         The currently selected country in the dropdown menu
+
     category
         The currently selected category in the dropdown menu
+
     entity
         The currently selected entity in the dropdown menu
+
+    app_state
+        The app state to update. If not provided, we use `APP_STATE` i.e.
+        the value from the global namespace.
 
     Returns
     -------
         Category figure.
     """
-    # TODO! The following line does not prevent errors when clicking on "X" in the dropdown
-    if category not in app_state.category_options:
-        return
+    if app_state is None:
+        app_state = APP_STATE
+
+    if any(v is None for v in (country, category, entity)):
+        # User cleared one of the selections in the dropdown, do nothing
+        return app_state.overview_graph
 
     app_state.update_all_indexes(country, category, entity)
 
@@ -695,4 +679,109 @@ def update_category_graph(country: str, category: str, entity: str) -> go.Figure
 
 
 if __name__ == "__main__":
+    APP_STATE = get_default_app_starting_state(test_ds=False)
+
+    external_stylesheets = [dbc.themes.MINTY]
+
+    # define table that will show filtered data set
+    table = dag.AgGrid(id="grid")
+
+    # Tell dash that we're using bootstrap for our external stylesheets so
+    # that the Col and Row classes function properly
+    app = Dash(__name__, external_stylesheets=external_stylesheets)
+
+    # define layout
+    # to be adjusted once everything is running
+    app.layout = dbc.Container(
+        [
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            html.H1(
+                                children="Primap-hist data explorer",
+                                style={"textAlign": "center"},
+                            ),
+                            html.H4(children="Country", style={"textAlign": "center"}),
+                            dcc.Dropdown(
+                                options=APP_STATE.country_options,
+                                value=APP_STATE.country,
+                                id="dropdown-country",
+                            ),
+                            # this is a line break element
+                            # (apparently bad html practice - replace with style param. later)
+                            html.Br(),
+                            html.Button(
+                                id="prev_country", children="prev country", n_clicks=0
+                            ),
+                            html.Button(
+                                id="next_country", children="next country", n_clicks=0
+                            ),
+                            html.H4(children="Category", style={"textAlign": "center"}),
+                            dcc.Dropdown(
+                                APP_STATE.category_options,
+                                value=APP_STATE.category,
+                                id="dropdown-category",
+                            ),
+                            html.Br(),
+                            html.Button(
+                                id="prev_category", children="prev category", n_clicks=0
+                            ),
+                            html.Button(
+                                id="next_category", children="next category", n_clicks=0
+                            ),
+                            html.H4(children="Entity", style={"textAlign": "center"}),
+                            dcc.Dropdown(
+                                APP_STATE.entity_options,
+                                value=APP_STATE.entity,
+                                id="dropdown-entity",
+                            ),
+                            html.Br(),
+                            html.Button(
+                                id="prev_entity", children="prev entity", n_clicks=0
+                            ),
+                            html.Button(
+                                id="next_entity", children="next entity", n_clicks=0
+                            ),
+                        ],
+                        width=3,  # Column will span this many of the 12 grid columns
+                    ),
+                    dbc.Col(
+                        [
+                            html.H4(children="Overview", style={"textAlign": "center"}),
+                            dcc.Graph(id="graph-overview"),
+                        ],
+                        width=9,
+                    ),
+                ]
+            ),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            html.Br(),
+                            html.H4(
+                                children="Category split", style={"textAlign": "center"}
+                            ),
+                            dcc.Graph(id="graph-category-split"),
+                        ],
+                        width=6,
+                    ),
+                    dbc.Col(
+                        [
+                            html.Br(),
+                            html.H4(
+                                children="Entity split", style={"textAlign": "center"}
+                            ),
+                            dcc.Graph(id="graph-entity-split"),
+                        ],
+                        width=6,
+                    ),
+                ]
+            ),
+            dbc.Row(dbc.Col(table)),
+        ],
+        style={"max-width": "none", "width": "100%"},
+    )
+
     app.run(debug=True)
