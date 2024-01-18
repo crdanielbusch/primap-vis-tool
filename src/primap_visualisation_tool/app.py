@@ -87,6 +87,12 @@ class AppState:
     entity_index: int
     """Index of the current entity"""
 
+    overview_graph: go.Figure | None = None
+    """Main graph"""
+
+    category_graph: go.Figure | None = None
+    """Graph showing breakdown within the selected category"""
+
     @property
     def country(self) -> str:
         """
@@ -284,7 +290,9 @@ class AppState:
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
 
-        return fig
+        self.overview_graph = fig
+
+        return self.overview_graph
 
     def update_category_figure(self) -> go.Figure:
         """
@@ -307,7 +315,7 @@ class AppState:
         """
         iso_country = country_options[self.country]
 
-        categories_plot = select_cat_children(self.category, app_state.category_options)
+        categories_plot = select_cat_children(self.category, self.category_options)
 
         filtered = (
             combined_ds[self.entity]
@@ -338,7 +346,9 @@ class AppState:
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
 
-        return fig
+        self.category_graph = fig
+
+        return self.category_graph
 
 
 @callback(
@@ -355,6 +365,7 @@ def handle_country_click(
     country_in: str,
     n_clicks_next_country: int,
     n_clicks_previous_country: int,
+    app_state: AppState | None = None,
 ) -> str:
     """
     Handle a click on next or previous country button
@@ -370,10 +381,17 @@ def handle_country_click(
     country_in
         Country dropdown value when the button is clicked
 
+    app_state
+        The app state to update. If not provided, we use `APP_STATE` i.e.
+        the value from the global namespace.
+
     Returns
     -------
         Value to update the country dropdown to
     """
+    if app_state is None:
+        app_state = APP_STATE
+
     if ctx.triggered_id == "next_country":
         # n_clicks_next_country is the number of clicks since the app started
         # We don't wnat that, just whether we need to go forwards or backwards.
@@ -407,6 +425,7 @@ def handle_category_click(
     category_in: str,
     n_clicks_next_category: int,
     n_clicks_previous_category: int,
+    app_state: AppState | None = None,
 ) -> str:
     """
     Handle a click on next or previous category button
@@ -422,10 +441,17 @@ def handle_category_click(
     category_in
         Country dropdown value when the button is clicked
 
+    app_state
+        The app state to update. If not provided, we use `APP_STATE` i.e.
+        the value from the global namespace.
+
     Returns
     -------
         Value to update the category dropdown to
     """
+    if app_state is None:
+        app_state = APP_STATE
+
     if ctx.triggered_id == "next_category":
         # n_clicks_next_category is the number of clicks since the app started
         # We don't wnat that, just whether we need to go forwards or backwards.
@@ -457,6 +483,7 @@ def handle_entity_click(
     entity_in: str,
     n_clicks_next_entity: int,
     n_clicks_previous_entity: int,
+    app_state: AppState | None = None,
 ) -> str:
     """
     Handle a click on next or previous entity button
@@ -472,10 +499,17 @@ def handle_entity_click(
     entity_in
         Country dropdown value when the button is clicked
 
+    app_state
+        The app state to update. If not provided, we use `APP_STATE` i.e.
+        the value from the global namespace.
+
     Returns
     -------
         Value to update the entity dropdown to
     """
+    if app_state is None:
+        app_state = APP_STATE
+
     if ctx.triggered_id == "next_entity":
         # n_clicks_next_entity is the number of clicks since the app started
         # We don't wnat that, just whether we need to go forwards or backwards.
@@ -499,7 +533,12 @@ def handle_entity_click(
     Input("dropdown-category", "value"),
     Input("dropdown-entity", "value"),
 )
-def update_overview_graph(country: str, category: str, entity: str) -> go.Figure:
+def update_overview_graph(
+    country: str,
+    category: str,
+    entity: str,
+    app_state: AppState | None = None,
+) -> go.Figure:
     """
     Update the overview graph.
 
@@ -507,18 +546,27 @@ def update_overview_graph(country: str, category: str, entity: str) -> go.Figure
     ----------
     country
         The currently selected country in the dropdown menu
+
     category
         The currently selected category in the dropdown menu
+
     entity
         The currently selected entity in the dropdown menu
+
+    app_state
+        The app state to update. If not provided, we use `APP_STATE` i.e.
+        the value from the global namespace.
 
     Returns
     -------
         Overview figure.
     """
-    # TODO! test if it actually prevents errors
-    if country not in app_state.country_options:
-        return
+    if app_state is None:
+        app_state = APP_STATE
+
+    if any(v is None for v in (country, category, entity)):
+        # User cleared one of the selections in the dropdown, do nothing
+        return app_state.overview_graph
 
     app_state.update_all_indexes(country, category, entity)
 
@@ -531,7 +579,12 @@ def update_overview_graph(country: str, category: str, entity: str) -> go.Figure
     Input("dropdown-category", "value"),
     Input("dropdown-entity", "value"),
 )
-def update_category_graph(country: str, category: str, entity: str) -> go.Figure:
+def update_category_graph(
+    country: str,
+    category: str,
+    entity: str,
+    app_state: AppState | None = None,
+) -> go.Figure:
     """
     Update the category graph.
 
@@ -539,18 +592,27 @@ def update_category_graph(country: str, category: str, entity: str) -> go.Figure
     ----------
     country
         The currently selected country in the dropdown menu
+
     category
         The currently selected category in the dropdown menu
+
     entity
         The currently selected entity in the dropdown menu
+
+    app_state
+        The app state to update. If not provided, we use `APP_STATE` i.e.
+        the value from the global namespace.
 
     Returns
     -------
         Category figure.
     """
-    # TODO! The following line does not prevent errors when clicking on "X" in the dropdown
-    if category not in app_state.category_options:
-        return
+    if app_state is None:
+        app_state = APP_STATE
+
+    if any(v is None for v in (country, category, entity)):
+        # User cleared one of the selections in the dropdown, do nothing
+        return app_state.overview_graph
 
     app_state.update_all_indexes(country, category, entity)
 
@@ -592,7 +654,7 @@ if __name__ == "__main__":
     # define table that will show filtered data set
     table = dag.AgGrid(id="grid")
 
-    app_state = AppState(
+    APP_STATE = AppState(
         country_options=country_dropdown_options,
         country_index=0,
         category_options=category_options,
@@ -615,8 +677,8 @@ if __name__ == "__main__":
                             ),
                             html.H4(children="Country", style={"textAlign": "center"}),
                             dcc.Dropdown(
-                                options=app_state.country_options,
-                                value=app_state.country,
+                                options=APP_STATE.country_options,
+                                value=APP_STATE.country,
                                 id="dropdown-country",
                             ),
                             # this is a line break element
@@ -630,8 +692,8 @@ if __name__ == "__main__":
                             ),
                             html.H4(children="Category", style={"textAlign": "center"}),
                             dcc.Dropdown(
-                                app_state.category_options,
-                                value=app_state.category,
+                                APP_STATE.category_options,
+                                value=APP_STATE.category,
                                 id="dropdown-category",
                             ),
                             html.Br(),
@@ -643,8 +705,8 @@ if __name__ == "__main__":
                             ),
                             html.H4(children="Entity", style={"textAlign": "center"}),
                             dcc.Dropdown(
-                                app_state.entity_options,
-                                value=app_state.entity,
+                                APP_STATE.entity_options,
+                                value=APP_STATE.entity,
                                 id="dropdown-entity",
                             ),
                             html.Br(),
