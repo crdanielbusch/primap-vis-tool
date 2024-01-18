@@ -17,14 +17,15 @@ import pycountry
 import xarray as xr
 from attrs import define
 from dash import Dash, Input, Output, State, callback, ctx, dcc, html
-from functions import select_cat_children
+
+from primap_visualisation_tool.functions import select_cat_children
 
 T = TypeVar("T")
 
 
 #  define folders
 print("Reading data set")
-root_folder = Path(__file__).parent
+root_folder = Path(__file__).parent.parent.parent
 data_folder = Path("data")
 primaphist_data_folder = Path("data") / "PRIMAP-hist_data"
 

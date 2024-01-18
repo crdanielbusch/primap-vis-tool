@@ -17,6 +17,8 @@ def select_cat_children(
         The selected category.
     existing_categories
         All existing categories in the data set.
+
+
     Returns
     -------
         Children categories.
