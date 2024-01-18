@@ -6,7 +6,7 @@ import climate_categories as cc
 
 
 def select_cat_children(
-    parent_category: str, existing_categories: list[str]
+    parent_category: str, existing_categories: tuple[str, ...]
 ) -> list[str]:
     """
     Find children categories of a category.
@@ -15,13 +15,14 @@ def select_cat_children(
     ----------
     parent_category
         The selected category.
+
     existing_categories
         All existing categories in the data set.
 
-
     Returns
     -------
-        Children categories.
+        Children categories. If there are no children for the
+        category, `parent_category` is simply returned.
     """
     parent = cc.IPCC2006_PRIMAP[parent_category]
     # There are two ways to break down category 3

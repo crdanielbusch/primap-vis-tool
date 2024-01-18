@@ -5,22 +5,20 @@ Author: Daniel Busch, Date: 2023-12-21
 """
 from __future__ import annotations
 
+from collections.abc import Sized
 from pathlib import Path
-from typing import TypeVar
 
-import dash_ag_grid as dag
-import dash_bootstrap_components as dbc
-import plotly.express as px
-import plotly.graph_objects as go
+import dash_ag_grid as dag  # type: ignore
+import dash_bootstrap_components as dbc  # type: ignore
+import plotly.express as px  # type: ignore
+import plotly.graph_objects as go  # type: ignore
 import primap2 as pm  # type: ignore
 import pycountry
 import xarray as xr
 from attrs import define
-from dash import Dash, Input, Output, State, callback, ctx, dcc, html
+from dash import Dash, Input, Output, State, callback, ctx, dcc, html  # type: ignore
 
 from primap_visualisation_tool.functions import select_cat_children
-
-T = TypeVar("T")
 
 
 def get_country_options(inds: xr.Dataset) -> dict[str, str]:
@@ -50,7 +48,7 @@ def get_country_options(inds: xr.Dataset) -> dict[str, str]:
 
 # Define app state
 @define
-class AppState:
+class AppState:  # type: ignore
     """
     State of the application
 
@@ -59,28 +57,28 @@ class AppState:
     unintended side-effects.
     """
 
-    country_options: tuple[str]
+    country_options: tuple[str, ...]
     """Options for the country drop-down"""
 
     country_index: int
     """Index of current country"""
 
-    category_options: tuple[str]
+    category_options: tuple[str, ...]
     """Options for the category drop-down"""
 
     category_index: int
     """Index of the current category"""
 
-    entity_options: tuple[str]
+    entity_options: tuple[str, ...]
     """Options for the entity drop-down"""
 
     entity_index: int
     """Index of the current entity"""
 
-    overview_graph: go.Figure | None = None
+    overview_graph: go.Figure | None = None  # type: ignore
     """Main graph"""
 
-    category_graph: go.Figure | None = None
+    category_graph: go.Figure | None = None  # type: ignore
     """Graph showing breakdown within the selected category"""
 
     @property
@@ -199,9 +197,7 @@ class AppState:
         return self.entity
 
     @staticmethod
-    def update_dropdown(
-        start_index: int, options: tuple[T], n_steps: int
-    ) -> tuple[int, T]:
+    def update_dropdown(start_index: int, options: Sized, n_steps: int) -> int:
         """
         Update the index of the dropdown options list.
 
@@ -209,8 +205,10 @@ class AppState:
         ----------
         start_index
             The current index in the dropdown selection.
+
         options
             A list of possible options for the dropdown menu.
+
         n_steps
             The number of clicks on a button. 1 is one step forward. -1 is one step back.
 
@@ -224,7 +222,7 @@ class AppState:
 
         return new_index
 
-    def update_main_figure(self) -> go.Figure:
+    def update_main_figure(self) -> go.Figure:  # type: ignore
         """
         Update the main figure based on the input in the dropdown menus.
 
@@ -284,7 +282,7 @@ class AppState:
 
         return self.overview_graph
 
-    def update_category_figure(self) -> go.Figure:
+    def update_category_figure(self) -> go.Figure:  # type: ignore
         """
         Update the main figure based on the input in the dropdown menus.
 
@@ -341,7 +339,7 @@ class AppState:
         return self.category_graph
 
 
-@callback(
+@callback(  # type: ignore
     Output(
         "dropdown-country",
         "value",
@@ -401,7 +399,7 @@ def handle_country_click(
     raise NotImplementedError(ctx.triggered_id)
 
 
-@callback(
+@callback(  # type: ignore
     Output(
         "dropdown-category",
         "value",
@@ -459,7 +457,7 @@ def handle_category_click(
     raise NotImplementedError(ctx.triggered_id)
 
 
-@callback(
+@callback(  # type: ignore
     Output(
         "dropdown-entity",
         "value",
@@ -517,7 +515,7 @@ def handle_entity_click(
     raise NotImplementedError(ctx.triggered_id)
 
 
-@callback(
+@callback(  # type: ignore
     Output("graph-overview", "figure"),
     Input("dropdown-country", "value"),
     Input("dropdown-category", "value"),
@@ -563,7 +561,7 @@ def update_overview_graph(
     return app_state.update_main_figure()
 
 
-@callback(
+@callback(  # type: ignore
     Output("graph-category-split", "figure"),
     Input("dropdown-country", "value"),
     Input("dropdown-category", "value"),
