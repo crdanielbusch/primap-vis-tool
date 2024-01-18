@@ -321,7 +321,7 @@ class AppState:
         return fig
 
     def update_category_figure(
-        self, country: str, category: str, entity: str
+        self
     ) -> go.Figure:
         """
         Update the main figure based on the input in the dropdown menus.
