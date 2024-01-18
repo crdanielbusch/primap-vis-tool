@@ -10,6 +10,7 @@ from typing import TypeVar
 
 import dash_ag_grid as dag
 import dash_bootstrap_components as dbc
+import plotly.express as px
 import plotly.graph_objects as go
 import primap2 as pm  # type: ignore
 import pycountry
@@ -262,7 +263,7 @@ class AppState:
 
         return new_index
 
-    def update_main_figure(self, country: str, category: str, entity: str) -> go.Figure:
+    def update_main_figure(self) -> go.Figure:
         """
         Update the main figure based on the input in the dropdown menus.
 
@@ -281,14 +282,14 @@ class AppState:
         -------
             Overview figure. A plotly graph object.
         """
-        iso_country = country_options[country]
+        iso_country = country_options[self.country]
 
         filtered = (
-            combined_ds[entity]
+            combined_ds[self.entity]
             .pr.loc[
                 {
                     "provenance": ["measured"],
-                    "category": category,
+                    "category": self.category,
                     "area (ISO3)": iso_country,
                 }
             ]
@@ -306,23 +307,21 @@ class AppState:
             fig.add_trace(
                 go.Scatter(
                     x=list(df_source_scenario["time"]),
-                    y=list(df_source_scenario[entity]),
+                    y=list(df_source_scenario[self.entity]),
                     mode="lines",
                     name=source_scenario,
                 )
             )
 
         fig.update_layout(
-            xaxis=dict(rangeslider=dict(visible=True), type="date"),
+            xaxis=dict(rangeslider=dict(visible=True, thickness=0.05), type="date"),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
 
         return fig
 
-    def update_category_figure(
-        self
-    ) -> go.Figure:
+    def update_category_figure(self) -> go.Figure:
         """
         Update the main figure based on the input in the dropdown menus.
 
@@ -341,12 +340,12 @@ class AppState:
         -------
             Category figure. A plotly express object.
         """
-        iso_country = country_options[country]
+        iso_country = country_options[self.country]
 
-        categories_plot = select_cat_children(category, app_state.category_options)
+        categories_plot = select_cat_children(self.category, app_state.category_options)
 
         filtered = (
-            combined_ds[entity]
+            combined_ds[self.entity]
             .pr.loc[
                 {
                     "provenance": ["measured"],
@@ -361,22 +360,12 @@ class AppState:
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
-        fig = go.Figure()
-
-        for category in categories_plot:
-            df_category = filtered_pandas.loc[
-                filtered_pandas["category (IPCC2006_PRIMAP)"] == category
-            ]
-            fig.add_trace(
-                go.Scatter(
-                    x=df_category["time"],
-                    y=df_category[entity],
-                    fill="tonexty",
-                    name=category,
-                    mode="lines",
-                    stackgroup="one",
-                )
-            )
+        fig = px.area(
+            filtered_pandas,
+            x="time",
+            y=self.entity,
+            color="category (IPCC2006_PRIMAP)",
+        )
 
         fig.update_layout(
             xaxis=dict(rangeslider=dict(visible=True), type="date"),
@@ -670,7 +659,7 @@ def update_overview_graph(country: str, category: str, entity: str) -> go.Figure
 
     app_state.update_all_indexes(country, category, entity)
 
-    return app_state.update_main_figure(country, category, entity)
+    return app_state.update_main_figure()
 
 
 @callback(
@@ -702,7 +691,7 @@ def update_category_graph(country: str, category: str, entity: str) -> go.Figure
 
     app_state.update_all_indexes(country, category, entity)
 
-    return app_state.update_category_figure(country, category, entity)
+    return app_state.update_category_figure()
 
 
 if __name__ == "__main__":
