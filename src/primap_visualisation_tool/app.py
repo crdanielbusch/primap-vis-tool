@@ -369,11 +369,13 @@ class AppState:  # type: ignore
 
         entities_to_plot = sorted(subentities[self.entity])
 
+        drop_parent = False
         if self.entity not in entities_to_plot:
             entities_to_plot = [
                 *entities_to_plot,
                 self.entity,
             ]  # need the parent entity for GWP conversion
+            drop_parent = True
 
         filtered = self.ds[entities_to_plot].pr.loc[
             {
@@ -384,6 +386,9 @@ class AppState:  # type: ignore
         ]
 
         filtered = apply_gwp(filtered, self.entity)
+
+        if drop_parent:
+            filtered = filtered.drop_vars(self.entity)
 
         stacked = filtered.pr.to_interchange_format().melt(
             id_vars=index_cols, var_name="time", value_name="value"
