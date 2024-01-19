@@ -66,8 +66,11 @@ def apply_gwp(inp: xr.Dataset, gwp_base_unit: str) -> xr.Dataset:
         entities = inp.data_vars
         outp = inp.copy()
         for entity in entities:
-            outp[entity] = outp[entity].pr.convert_to_gwp_like(inp[gwp_base_unit])
-            outp[entity] = outp[entity].pint.to(unit)
+            converted = outp[entity].pr.convert_to_gwp_like(inp[gwp_base_unit])
+            outp[converted.name] = converted
+            if converted.name != entity:
+                outp = outp.drop_vars(entity)
+            outp[converted.name] = outp[converted.name].pint.to(unit)
 
         return outp
     else:
