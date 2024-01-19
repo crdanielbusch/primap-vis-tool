@@ -257,7 +257,6 @@ class AppState:  # type: ignore
             self.ds[self.entity]
             .pr.loc[
                 {
-                    "provenance": ["measured"],
                     "category": self.category,
                     "area (ISO3)": iso_country,
                 }
@@ -319,7 +318,6 @@ class AppState:  # type: ignore
             self.ds[self.entity]
             .pr.loc[
                 {
-                    "provenance": ["measured"],
                     "category": categories_plot,
                     "area (ISO3)": iso_country,
                     # TODO! dropdown for source/scenario in a following PR
@@ -379,7 +377,6 @@ class AppState:  # type: ignore
 
         filtered = self.ds[entities_to_plot].pr.loc[
             {
-                "provenance": ["measured"],
                 "category": [self.category],
                 "area (ISO3)": [iso_country],
                 "SourceScen": ["PRIMAP-hist_v2.5_final_nr, HISTCR"],
@@ -445,6 +442,8 @@ def get_default_app_starting_state(
             / f"combined_data_{current_version}_{old_version}.nc"
         )
     print("Finished reading data set")
+
+    combined_ds = combined_ds.drop_vars("provenance")
 
     country_name_iso_mapping = get_country_options(combined_ds)
     country_dropdown_options = tuple(sorted(country_name_iso_mapping.keys()))
@@ -779,7 +778,7 @@ def update_entity_graph(
 
 
 if __name__ == "__main__":
-    APP_STATE = get_default_app_starting_state(test_ds=False)
+    APP_STATE = get_default_app_starting_state(test_ds=True)
 
     external_stylesheets = [dbc.themes.MINTY]
 
