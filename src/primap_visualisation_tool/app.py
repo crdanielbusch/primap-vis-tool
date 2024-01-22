@@ -363,7 +363,7 @@ class AppState:  # type: ignore
 
         Returns
         -------
-            Category figure. A plotly express object.
+            Entity figure.
         """
         iso_country = self.country_name_iso_mapping[self.country]
 

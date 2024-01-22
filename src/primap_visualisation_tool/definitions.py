@@ -3,7 +3,7 @@ Definitions.
 """
 
 
-subentities = {
+SUBENTITIES: dict[str, list[str]] = {
     "CO2": ["CO2"],
     "CH4": ["CH4"],
     "N2O": ["N2O"],
@@ -26,8 +26,9 @@ subentities = {
     "FGASES (AR6GWP100)": ["HFCS (AR6GWP100)", "PFCS (AR6GWP100)", "NF3", "SF6"],
     "KYOTOGHG (AR6GWP100)": ["CO2", "CH4", "N2O", "FGASES (AR6GWP100)"],
 }
+"""Mapping between entities and their components"""
 
-index_cols = [
+index_cols: list[str] = [
     # "source",
     # "scenario (PRIMAP-hist)",
     "SourceScen",
@@ -37,3 +38,4 @@ index_cols = [
     "unit",
     "category (IPCC2006_PRIMAP)",
 ]
+"""Columns to use as the index when creating stacked plots"""
