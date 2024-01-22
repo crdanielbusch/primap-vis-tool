@@ -91,6 +91,9 @@ class AppState:  # type: ignore
     category_graph: go.Figure | None = None  # type: ignore
     """Graph showing breakdown within the selected category"""
 
+    entity_graph: go.Figure | None = None  # type: ignore
+    """Graph showing breakdown within the selected entity"""
+
     @property
     def country(self) -> str:
         """
@@ -402,7 +405,9 @@ class AppState:  # type: ignore
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
 
-        return fig
+        self.entity_graph = fig
+
+        return self.entity_graph
 
 
 def get_default_app_starting_state(
