@@ -70,7 +70,8 @@ def apply_gwp(
     Returns
     -------
         Dataset with all variables converted to the same GWP as `entity_to_match`
-        and unit converted to `unit`.
+        and unit converted to `unit`. If ``inp[entity_to_match]`` doesn't have a
+        GWP context, ``inp`` is simply returned.
     """
     if "gwp_context" in inp[entity_to_match].attrs.keys():
         entities = inp.data_vars
