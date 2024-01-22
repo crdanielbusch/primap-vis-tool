@@ -737,7 +737,6 @@ def update_entity_graph(
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
 
-
     Returns
     -------
         Entity figure.
