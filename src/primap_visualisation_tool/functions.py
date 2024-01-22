@@ -69,7 +69,8 @@ def apply_gwp(inp: xr.Dataset, gwp_base_unit: str) -> xr.Dataset:
             converted = outp[entity].pr.convert_to_gwp_like(inp[gwp_base_unit])
             outp[converted.name] = converted
             if converted.name != entity:
-                outp = outp.drop_vars(entity)
+                # works without the str() function bit mypy will complain
+                outp = outp.drop_vars(str(entity))
             outp[converted.name] = outp[converted.name].pint.to(unit)
 
         return outp

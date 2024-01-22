@@ -18,7 +18,7 @@ import xarray as xr
 from attrs import define
 from dash import Dash, Input, Output, State, callback, ctx, dcc, html  # type: ignore
 
-from primap_visualisation_tool.definitions import index_cols, subentities
+from primap_visualisation_tool.definitions import SUBENTITIES, index_cols
 from primap_visualisation_tool.functions import apply_gwp, select_cat_children
 
 
@@ -367,7 +367,7 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        entities_to_plot = sorted(subentities[self.entity])
+        entities_to_plot = sorted(SUBENTITIES[self.entity])
 
         if self.entity not in entities_to_plot:
             entities_to_plot = [
