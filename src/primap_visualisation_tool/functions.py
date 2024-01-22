@@ -85,6 +85,4 @@ def apply_gwp(
 
         return outp
 
-    # Unclear whether this should just return or instead try and just convert the unit i.e.
-    # return inp.pint.to(unit)
     return inp

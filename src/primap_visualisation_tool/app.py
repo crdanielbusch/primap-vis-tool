@@ -339,8 +339,11 @@ class AppState:  # type: ignore
 
         entities_to_plot = sorted(SUBENTITIES[self.entity])
 
-        # Need the parent entity for GWP conversion
-        filtered = self.ds[[*entities_to_plot, self.entity]].pr.loc[
+        if self.entity not in entities_to_plot:
+            # need the parent entity for GWP conversion
+            entities_to_plot = [*entities_to_plot, self.entity]
+
+        filtered = self.ds[entities_to_plot].pr.loc[
             {
                 "category": [self.category],
                 "area (ISO3)": [iso_country],
@@ -724,15 +727,17 @@ def update_entity_graph(
     ----------
     country
         The currently selected country in the dropdown menu
-        
+
     category
         The currently selected category in the dropdown menu
-        
+
     entity
         The currently selected entity in the dropdown menu
 
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
+
+
     Returns
     -------
         Entity figure.
@@ -750,7 +755,7 @@ def update_entity_graph(
 
 
 if __name__ == "__main__":
-    APP_STATE = get_default_app_starting_state(test_ds=False)
+    APP_STATE = get_default_app_starting_state(test_ds=True)
 
     external_stylesheets = [dbc.themes.MINTY]
 
