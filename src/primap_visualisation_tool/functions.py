@@ -79,7 +79,7 @@ def apply_gwp(
             converted = outp[entity].pr.convert_to_gwp_like(inp[entity_to_match])
             outp[converted.name] = converted
             if converted.name != entity:
-                # works without the str() function bit mypy will complain
+                # works without the str() function but mypy will complain
                 outp = outp.drop_vars(str(entity))
             outp[converted.name] = outp[converted.name].pint.to(unit)
 
