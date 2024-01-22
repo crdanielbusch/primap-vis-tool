@@ -728,11 +728,15 @@ def update_entity_graph(
     ----------
     country
         The currently selected country in the dropdown menu
+        
     category
         The currently selected category in the dropdown menu
+        
     entity
         The currently selected entity in the dropdown menu
 
+    app_state
+        Application state. If not provided, we use `APP_STATE` from the global namespace.
     Returns
     -------
         Entity figure.
