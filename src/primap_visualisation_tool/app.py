@@ -239,17 +239,6 @@ class AppState:  # type: ignore
         """
         Update the main figure based on the input in the dropdown menus.
 
-        Parameters
-        ----------
-        country
-            Country value to use to determine the new country index
-
-        category
-            Category value to use to determine the new category index
-
-        entity
-            Entity value to use to determine the new entity index
-
         Returns
         -------
             Overview figure. A plotly graph object.
@@ -298,17 +287,6 @@ class AppState:  # type: ignore
         """
         Update the main figure based on the input in the dropdown menus.
 
-        Parameters
-        ----------
-        country
-            Country value to use to determine the new country index
-
-        category
-            Category value to use to determine the new category index
-
-        entity
-            Entity value to use to determine the new entity index
-
         Returns
         -------
             Category figure. A plotly express object.
@@ -352,17 +330,6 @@ class AppState:  # type: ignore
     def update_entity_figure(self) -> go.Figure:  # type: ignore
         """
         Update the main figure based on the input in the dropdown menus.
-
-        Parameters
-        ----------
-        country
-            Country value to use to determine the new country index
-
-        category
-            Category value to use to determine the new category index
-
-        entity
-            Entity value to use to determine the new entity index
 
         Returns
         -------
