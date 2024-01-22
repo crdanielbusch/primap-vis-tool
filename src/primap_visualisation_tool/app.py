@@ -12,6 +12,7 @@ import dash_ag_grid as dag  # type: ignore
 import dash_bootstrap_components as dbc  # type: ignore
 import plotly.express as px  # type: ignore
 import plotly.graph_objects as go  # type: ignore
+import plotly.graph_objs.Figure  # type: ignore
 import primap2 as pm  # type: ignore
 import pycountry
 import xarray as xr
@@ -85,13 +86,13 @@ class AppState:  # type: ignore
     ds: xr.Dataset
     """Dataset to plot from"""
 
-    overview_graph: go.Figure | None = None  # type: ignore
+    overview_graph: plotly.graph_objs.Figure | None = None  # type: ignore
     """Main graph"""
 
-    category_graph: go.Figure | None = None  # type: ignore
+    category_graph: plotly.graph_objs.Figure | None = None  # type: ignore
     """Graph showing breakdown within the selected category"""
 
-    entity_graph: go.Figure | None = None  # type: ignore
+    entity_graph: plotly.graph_objs.Figure | None = None  # type: ignore
     """Graph showing breakdown within the selected entity"""
 
     @property
@@ -235,7 +236,7 @@ class AppState:  # type: ignore
 
         return new_index
 
-    def update_main_figure(self) -> go.Figure:  # type: ignore
+    def update_main_figure(self) -> plotly.graph_objs.Figure:  # type: ignore
         """
         Update the main figure based on the input in the dropdown menus.
 
@@ -294,7 +295,7 @@ class AppState:  # type: ignore
 
         return self.overview_graph
 
-    def update_category_figure(self) -> go.Figure:  # type: ignore
+    def update_category_figure(self) -> plotly.graph_objs.Figure:  # type: ignore
         """
         Update the main figure based on the input in the dropdown menus.
 
@@ -349,7 +350,7 @@ class AppState:  # type: ignore
 
         return self.category_graph
 
-    def update_entity_figure(self) -> go.Figure:  # type: ignore
+    def update_entity_figure(self) -> plotly.graph_objs.Figure:  # type: ignore
         """
         Update the main figure based on the input in the dropdown menus.
 
@@ -661,7 +662,7 @@ def update_overview_graph(
     category: str,
     entity: str,
     app_state: AppState | None = None,
-) -> go.Figure:
+) -> plotly.graph_objs.Figure:
     """
     Update the overview graph.
 
@@ -707,7 +708,7 @@ def update_category_graph(
     category: str,
     entity: str,
     app_state: AppState | None = None,
-) -> go.Figure:
+) -> plotly.graph_objs.Figure:
     """
     Update the category graph.
 
@@ -753,7 +754,7 @@ def update_entity_graph(
     category: str,
     entity: str,
     app_state: AppState | None = None,
-) -> go.Figure:
+) -> plotly.graph_objs.Figure:
     """
     Update the entity graph.
 
