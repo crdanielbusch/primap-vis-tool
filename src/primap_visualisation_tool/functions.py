@@ -3,6 +3,7 @@ Define helper functions.
 
 """
 import climate_categories as cc
+import xarray as xr
 
 
 def select_cat_children(
@@ -43,3 +44,46 @@ def select_cat_children(
         return [parent_category]
 
     return output_categories
+
+
+def apply_gwp(
+    inp: xr.Dataset, entity_to_match: str, unit: str = "Gg CO2 / year"
+) -> xr.Dataset:
+    """
+    Convert all entities to the same GWP and unit.
+
+    All entities in the dataset are converted to the same GWP and unit as
+    `entity_to_match`.
+
+    Parameters
+    ----------
+    inp
+        Input data set.
+
+    entity_to_match
+        The entity in the data set which defines the GWP all other variables
+        in `inp` should be converted to.
+
+    unit
+        Unit to convert to
+
+    Returns
+    -------
+        Dataset with all variables converted to the same GWP as `entity_to_match`
+        and unit converted to `unit`. If ``inp[entity_to_match]`` doesn't have a
+        GWP context, ``inp`` is simply returned.
+    """
+    if "gwp_context" in inp[entity_to_match].attrs.keys():
+        entities = inp.data_vars
+        outp = inp.copy()
+        for entity in entities:
+            converted = outp[entity].pr.convert_to_gwp_like(inp[entity_to_match])
+            outp[converted.name] = converted
+            if converted.name != entity:
+                # works without the str() function but mypy will complain
+                outp = outp.drop_vars(str(entity))
+            outp[converted.name] = outp[converted.name].pint.to(unit)
+
+        return outp
+
+    return inp

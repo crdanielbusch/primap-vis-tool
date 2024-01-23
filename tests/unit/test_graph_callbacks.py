@@ -10,6 +10,7 @@ import pytest
 from primap_visualisation_tool.app import (
     AppState,
     update_category_graph,
+    update_entity_graph,
     update_overview_graph,
 )
 
@@ -26,7 +27,9 @@ dropdowns_with_null_values = pytest.mark.parametrize(
 
 
 def get_starting_app_state(
-    category_graph: Any | None = None, overview_graph: Any | None = None
+    category_graph: Any | None = None,
+    overview_graph: Any | None = None,
+    entity_graph: Any | None = None,
 ) -> AppState:
     app_state = AppState(
         country_options=("Australia", "New Zealand"),
@@ -40,6 +43,7 @@ def get_starting_app_state(
         ds="not used",
         category_graph=category_graph,
         overview_graph=overview_graph,
+        entity_graph=entity_graph,
     )
 
     return app_state
@@ -59,7 +63,7 @@ def check_starting_values_dont_clash_with_starting_state(
 @dropdowns_with_null_values
 def test_update_overview_graph_can_handle_null_selection(country, category, entity):
     app_state = get_starting_app_state(
-        category_graph="Mock starting value",
+        overview_graph="Mock starting value",
     )
     check_starting_values_dont_clash_with_starting_state(
         app_state=app_state,
@@ -84,7 +88,9 @@ def test_update_overview_graph_can_handle_null_selection(country, category, enti
 
 @dropdowns_with_null_values
 def test_update_category_graph_can_handle_null_selection(country, category, entity):
-    app_state = get_starting_app_state()
+    app_state = get_starting_app_state(
+        category_graph="Mock starting value",
+    )
     check_starting_values_dont_clash_with_starting_state(
         app_state=app_state,
         starting_country=country,
@@ -98,6 +104,32 @@ def test_update_category_graph_can_handle_null_selection(country, category, enti
 
     # This checks that the returned value is just taken from the existing figure
     assert res == app_state.category_graph
+
+    # This checks that update_all_indexes wasn't called i.e. that the app state
+    # hasn't changed
+    assert app_state.country != country
+    assert app_state.category != category
+    assert app_state.entity != entity
+
+
+@dropdowns_with_null_values
+def test_update_entity_graph_can_handle_null_selection(country, category, entity):
+    app_state = get_starting_app_state(
+        entity_graph="Mock starting value",
+    )
+    check_starting_values_dont_clash_with_starting_state(
+        app_state=app_state,
+        starting_country=country,
+        starting_category=category,
+        starting_entity=entity,
+    )
+
+    res = update_entity_graph(
+        country=country, category=category, entity=entity, app_state=app_state
+    )
+
+    # This checks that the returned value is just taken from the existing figure
+    assert res == app_state.entity_graph
 
     # This checks that update_all_indexes wasn't called i.e. that the app state
     # hasn't changed
