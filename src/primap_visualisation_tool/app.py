@@ -171,8 +171,6 @@ class AppState:  # type: ignore
 
         original_source_scenario_options = tuple(self.ds["SourceScen"].to_numpy())
 
-        print(f"Old options {self.source_scenario_options}")
-
         new_source_scenario_options = [
             i
             for i in original_source_scenario_options
@@ -183,8 +181,6 @@ class AppState:  # type: ignore
             return
 
         self.source_scenario_options = tuple(new_source_scenario_options)
-
-        print(f"New options {self.source_scenario_options}")
 
     def update_all_indexes(
         self, country: str, category: str, entity: str, source_scenario: str
@@ -442,7 +438,6 @@ class AppState:  # type: ignore
             entities_to_plot = [*entities_to_plot, self.entity]
             drop_parent = True
 
-        print(self.source_scenario)
         filtered = self.ds[entities_to_plot].pr.loc[
             {
                 "category": [self.category],
@@ -878,7 +873,7 @@ def update_entity_graph(
 
 
 if __name__ == "__main__":
-    APP_STATE = get_default_app_starting_state(test_ds=True)
+    APP_STATE = get_default_app_starting_state(test_ds=False)
 
     external_stylesheets = [dbc.themes.MINTY]
 
