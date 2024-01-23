@@ -231,7 +231,7 @@ class AppState:  # type: ignore
 
     def update_source_scenario(self, n_steps: int) -> str:
         """
-        Update the entity in the dropdown selection.
+        Update the source-scenario in the dropdown selection.
 
         Parameters
         ----------
@@ -342,8 +342,7 @@ class AppState:  # type: ignore
                 {
                     "category": categories_plot,
                     "area (ISO3)": iso_country,
-                    # TODO! dropdown for source/scenario in a following PR
-                    "SourceScen": ["PRIMAP-hist_v2.5_final_nr, HISTCR"],
+                    "SourceScen": self.source_scenario,
                 }
             ]
             .squeeze()
@@ -386,11 +385,12 @@ class AppState:  # type: ignore
             entities_to_plot = [*entities_to_plot, self.entity]
             drop_parent = True
 
+        print(self.source_scenario)
         filtered = self.ds[entities_to_plot].pr.loc[
             {
                 "category": [self.category],
                 "area (ISO3)": [iso_country],
-                "SourceScen": ["PRIMAP-hist_v2.5_final_nr, HISTCR"],
+                "SourceScen": [self.source_scenario],
             }
         ]
 
@@ -941,8 +941,6 @@ if __name__ == "__main__":
                                 style={"textAlign": "center"},
                             ),
                             dcc.Dropdown(
-                                # ["scen1", "scen2"],
-                                # ["scen1"],
                                 APP_STATE.source_scenario_options,
                                 value=APP_STATE.source_scenario,
                                 id="dropdown-source-scenario",
