@@ -82,6 +82,9 @@ class AppState:  # type: ignore
     source_scenario_options: tuple[str, ...]
     """Options for the source-scenario drop-down"""
 
+    source_scenario_index: int
+    """Index of the current source-scenario"""
+
     ds: xr.Dataset
     """Dataset to plot from"""
 
@@ -127,7 +130,20 @@ class AppState:  # type: ignore
         """
         return self.entity_options[self.entity_index]
 
-    def update_all_indexes(self, country: str, category: str, entity: str) -> None:
+    @property
+    def source_scenario(self) -> str:
+        """
+        Get source_scenario for current index.
+
+        Returns
+        -------
+            source_scenario.
+        """
+        return self.source_scenario_options[self.source_scenario_index]
+
+    def update_all_indexes(
+        self, country: str, category: str, entity: str, source_scenario: str
+    ) -> None:
         """
         Update all indexes based on the current selection.
 
@@ -141,10 +157,14 @@ class AppState:  # type: ignore
 
         entity
             Entity value to use to determine the new entity index
+
+        source_scenario
+            Source-scenario value to use to determine the new entity index
         """
         self.country_index = self.country_options.index(country)
         self.category_index = self.category_options.index(category)
         self.entity_index = self.entity_options.index(entity)
+        self.source_scenario_index = self.source_scenario_options.index(source_scenario)
 
     def update_country(self, n_steps: int) -> str:
         """
@@ -208,6 +228,27 @@ class AppState:  # type: ignore
         )
 
         return self.entity
+
+    def update_source_scenario(self, n_steps: int) -> str:
+        """
+        Update the entity in the dropdown selection.
+
+        Parameters
+        ----------
+        n_steps
+            The number of clicks on a button. 1 is one step forward. -1 is one step back.
+
+        Returns
+        -------
+            Updated Entity.
+        """
+        self.source_scenario_index = self.update_dropdown(
+            start_index=self.source_scenario_index,
+            options=self.source_scenario_options,
+            n_steps=n_steps,
+        )
+
+        return self.source_scenario
 
     @staticmethod
     def update_dropdown(start_index: int, options: Sized, n_steps: int) -> int:
@@ -441,6 +482,7 @@ def get_default_app_starting_state(
         entity_options=entity_options,
         entity_index=0,
         source_scenario_options=source_scenario_options,
+        source_scenario_index=0,
         ds=combined_ds,
     )
 
@@ -621,15 +663,74 @@ def handle_entity_click(
 
 
 @callback(  # type: ignore
+    Output(
+        "dropdown-source-scenario",
+        "value",
+    ),
+    State("dropdown-source-scenario", "value"),
+    Input("next_source-scenario", "n_clicks"),
+    Input("prev_source-scenario", "n_clicks"),
+)
+def handle_source_scenario_click(
+    source_scenario_in: str,
+    n_clicks_next_source_scenario: int,
+    n_clicks_previous_source_scenario: int,
+    app_state: AppState | None = None,
+) -> str:
+    """
+    Handle a click on next or previous entity button
+
+    Parameters
+    ----------
+    n_clicks_next_source_scenario
+        Number of clicks on the next source_scenario button
+
+    n_clicks_previous_source_scenario
+        Number of clicks on the previous source_scenario button
+
+    source_scenario_in
+        source_scenario dropdown value when the button is clicked
+
+    app_state
+        The app state to update. If not provided, we use `APP_STATE` i.e.
+        the value from the global namespace.
+
+    Returns
+    -------
+        Value to update the entity dropdown to
+    """
+    if app_state is None:
+        app_state = APP_STATE
+
+    if ctx.triggered_id == "next_source-scenario":
+        # n_clicks_next_entity is the number of clicks since the app started
+        # We don't wnat that, just whether we need to go forwards or backwards.
+        # We might want to do this differently in future for performance maybe.
+        return app_state.update_source_scenario(n_steps=1)
+
+    if ctx.triggered_id == "prev_source-scenario":
+        # As above re why -1 not n_clicks_previous_entity
+        return app_state.update_source_scenario(n_steps=-1)
+
+    if ctx.triggered_id is None:
+        # Start up, just return current state
+        return app_state.source_scenario
+
+    raise NotImplementedError(ctx.triggered_id)
+
+
+@callback(  # type: ignore
     Output("graph-overview", "figure"),
     Input("dropdown-country", "value"),
     Input("dropdown-category", "value"),
     Input("dropdown-entity", "value"),
+    Input("dropdown-source-scenario", "value"),
 )
 def update_overview_graph(
     country: str,
     category: str,
     entity: str,
+    source_scenario: str,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -650,6 +751,9 @@ def update_overview_graph(
         The app state to update. If not provided, we use `APP_STATE` i.e.
         the value from the global namespace.
 
+    source_scenario
+        The currently selected source-scenario in the dropdown menu
+
     Returns
     -------
         Overview figure.
@@ -657,11 +761,11 @@ def update_overview_graph(
     if app_state is None:
         app_state = APP_STATE
 
-    if any(v is None for v in (country, category, entity)):
+    if any(v is None for v in (country, category, entity, source_scenario)):
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.overview_graph
 
-    app_state.update_all_indexes(country, category, entity)
+    app_state.update_all_indexes(country, category, entity, source_scenario)
 
     return app_state.update_main_figure()
 
@@ -671,11 +775,13 @@ def update_overview_graph(
     Input("dropdown-country", "value"),
     Input("dropdown-category", "value"),
     Input("dropdown-entity", "value"),
+    Input("dropdown-source-scenario", "value"),
 )
 def update_category_graph(
     country: str,
     category: str,
     entity: str,
+    source_scenario: str,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -692,6 +798,9 @@ def update_category_graph(
     entity
         The currently selected entity in the dropdown menu
 
+    source_scenario
+        The currently selected source-scenario in the dropdown menu
+
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
         the value from the global namespace.
@@ -703,11 +812,11 @@ def update_category_graph(
     if app_state is None:
         app_state = APP_STATE
 
-    if any(v is None for v in (country, category, entity)):
+    if any(v is None for v in (country, category, entity, source_scenario)):
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.category_graph
 
-    app_state.update_all_indexes(country, category, entity)
+    app_state.update_all_indexes(country, category, entity, source_scenario)
 
     return app_state.update_category_figure()
 
@@ -717,11 +826,13 @@ def update_category_graph(
     Input("dropdown-country", "value"),
     Input("dropdown-category", "value"),
     Input("dropdown-entity", "value"),
+    Input("dropdown-source-scenario", "value"),
 )
 def update_entity_graph(
     country: str,
     category: str,
     entity: str,
+    source_scenario: str,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -738,6 +849,9 @@ def update_entity_graph(
     entity
         The currently selected entity in the dropdown menu
 
+    source_scenario
+        The currently selected source-scenario in the dropdown menu
+
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
 
@@ -748,11 +862,11 @@ def update_entity_graph(
     if app_state is None:
         app_state = APP_STATE
 
-    if any(v is None for v in (country, category, entity)):
+    if any(v is None for v in (country, category, entity, source_scenario)):
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.entity_graph
 
-    app_state.update_all_indexes(country, category, entity)
+    app_state.update_all_indexes(country, category, entity, source_scenario)
 
     return app_state.update_entity_figure()
 
@@ -777,10 +891,10 @@ if __name__ == "__main__":
                 [
                     dbc.Col(
                         [
-                            html.H1(
-                                children="Primap-hist data explorer",
-                                style={"textAlign": "center"},
-                            ),
+                            # html.H1(
+                            #     children="Primap-hist data explorer",
+                            #     style={"textAlign": "center"},
+                            # ),
                             html.H4(children="Country", style={"textAlign": "center"}),
                             dcc.Dropdown(
                                 options=APP_STATE.country_options,
@@ -821,6 +935,28 @@ if __name__ == "__main__":
                             ),
                             html.Button(
                                 id="next_entity", children="next entity", n_clicks=0
+                            ),
+                            html.H4(
+                                children="Source-Scenario",
+                                style={"textAlign": "center"},
+                            ),
+                            dcc.Dropdown(
+                                # ["scen1", "scen2"],
+                                # ["scen1"],
+                                APP_STATE.source_scenario_options,
+                                value=APP_STATE.source_scenario,
+                                id="dropdown-source-scenario",
+                            ),
+                            html.Br(),
+                            html.Button(
+                                id="prev_source-scenario",
+                                children="prev source-scenario",
+                                n_clicks=0,
+                            ),
+                            html.Button(
+                                id="next_source-scenario",
+                                children="next source-scenario",
+                                n_clicks=0,
                             ),
                         ],
                         width=3,  # Column will span this many of the 12 grid columns
