@@ -722,6 +722,7 @@ def handle_entity_click(
 @callback(  # type: ignore
     Output("graph-overview", "figure"),
     Output("dropdown-source-scenario", "options"),
+    Output("dropdown-source-scenario", "value"),
     Input("dropdown-country", "value"),
     Input("dropdown-category", "value"),
     Input("dropdown-entity", "value"),
@@ -768,7 +769,11 @@ def update_overview_graph(
 
     app_state.update_all_indexes(country, category, entity, source_scenario)
 
-    return app_state.update_main_figure(), app_state.source_scenario_options
+    return (
+        app_state.update_main_figure(),
+        app_state.source_scenario_options,
+        app_state.source_scenario,
+    )
 
 
 @callback(  # type: ignore
@@ -892,10 +897,6 @@ if __name__ == "__main__":
                 [
                     dbc.Col(
                         [
-                            # html.H1(
-                            #     children="Primap-hist data explorer",
-                            #     style={"textAlign": "center"},
-                            # ),
                             html.H4(children="Country", style={"textAlign": "center"}),
                             dcc.Dropdown(
                                 options=APP_STATE.country_options,
