@@ -702,7 +702,7 @@ def update_category_graph(
 
     if any(v is None for v in (country, category, entity)):
         # User cleared one of the selections in the dropdown, do nothing
-        return app_state.overview_graph
+        return app_state.category_graph
 
     app_state.update_all_indexes(country, category, entity)
 
