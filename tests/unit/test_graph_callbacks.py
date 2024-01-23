@@ -63,7 +63,7 @@ def check_starting_values_dont_clash_with_starting_state(
 @dropdowns_with_null_values
 def test_update_overview_graph_can_handle_null_selection(country, category, entity):
     app_state = get_starting_app_state(
-        category_graph="Mock starting value",
+        overview_graph="Mock starting value",
     )
     check_starting_values_dont_clash_with_starting_state(
         app_state=app_state,
@@ -89,7 +89,7 @@ def test_update_overview_graph_can_handle_null_selection(country, category, enti
 @dropdowns_with_null_values
 def test_update_category_graph_can_handle_null_selection(country, category, entity):
     app_state = get_starting_app_state(
-        entity_graph="Mock starting value",
+        category_graph="Mock starting value",
     )
     check_starting_values_dont_clash_with_starting_state(
         app_state=app_state,
@@ -115,7 +115,7 @@ def test_update_category_graph_can_handle_null_selection(country, category, enti
 @dropdowns_with_null_values
 def test_update_entity_graph_can_handle_null_selection(country, category, entity):
     app_state = get_starting_app_state(
-        category_graph="Mock starting value",
+        entity_graph="Mock starting value",
     )
     check_starting_values_dont_clash_with_starting_state(
         app_state=app_state,
