@@ -663,63 +663,6 @@ def handle_entity_click(
 
 
 @callback(  # type: ignore
-    Output(
-        "dropdown-source-scenario",
-        "value",
-    ),
-    State("dropdown-source-scenario", "value"),
-    Input("next_source-scenario", "n_clicks"),
-    Input("prev_source-scenario", "n_clicks"),
-)
-def handle_source_scenario_click(
-    source_scenario_in: str,
-    n_clicks_next_source_scenario: int,
-    n_clicks_previous_source_scenario: int,
-    app_state: AppState | None = None,
-) -> str:
-    """
-    Handle a click on next or previous entity button
-
-    Parameters
-    ----------
-    n_clicks_next_source_scenario
-        Number of clicks on the next source_scenario button
-
-    n_clicks_previous_source_scenario
-        Number of clicks on the previous source_scenario button
-
-    source_scenario_in
-        source_scenario dropdown value when the button is clicked
-
-    app_state
-        The app state to update. If not provided, we use `APP_STATE` i.e.
-        the value from the global namespace.
-
-    Returns
-    -------
-        Value to update the entity dropdown to
-    """
-    if app_state is None:
-        app_state = APP_STATE
-
-    if ctx.triggered_id == "next_source-scenario":
-        # n_clicks_next_entity is the number of clicks since the app started
-        # We don't wnat that, just whether we need to go forwards or backwards.
-        # We might want to do this differently in future for performance maybe.
-        return app_state.update_source_scenario(n_steps=1)
-
-    if ctx.triggered_id == "prev_source-scenario":
-        # As above re why -1 not n_clicks_previous_entity
-        return app_state.update_source_scenario(n_steps=-1)
-
-    if ctx.triggered_id is None:
-        # Start up, just return current state
-        return app_state.source_scenario
-
-    raise NotImplementedError(ctx.triggered_id)
-
-
-@callback(  # type: ignore
     Output("graph-overview", "figure"),
     Input("dropdown-country", "value"),
     Input("dropdown-category", "value"),
@@ -946,16 +889,6 @@ if __name__ == "__main__":
                                 id="dropdown-source-scenario",
                             ),
                             html.Br(),
-                            html.Button(
-                                id="prev_source-scenario",
-                                children="prev source-scenario",
-                                n_clicks=0,
-                            ),
-                            html.Button(
-                                id="next_source-scenario",
-                                children="next source-scenario",
-                                n_clicks=0,
-                            ),
                         ],
                         width=3,  # Column will span this many of the 12 grid columns
                     ),
