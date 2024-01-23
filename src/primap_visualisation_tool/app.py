@@ -141,6 +141,51 @@ class AppState:  # type: ignore
         """
         return self.source_scenario_options[self.source_scenario_index]
 
+    def update_source_scenario_options(self) -> None:
+        """
+        Update the source scenario dropdown options according to country, category and entity
+
+        """
+        iso_country = self.country_name_iso_mapping[self.country]
+
+        filtered = (
+            self.ds[self.entity]
+            .pr.loc[
+                {
+                    "category": self.category,
+                    "area (ISO3)": iso_country,
+                }
+            ]
+            .squeeze()
+        )
+
+        filtered_pandas = filtered.to_dataframe().reset_index()
+
+        null_source_scenario_options = filtered_pandas.groupby(by="SourceScen")[
+            self.entity
+        ].apply(lambda x: x.isna().all())
+
+        null_source_scenario_options = null_source_scenario_options[
+            list(null_source_scenario_options)
+        ].index
+
+        original_source_scenario_options = tuple(self.ds["SourceScen"].to_numpy())
+
+        print(f"Old options {self.source_scenario_options}")
+
+        new_source_scenario_options = [
+            i
+            for i in original_source_scenario_options
+            if i not in null_source_scenario_options
+        ]
+
+        if not new_source_scenario_options:
+            return
+
+        self.source_scenario_options = tuple(new_source_scenario_options)
+
+        print(f"New options {self.source_scenario_options}")
+
     def update_all_indexes(
         self, country: str, category: str, entity: str, source_scenario: str
     ) -> None:
@@ -161,10 +206,22 @@ class AppState:  # type: ignore
         source_scenario
             Source-scenario value to use to determine the new entity index
         """
+        # store value of source_scenario
+
         self.country_index = self.country_options.index(country)
         self.category_index = self.category_options.index(category)
         self.entity_index = self.entity_options.index(entity)
-        self.source_scenario_index = self.source_scenario_options.index(source_scenario)
+
+        # filter source scenario index
+        self.update_source_scenario_options()
+        # update source scenario list
+        # when value is not part of new options list, take the first
+        if source_scenario in self.source_scenario_options:
+            self.source_scenario_index = self.source_scenario_options.index(
+                source_scenario
+            )
+        else:
+            self.source_scenario_index = 0
 
     def update_country(self, n_steps: int) -> str:
         """
@@ -664,6 +721,7 @@ def handle_entity_click(
 
 @callback(  # type: ignore
     Output("graph-overview", "figure"),
+    Output("dropdown-source-scenario", "options"),
     Input("dropdown-country", "value"),
     Input("dropdown-category", "value"),
     Input("dropdown-entity", "value"),
@@ -710,7 +768,7 @@ def update_overview_graph(
 
     app_state.update_all_indexes(country, category, entity, source_scenario)
 
-    return app_state.update_main_figure()
+    return app_state.update_main_figure(), app_state.source_scenario_options
 
 
 @callback(  # type: ignore
