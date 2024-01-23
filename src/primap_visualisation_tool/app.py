@@ -339,11 +339,11 @@ class AppState:  # type: ignore
 
         entities_to_plot = sorted(SUBENTITIES[self.entity])
 
+        drop_parent = False
         if self.entity not in entities_to_plot:
-            entities_to_plot = [
-                *entities_to_plot,
-                self.entity,
-            ]  # need the parent entity for GWP conversion
+            # need the parent entity for GWP conversion
+            entities_to_plot = [*entities_to_plot, self.entity]
+            drop_parent = True
 
         filtered = self.ds[entities_to_plot].pr.loc[
             {
@@ -354,6 +354,12 @@ class AppState:  # type: ignore
         ]
 
         filtered = apply_gwp(filtered, self.entity)
+
+        # Drop the parent entity out before plotting (as otherwise the
+        # area plot doesn't make sense)
+        # TODO! Check if there is a nicer logic for that
+        if drop_parent:
+            filtered = filtered.drop_vars(self.entity)
 
         stacked = filtered.pr.to_interchange_format().melt(
             id_vars=index_cols, var_name="time", value_name="value"
@@ -445,7 +451,6 @@ def get_default_app_starting_state(
     Output(
         "dropdown-country",
         "value",
-        # allow_duplicate=True # this did not work hence one callback not two
     ),
     State("dropdown-country", "value"),
     Input("next_country", "n_clicks"),
@@ -505,7 +510,6 @@ def handle_country_click(
     Output(
         "dropdown-category",
         "value",
-        # allow_duplicate=True # this did not work hence one callback not two
     ),
     State("dropdown-category", "value"),
     Input("next_category", "n_clicks"),
@@ -563,7 +567,6 @@ def handle_category_click(
     Output(
         "dropdown-entity",
         "value",
-        # allow_dupliente=True # this did not work hence one callback not two
     ),
     State("dropdown-entity", "value"),
     Input("next_entity", "n_clicks"),
@@ -737,7 +740,6 @@ def update_entity_graph(
 
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
-
 
     Returns
     -------
