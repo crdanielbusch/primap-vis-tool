@@ -479,13 +479,21 @@ class AppState:  # type: ignore
 def get_default_app_starting_state(
     current_version: str = "v2.5_final",
     old_version: str = "v2.4.2_final",
-    test_ds: bool = False,
+    start_values: dict[str, str] = {
+        "country": "EARTH",
+        "category": "M.0.EL",
+        "entity": "KYOTOGHG (AR6GWP100)",
+    },
+    test_ds: bool = True,
 ) -> AppState:
     """
     Get default starting state for the application
 
     Parameters
     ----------
+    start_values
+        Intitial values for country, category and entity.
+
     current_version
         Current version of PRIMAP-hist to inspect
 
@@ -528,11 +536,11 @@ def get_default_app_starting_state(
     app_state = AppState(
         country_options=country_dropdown_options,
         country_name_iso_mapping=country_name_iso_mapping,
-        country_index=0,
+        country_index=country_dropdown_options.index(start_values["country"]),
         category_options=category_options,
-        category_index=0,
+        category_index=category_options.index(start_values["category"]),
         entity_options=entity_options,
-        entity_index=0,
+        entity_index=entity_options.index(start_values["entity"]),
         source_scenario_options=source_scenario_options,
         source_scenario_index=0,
         ds=combined_ds,
@@ -873,7 +881,7 @@ def update_entity_graph(
 
 
 if __name__ == "__main__":
-    APP_STATE = get_default_app_starting_state(test_ds=False)
+    APP_STATE = get_default_app_starting_state(test_ds=True)
 
     external_stylesheets = [dbc.themes.MINTY]
 
