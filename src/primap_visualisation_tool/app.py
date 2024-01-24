@@ -282,27 +282,6 @@ class AppState:  # type: ignore
 
         return self.entity
 
-    def update_source_scenario(self, n_steps: int) -> str:
-        """
-        Update the source-scenario in the dropdown selection.
-
-        Parameters
-        ----------
-        n_steps
-            The number of clicks on a button. 1 is one step forward. -1 is one step back.
-
-        Returns
-        -------
-            Updated Entity.
-        """
-        self.source_scenario_index = self.update_dropdown(
-            start_index=self.source_scenario_index,
-            options=self.source_scenario_options,
-            n_steps=n_steps,
-        )
-
-        return self.source_scenario
-
     @staticmethod
     def update_dropdown(start_index: int, options: Sized, n_steps: int) -> int:
         """
