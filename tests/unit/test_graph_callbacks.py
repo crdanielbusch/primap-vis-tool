@@ -15,13 +15,34 @@ from primap_visualisation_tool.app import (
 )
 
 dropdowns_with_null_values = pytest.mark.parametrize(
-    "country, category, entity",
+    "country, category, entity, source_scenario",
     (
-        pytest.param(None, "1", "CH4", id="country is None"),
-        pytest.param("New Zealand", None, "CH4", id="category is None"),
-        pytest.param("New Zealand", "1", None, id="entity is None"),
-        pytest.param(None, "1", None, id="multiple values are None"),
-        pytest.param(None, None, None, id="all values are None"),
+        pytest.param(
+            None, "1", "CH4", "PRIMAP-hist_v2.5_final_nr, HISTCR", id="country is None"
+        ),
+        pytest.param(
+            "New Zealand",
+            None,
+            "CH4",
+            "PRIMAP-hist_v2.5_final_nr, HISTCR",
+            id="category is None",
+        ),
+        pytest.param(
+            "New Zealand",
+            "1",
+            None,
+            "PRIMAP-hist_v2.5_final_nr, HISTCR",
+            id="entity is None",
+        ),
+        pytest.param("New Zealand", "1", "CH4", None, id="source-scenario is None"),
+        pytest.param(
+            None,
+            "1",
+            None,
+            "PRIMAP-hist_v2.5_final_nr, HISTCR",
+            id="multiple values are None",
+        ),
+        pytest.param(None, None, None, None, id="all values are None"),
     ),
 )
 
@@ -39,7 +60,11 @@ def get_starting_app_state(
         category_index=0,
         entity_options=("CO2", "CH4"),
         entity_index=0,
-        source_scenario_options=("not used"),
+        source_scenario_options=(
+            "PRIMAP-hist_v2.5_final_nr, HISTTP",
+            "PRIMAP-hist_v2.5_final_nr, HISTCR",
+        ),
+        source_scenario_index=0,
         ds="not used",
         category_graph=category_graph,
         overview_graph=overview_graph,
@@ -54,14 +79,18 @@ def check_starting_values_dont_clash_with_starting_state(
     starting_country: str,
     starting_category: str,
     starting_entity: str,
+    starting_source_scenario: str,
 ) -> None:
     assert app_state.country != starting_country
     assert app_state.category != starting_category
     assert app_state.entity != starting_entity
+    assert app_state.source_scenario != starting_source_scenario
 
 
 @dropdowns_with_null_values
-def test_update_overview_graph_can_handle_null_selection(country, category, entity):
+def test_update_overview_graph_can_handle_null_selection(
+    country, category, entity, source_scenario
+):
     app_state = get_starting_app_state(
         overview_graph="Mock starting value",
     )
@@ -70,10 +99,15 @@ def test_update_overview_graph_can_handle_null_selection(country, category, enti
         starting_country=country,
         starting_category=category,
         starting_entity=entity,
+        starting_source_scenario=source_scenario,
     )
 
     res = update_overview_graph(
-        country=country, category=category, entity=entity, app_state=app_state
+        country=country,
+        category=category,
+        entity=entity,
+        source_scenario=source_scenario,
+        app_state=app_state,
     )
 
     # This checks that the returned value is just taken from the existing figure
@@ -84,10 +118,13 @@ def test_update_overview_graph_can_handle_null_selection(country, category, enti
     assert app_state.country != country
     assert app_state.category != category
     assert app_state.entity != entity
+    assert app_state.source_scenario != source_scenario
 
 
 @dropdowns_with_null_values
-def test_update_category_graph_can_handle_null_selection(country, category, entity):
+def test_update_category_graph_can_handle_null_selection(
+    country, category, entity, source_scenario
+):
     app_state = get_starting_app_state(
         category_graph="Mock starting value",
     )
@@ -96,10 +133,15 @@ def test_update_category_graph_can_handle_null_selection(country, category, enti
         starting_country=country,
         starting_category=category,
         starting_entity=entity,
+        starting_source_scenario=source_scenario,
     )
 
     res = update_category_graph(
-        country=country, category=category, entity=entity, app_state=app_state
+        country=country,
+        category=category,
+        entity=entity,
+        source_scenario=source_scenario,
+        app_state=app_state,
     )
 
     # This checks that the returned value is just taken from the existing figure
@@ -110,10 +152,13 @@ def test_update_category_graph_can_handle_null_selection(country, category, enti
     assert app_state.country != country
     assert app_state.category != category
     assert app_state.entity != entity
+    assert app_state.source_scenario != source_scenario
 
 
 @dropdowns_with_null_values
-def test_update_entity_graph_can_handle_null_selection(country, category, entity):
+def test_update_entity_graph_can_handle_null_selection(
+    country, category, entity, source_scenario
+):
     app_state = get_starting_app_state(
         entity_graph="Mock starting value",
     )
@@ -122,10 +167,15 @@ def test_update_entity_graph_can_handle_null_selection(country, category, entity
         starting_country=country,
         starting_category=category,
         starting_entity=entity,
+        starting_source_scenario=source_scenario,
     )
 
     res = update_entity_graph(
-        country=country, category=category, entity=entity, app_state=app_state
+        country=country,
+        category=category,
+        entity=entity,
+        source_scenario=source_scenario,
+        app_state=app_state,
     )
 
     # This checks that the returned value is just taken from the existing figure
@@ -136,3 +186,4 @@ def test_update_entity_graph_can_handle_null_selection(country, category, entity
     assert app_state.country != country
     assert app_state.category != category
     assert app_state.entity != entity
+    assert app_state.source_scenario != source_scenario
