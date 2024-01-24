@@ -82,6 +82,9 @@ class AppState:  # type: ignore
     source_scenario_options: tuple[str, ...]
     """Options for the source-scenario drop-down"""
 
+    source_scenario_index: int
+    """Index of the current source-scenario"""
+
     ds: xr.Dataset
     """Dataset to plot from"""
 
@@ -127,7 +130,61 @@ class AppState:  # type: ignore
         """
         return self.entity_options[self.entity_index]
 
-    def update_all_indexes(self, country: str, category: str, entity: str) -> None:
+    @property
+    def source_scenario(self) -> str:
+        """
+        Get source_scenario for current index.
+
+        Returns
+        -------
+            source_scenario.
+        """
+        return self.source_scenario_options[self.source_scenario_index]
+
+    def update_source_scenario_options(self) -> None:
+        """
+        Update the source scenario dropdown options according to country, category and entity
+
+        """
+        iso_country = self.country_name_iso_mapping[self.country]
+
+        filtered = (
+            self.ds[self.entity]
+            .pr.loc[
+                {
+                    "category": self.category,
+                    "area (ISO3)": iso_country,
+                }
+            ]
+            .squeeze()
+        )
+
+        filtered_pandas = filtered.to_dataframe().reset_index()
+
+        null_source_scenario_options = filtered_pandas.groupby(by="SourceScen")[
+            self.entity
+        ].apply(lambda x: x.isna().all())
+
+        null_source_scenario_options = null_source_scenario_options[
+            list(null_source_scenario_options)
+        ].index
+
+        original_source_scenario_options = tuple(self.ds["SourceScen"].to_numpy())
+
+        new_source_scenario_options = [
+            i
+            for i in original_source_scenario_options
+            if i not in null_source_scenario_options
+        ]
+
+        if not new_source_scenario_options:
+            return
+
+        self.source_scenario_options = tuple(new_source_scenario_options)
+
+    def update_all_indexes(
+        self, country: str, category: str, entity: str, source_scenario: str
+    ) -> None:
         """
         Update all indexes based on the current selection.
 
@@ -141,10 +198,26 @@ class AppState:  # type: ignore
 
         entity
             Entity value to use to determine the new entity index
+
+        source_scenario
+            Source-scenario value to use to determine the new entity index
         """
+        # store value of source_scenario
+
         self.country_index = self.country_options.index(country)
         self.category_index = self.category_options.index(category)
         self.entity_index = self.entity_options.index(entity)
+
+        # filter source scenario index
+        self.update_source_scenario_options()
+        # update source scenario list
+        # when value is not part of new options list, take the first
+        if source_scenario in self.source_scenario_options:
+            self.source_scenario_index = self.source_scenario_options.index(
+                source_scenario
+            )
+        else:
+            self.source_scenario_index = 0
 
     def update_country(self, n_steps: int) -> str:
         """
@@ -301,8 +374,7 @@ class AppState:  # type: ignore
                 {
                     "category": categories_plot,
                     "area (ISO3)": iso_country,
-                    # TODO! dropdown for source/scenario in a following PR
-                    "SourceScen": ["PRIMAP-hist_v2.5_final_nr, HISTCR"],
+                    "SourceScen": self.source_scenario,
                 }
             ]
             .squeeze()
@@ -349,7 +421,7 @@ class AppState:  # type: ignore
             {
                 "category": [self.category],
                 "area (ISO3)": [iso_country],
-                "SourceScen": ["PRIMAP-hist_v2.5_final_nr, HISTCR"],
+                "SourceScen": [self.source_scenario],
             }
         ]
 
@@ -386,13 +458,21 @@ class AppState:  # type: ignore
 def get_default_app_starting_state(
     current_version: str = "v2.5_final",
     old_version: str = "v2.4.2_final",
-    test_ds: bool = False,
+    start_values: dict[str, str] = {
+        "country": "EARTH",
+        "category": "M.0.EL",
+        "entity": "KYOTOGHG (AR6GWP100)",
+    },
+    test_ds: bool = True,
 ) -> AppState:
     """
     Get default starting state for the application
 
     Parameters
     ----------
+    start_values
+        Intitial values for country, category and entity.
+
     current_version
         Current version of PRIMAP-hist to inspect
 
@@ -435,12 +515,13 @@ def get_default_app_starting_state(
     app_state = AppState(
         country_options=country_dropdown_options,
         country_name_iso_mapping=country_name_iso_mapping,
-        country_index=0,
+        country_index=country_dropdown_options.index(start_values["country"]),
         category_options=category_options,
-        category_index=0,
+        category_index=category_options.index(start_values["category"]),
         entity_options=entity_options,
-        entity_index=0,
+        entity_index=entity_options.index(start_values["entity"]),
         source_scenario_options=source_scenario_options,
+        source_scenario_index=0,
         ds=combined_ds,
     )
 
@@ -622,14 +703,18 @@ def handle_entity_click(
 
 @callback(  # type: ignore
     Output("graph-overview", "figure"),
+    Output("dropdown-source-scenario", "options"),
+    Output("dropdown-source-scenario", "value"),
     Input("dropdown-country", "value"),
     Input("dropdown-category", "value"),
     Input("dropdown-entity", "value"),
+    Input("dropdown-source-scenario", "value"),
 )
 def update_overview_graph(
     country: str,
     category: str,
     entity: str,
+    source_scenario: str,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -650,6 +735,9 @@ def update_overview_graph(
         The app state to update. If not provided, we use `APP_STATE` i.e.
         the value from the global namespace.
 
+    source_scenario
+        The currently selected source-scenario in the dropdown menu
+
     Returns
     -------
         Overview figure.
@@ -657,13 +745,17 @@ def update_overview_graph(
     if app_state is None:
         app_state = APP_STATE
 
-    if any(v is None for v in (country, category, entity)):
+    if any(v is None for v in (country, category, entity, source_scenario)):
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.overview_graph
 
-    app_state.update_all_indexes(country, category, entity)
+    app_state.update_all_indexes(country, category, entity, source_scenario)
 
-    return app_state.update_main_figure()
+    return (
+        app_state.update_main_figure(),
+        app_state.source_scenario_options,
+        app_state.source_scenario,
+    )
 
 
 @callback(  # type: ignore
@@ -671,11 +763,13 @@ def update_overview_graph(
     Input("dropdown-country", "value"),
     Input("dropdown-category", "value"),
     Input("dropdown-entity", "value"),
+    Input("dropdown-source-scenario", "value"),
 )
 def update_category_graph(
     country: str,
     category: str,
     entity: str,
+    source_scenario: str,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -692,6 +786,9 @@ def update_category_graph(
     entity
         The currently selected entity in the dropdown menu
 
+    source_scenario
+        The currently selected source-scenario in the dropdown menu
+
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
         the value from the global namespace.
@@ -703,11 +800,11 @@ def update_category_graph(
     if app_state is None:
         app_state = APP_STATE
 
-    if any(v is None for v in (country, category, entity)):
+    if any(v is None for v in (country, category, entity, source_scenario)):
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.category_graph
 
-    app_state.update_all_indexes(country, category, entity)
+    app_state.update_all_indexes(country, category, entity, source_scenario)
 
     return app_state.update_category_figure()
 
@@ -717,11 +814,13 @@ def update_category_graph(
     Input("dropdown-country", "value"),
     Input("dropdown-category", "value"),
     Input("dropdown-entity", "value"),
+    Input("dropdown-source-scenario", "value"),
 )
 def update_entity_graph(
     country: str,
     category: str,
     entity: str,
+    source_scenario: str,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -738,6 +837,9 @@ def update_entity_graph(
     entity
         The currently selected entity in the dropdown menu
 
+    source_scenario
+        The currently selected source-scenario in the dropdown menu
+
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
 
@@ -748,11 +850,11 @@ def update_entity_graph(
     if app_state is None:
         app_state = APP_STATE
 
-    if any(v is None for v in (country, category, entity)):
+    if any(v is None for v in (country, category, entity, source_scenario)):
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.entity_graph
 
-    app_state.update_all_indexes(country, category, entity)
+    app_state.update_all_indexes(country, category, entity, source_scenario)
 
     return app_state.update_entity_figure()
 
@@ -777,10 +879,6 @@ if __name__ == "__main__":
                 [
                     dbc.Col(
                         [
-                            html.H1(
-                                children="Primap-hist data explorer",
-                                style={"textAlign": "center"},
-                            ),
                             html.H4(children="Country", style={"textAlign": "center"}),
                             dcc.Dropdown(
                                 options=APP_STATE.country_options,
@@ -822,6 +920,16 @@ if __name__ == "__main__":
                             html.Button(
                                 id="next_entity", children="next entity", n_clicks=0
                             ),
+                            html.H4(
+                                children="Source-Scenario",
+                                style={"textAlign": "center"},
+                            ),
+                            dcc.Dropdown(
+                                APP_STATE.source_scenario_options,
+                                value=APP_STATE.source_scenario,
+                                id="dropdown-source-scenario",
+                            ),
+                            html.Br(),
                         ],
                         width=3,  # Column will span this many of the 12 grid columns
                     ),
