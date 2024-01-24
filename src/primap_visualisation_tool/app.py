@@ -462,6 +462,7 @@ def get_default_app_starting_state(
         "country": "EARTH",
         "category": "M.0.EL",
         "entity": "KYOTOGHG (AR6GWP100)",
+        "source_scenario": "PRIMAP-hist_v2.5_final_nr, HISTCR",
     },
     test_ds: bool = True,
 ) -> AppState:
@@ -512,6 +513,8 @@ def get_default_app_starting_state(
 
     source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
 
+    print(source_scenario_options)
+
     app_state = AppState(
         country_options=country_dropdown_options,
         country_name_iso_mapping=country_name_iso_mapping,
@@ -521,7 +524,7 @@ def get_default_app_starting_state(
         entity_options=entity_options,
         entity_index=entity_options.index(start_values["entity"]),
         source_scenario_options=source_scenario_options,
-        source_scenario_index=0,
+        source_scenario_index=source_scenario_options.index(start_values["source_scenario"]),
         ds=combined_ds,
     )
 
@@ -700,21 +703,56 @@ def handle_entity_click(
 
     raise NotImplementedError(ctx.triggered_id)
 
-
 @callback(  # type: ignore
-    Output("graph-overview", "figure"),
     Output("dropdown-source-scenario", "options"),
     Output("dropdown-source-scenario", "value"),
+    Output("hidden-div", "children"),
     Input("dropdown-country", "value"),
     Input("dropdown-category", "value"),
     Input("dropdown-entity", "value"),
+    State("dropdown-source-scenario", "value"),
+    State("hidden-div", "children"),
+)
+def update_source_scenario_dropdown(
+    country: str,
+    category: str,
+    entity: str,
+    source_scenario: str,
+    state_variable,
+    app_state: AppState | None = None,
+):
+    if app_state is None:
+        app_state = APP_STATE
+
+    app_state.update_all_indexes(country, category, entity, source_scenario)
+
+    if bool(int(state_variable)):
+        new_state = str(0)
+    else:
+        new_state = str(1)
+
+    print(state_variable, new_state)
+
+    return (
+        app_state.source_scenario_options,
+        app_state.source_scenario,
+        state_variable,
+    )
+
+@callback(  # type: ignore
+    Output("graph-overview", "figure"),
+    State("dropdown-country", "value"),
+    State("dropdown-category", "value"),
+    State("dropdown-entity", "value"),
     Input("dropdown-source-scenario", "value"),
+    Input("hidden-div", "children"),
 )
 def update_overview_graph(
     country: str,
     category: str,
     entity: str,
     source_scenario: str,
+    state_variable,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -751,25 +789,23 @@ def update_overview_graph(
 
     app_state.update_all_indexes(country, category, entity, source_scenario)
 
-    return (
-        app_state.update_main_figure(),
-        app_state.source_scenario_options,
-        app_state.source_scenario,
-    )
+    return app_state.update_main_figure()
 
 
 @callback(  # type: ignore
     Output("graph-category-split", "figure"),
-    Input("dropdown-country", "value"),
-    Input("dropdown-category", "value"),
-    Input("dropdown-entity", "value"),
+    State("dropdown-country", "value"),
+    State("dropdown-category", "value"),
+    State("dropdown-entity", "value"),
     Input("dropdown-source-scenario", "value"),
+    Input("hidden-div", "children"),
 )
 def update_category_graph(
     country: str,
     category: str,
     entity: str,
     source_scenario: str,
+    state_variable,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -811,16 +847,18 @@ def update_category_graph(
 
 @callback(  # type: ignore
     Output("graph-entity-split", "figure"),
-    Input("dropdown-country", "value"),
-    Input("dropdown-category", "value"),
-    Input("dropdown-entity", "value"),
+    State("dropdown-country", "value"),
+    State("dropdown-category", "value"),
+    State("dropdown-entity", "value"),
     Input("dropdown-source-scenario", "value"),
+    Input("hidden-div", "children"),
 )
 def update_entity_graph(
     country: str,
     category: str,
     entity: str,
     source_scenario: str,
+    state_variable,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -879,6 +917,7 @@ if __name__ == "__main__":
                 [
                     dbc.Col(
                         [
+                            html.Div(html.Div(id='hidden-div', children="1")),
                             html.H4(children="Country", style={"textAlign": "center"}),
                             dcc.Dropdown(
                                 options=APP_STATE.country_options,
