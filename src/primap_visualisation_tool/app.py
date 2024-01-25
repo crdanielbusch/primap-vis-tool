@@ -711,19 +711,19 @@ def handle_entity_click(
 @callback(  # type: ignore
     Output("dropdown-source-scenario", "options"),
     Output("dropdown-source-scenario", "value"),
-    Output("hidden-div", "children"),
+    Output("memory", "data"),
     Input("dropdown-country", "value"),
     Input("dropdown-category", "value"),
     Input("dropdown-entity", "value"),
     State("dropdown-source-scenario", "value"),
-    State("hidden-div", "children"),
+    State("memory", "data"),
 )
 def update_source_scenario_dropdown(  # noqa: PLR0913
     country: str,
     category: str,
     entity: str,
     source_scenario: str,
-    state_variable: int,
+    memory_data,
     app_state: AppState | None = None,
 ) -> tuple[tuple[str, ...], str, int]:
     """
@@ -743,8 +743,8 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
     source_scenario
         The currently selected source scenario options.
 
-    state_variable
-        A state variable that alternates between 0 and 1.
+    memory_data
+        Data stored in browser memory.
 
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
@@ -763,17 +763,15 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
 
     app_state.update_all_indexes(country, category, entity, source_scenario)
 
-    if bool(int(state_variable)):
-        new_state = str(0)
-    else:
-        new_state = str(1)
+    # Give a default data dict with 0 clicks if there's no data.
+    memory_data = memory_data or {"clicks": 0}
 
-    print(state_variable, new_state)
+    memory_data["clicks"] = memory_data["clicks"] + 1
 
     return (
         app_state.source_scenario_options,
         app_state.source_scenario,
-        new_state,
+        memory_data,
     )
 
 
@@ -782,13 +780,13 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
     State("dropdown-country", "value"),
     State("dropdown-category", "value"),
     State("dropdown-entity", "value"),
-    Input("hidden-div", "children"),
+    Input("memory", "data"),
 )
 def update_overview_graph(
     country: str,
     category: str,
     entity: str,
-    state_variable,
+    memory_data,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -805,8 +803,8 @@ def update_overview_graph(
     entity
         The currently selected entity in the dropdown menu
 
-    state_variable
-        A state variable that alternates between 0 and 1.
+    memory_data
+        Data stored in browser memory.
 
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
@@ -832,14 +830,14 @@ def update_overview_graph(
     State("dropdown-category", "value"),
     State("dropdown-entity", "value"),
     Input("dropdown-source-scenario", "value"),
-    Input("hidden-div", "children"),
+    Input("memory", "data"),
 )
 def update_category_graph(  # noqa: PLR0913
     country: str,
     category: str,
     entity: str,
     source_scenario: str,
-    state_variable,
+    memory_data,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -859,8 +857,8 @@ def update_category_graph(  # noqa: PLR0913
     source_scenario
         The currently selected source-scenario in the dropdown menu
 
-    state_variable
-        A state variable that alternates between 0 and 1.
+    memory_data
+        Data stored in browser memory.
 
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
@@ -886,14 +884,14 @@ def update_category_graph(  # noqa: PLR0913
     State("dropdown-category", "value"),
     State("dropdown-entity", "value"),
     Input("dropdown-source-scenario", "value"),
-    Input("hidden-div", "children"),
+    Input("memory", "data"),
 )
 def update_entity_graph(  # noqa: PLR0913
     country: str,
     category: str,
     entity: str,
     source_scenario: str,
-    state_variable,
+    memory_data,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -913,8 +911,8 @@ def update_entity_graph(  # noqa: PLR0913
     source_scenario
         The currently selected source-scenario in the dropdown menu
 
-    state_variable
-        A state variable that alternates between 0 and 1.
+    memory_data
+        Data stored in browser memory.
 
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
@@ -953,7 +951,7 @@ if __name__ == "__main__":
                 [
                     dbc.Col(
                         [
-                            html.Div(html.Div(id="hidden-div", children="0")),
+                            dcc.Store(id="memory"),
                             html.H4(children="Country", style={"textAlign": "center"}),
                             dcc.Dropdown(
                                 options=APP_STATE.country_options,
