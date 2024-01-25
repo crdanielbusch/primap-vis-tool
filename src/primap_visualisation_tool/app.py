@@ -382,6 +382,10 @@ class AppState:  # type: ignore
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
+        # Fix for figure not loading at start
+        # https://github.com/plotly/plotly.py/issues/3441
+        fig = go.Figure(layout=dict(template="plotly"))
+
         fig = px.area(
             filtered_pandas,
             x="time",
@@ -819,8 +823,6 @@ def update_overview_graph(
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.overview_graph
 
-    # app_state.update_all_indexes(country, category, entity, source_scenario)
-
     return app_state.update_main_figure()
 
 
@@ -875,8 +877,6 @@ def update_category_graph(  # noqa: PLR0913
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.category_graph
 
-    app_state.update_all_indexes(country, category, entity, source_scenario)
-
     return app_state.update_category_figure()
 
 
@@ -929,8 +929,6 @@ def update_entity_graph(  # noqa: PLR0913
     if any(v is None for v in (country, category, entity, source_scenario)):
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.entity_graph
-
-    app_state.update_all_indexes(country, category, entity, source_scenario)
 
     return app_state.update_entity_figure()
 
