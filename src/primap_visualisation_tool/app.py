@@ -513,8 +513,6 @@ def get_default_app_starting_state(
 
     source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
 
-    print(source_scenario_options)
-
     app_state = AppState(
         country_options=country_dropdown_options,
         country_name_iso_mapping=country_name_iso_mapping,
@@ -524,7 +522,9 @@ def get_default_app_starting_state(
         entity_options=entity_options,
         entity_index=entity_options.index(start_values["entity"]),
         source_scenario_options=source_scenario_options,
-        source_scenario_index=source_scenario_options.index(start_values["source_scenario"]),
+        source_scenario_index=source_scenario_options.index(
+            start_values["source_scenario"]
+        ),
         ds=combined_ds,
     )
 
@@ -703,6 +703,7 @@ def handle_entity_click(
 
     raise NotImplementedError(ctx.triggered_id)
 
+
 @callback(  # type: ignore
     Output("dropdown-source-scenario", "options"),
     Output("dropdown-source-scenario", "value"),
@@ -713,14 +714,46 @@ def handle_entity_click(
     State("dropdown-source-scenario", "value"),
     State("hidden-div", "children"),
 )
-def update_source_scenario_dropdown(
+def update_source_scenario_dropdown(  # noqa: PLR0913
     country: str,
     category: str,
     entity: str,
     source_scenario: str,
-    state_variable,
+    state_variable: int,
     app_state: AppState | None = None,
-):
+) -> tuple[tuple[str, ...], str, int]:
+    """
+    Update source scenario options in dropdown and, if necessary, source scenario value in dropdown.
+
+    Parameters
+    ----------
+    country
+        The currently selected country in the dropdown menu
+
+    category
+        The currently selected category in the dropdown menu
+
+    entity
+        The currently selected entity in the dropdown menu
+
+    source_scenario
+        The currently selected source scenario options.
+
+    state_variable
+        A state variable that alternates between 0 and 1.
+
+    app_state
+        The app state to update. If not provided, we use `APP_STATE` i.e.
+        the value from the global namespace.
+
+    Returns
+    -------
+    Source scenario_options
+    Source scenario value
+    State variable
+
+
+    """
     if app_state is None:
         app_state = APP_STATE
 
@@ -736,22 +769,21 @@ def update_source_scenario_dropdown(
     return (
         app_state.source_scenario_options,
         app_state.source_scenario,
-        state_variable,
+        new_state,
     )
+
 
 @callback(  # type: ignore
     Output("graph-overview", "figure"),
     State("dropdown-country", "value"),
     State("dropdown-category", "value"),
     State("dropdown-entity", "value"),
-    Input("dropdown-source-scenario", "value"),
     Input("hidden-div", "children"),
 )
 def update_overview_graph(
     country: str,
     category: str,
     entity: str,
-    source_scenario: str,
     state_variable,
     app_state: AppState | None = None,
 ) -> go.Figure:
@@ -769,12 +801,12 @@ def update_overview_graph(
     entity
         The currently selected entity in the dropdown menu
 
+    state_variable
+        A state variable that alternates between 0 and 1.
+
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
         the value from the global namespace.
-
-    source_scenario
-        The currently selected source-scenario in the dropdown menu
 
     Returns
     -------
@@ -783,11 +815,11 @@ def update_overview_graph(
     if app_state is None:
         app_state = APP_STATE
 
-    if any(v is None for v in (country, category, entity, source_scenario)):
+    if any(v is None for v in (country, category, entity)):  # , source_scenario)):
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.overview_graph
 
-    app_state.update_all_indexes(country, category, entity, source_scenario)
+    # app_state.update_all_indexes(country, category, entity, source_scenario)
 
     return app_state.update_main_figure()
 
@@ -800,7 +832,7 @@ def update_overview_graph(
     Input("dropdown-source-scenario", "value"),
     Input("hidden-div", "children"),
 )
-def update_category_graph(
+def update_category_graph(  # noqa: PLR0913
     country: str,
     category: str,
     entity: str,
@@ -824,6 +856,9 @@ def update_category_graph(
 
     source_scenario
         The currently selected source-scenario in the dropdown menu
+
+    state_variable
+        A state variable that alternates between 0 and 1.
 
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
@@ -853,7 +888,7 @@ def update_category_graph(
     Input("dropdown-source-scenario", "value"),
     Input("hidden-div", "children"),
 )
-def update_entity_graph(
+def update_entity_graph(  # noqa: PLR0913
     country: str,
     category: str,
     entity: str,
@@ -877,6 +912,9 @@ def update_entity_graph(
 
     source_scenario
         The currently selected source-scenario in the dropdown menu
+
+    state_variable
+        A state variable that alternates between 0 and 1.
 
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
@@ -917,7 +955,7 @@ if __name__ == "__main__":
                 [
                     dbc.Col(
                         [
-                            html.Div(html.Div(id='hidden-div', children="1")),
+                            html.Div(html.Div(id="hidden-div", children="0")),
                             html.H4(children="Country", style={"textAlign": "center"}),
                             dcc.Dropdown(
                                 options=APP_STATE.country_options,
