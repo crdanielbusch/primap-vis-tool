@@ -382,6 +382,10 @@ class AppState:  # type: ignore
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
+        # TODO! Either delete this or implement exception for all-nan subcategories
+        if filtered_pandas[self.entity].isna().all():
+            print(f"All sub-categories in category {self.category} are nan")
+
         # Fix for figure not loading at start
         # https://github.com/plotly/plotly.py/issues/3441
         fig = go.Figure(layout=dict(template="plotly"))
@@ -468,7 +472,7 @@ def get_default_app_starting_state(
         "entity": "KYOTOGHG (AR6GWP100)",
         "source_scenario": "PRIMAP-hist_v2.5_final_nr, HISTCR",
     },
-    test_ds: bool = True,
+    test_ds: bool = False,
 ) -> AppState:
     """
     Get default starting state for the application
@@ -875,6 +879,10 @@ def update_category_graph(  # noqa: PLR0913
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.category_graph
 
+    app_state.source_scenario_index = app_state.source_scenario_options.index(
+        source_scenario
+    )
+
     return app_state.update_category_figure()
 
 
@@ -927,6 +935,10 @@ def update_entity_graph(  # noqa: PLR0913
     if any(v is None for v in (country, category, entity, source_scenario)):
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.entity_graph
+
+    app_state.source_scenario_index = app_state.source_scenario_options.index(
+        source_scenario
+    )
 
     return app_state.update_entity_figure()
 
