@@ -765,6 +765,10 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
     if app_state is None:
         app_state = APP_STATE
 
+    if any(v is None for v in (country, category, entity, source_scenario)):
+        # User cleared one of the selections in the dropdown, do nothing
+        return
+
     app_state.update_all_indexes(country, category, entity, source_scenario)
 
     # Give a default data dict with 0 clicks if there's no data.

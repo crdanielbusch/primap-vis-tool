@@ -88,6 +88,27 @@ def check_starting_values_dont_clash_with_starting_state(
 
 
 @dropdowns_with_null_values
+def test_update_source_scenario_dropdown(country, category, entity, source_scenario):
+    app_state = get_starting_app_state(
+        overview_graph="Mock starting value",
+    )
+    check_starting_values_dont_clash_with_starting_state(
+        app_state=app_state,
+        starting_country=country,
+        starting_category=category,
+        starting_entity=entity,
+        starting_source_scenario=source_scenario,
+    )
+
+    # This checks that update_all_indexes wasn't called i.e. that the app state
+    # hasn't changed
+    assert app_state.country != country
+    assert app_state.category != category
+    assert app_state.entity != entity
+    assert app_state.source_scenario != source_scenario
+
+
+@dropdowns_with_null_values
 def test_update_overview_graph_can_handle_null_selection(
     country, category, entity, source_scenario
 ):
