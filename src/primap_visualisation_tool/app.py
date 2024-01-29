@@ -767,7 +767,11 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
 
     if any(v is None for v in (country, category, entity, source_scenario)):
         # User cleared one of the selections in the dropdown, do nothing
-        return
+        return (
+            app_state.source_scenario_options,
+            app_state.source_scenario,
+            memory_data,
+        )
 
     app_state.update_all_indexes(country, category, entity, source_scenario)
 
