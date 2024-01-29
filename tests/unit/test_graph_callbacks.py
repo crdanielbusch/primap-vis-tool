@@ -91,6 +91,11 @@ def check_starting_values_dont_clash_with_starting_state(
 def test_update_overview_graph_can_handle_null_selection(
     country, category, entity, source_scenario
 ):
+    # This callback will not be triggered when None is selected for source_scenario
+    # Therefore, there is nothing in the app to deal with this case
+    if source_scenario is None:
+        return
+
     app_state = get_starting_app_state(
         overview_graph="Mock starting value",
     )
@@ -106,7 +111,7 @@ def test_update_overview_graph_can_handle_null_selection(
         country=country,
         category=category,
         entity=entity,
-        source_scenario=source_scenario,
+        memory_data=0,
         app_state=app_state,
     )
 
@@ -141,6 +146,7 @@ def test_update_category_graph_can_handle_null_selection(
         category=category,
         entity=entity,
         source_scenario=source_scenario,
+        memory_data=0,
         app_state=app_state,
     )
 
@@ -175,6 +181,7 @@ def test_update_entity_graph_can_handle_null_selection(
         category=category,
         entity=entity,
         source_scenario=source_scenario,
+        memory_data=0,
         app_state=app_state,
     )
 
