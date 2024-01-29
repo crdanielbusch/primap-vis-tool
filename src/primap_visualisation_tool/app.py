@@ -768,9 +768,9 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
     app_state.update_all_indexes(country, category, entity, source_scenario)
 
     # Give a default data dict with 0 clicks if there's no data.
-    memory_data = memory_data or {"clicks": 0}
+    memory_data = memory_data or {"_": 0}
 
-    memory_data["clicks"] = memory_data["clicks"] + 1
+    memory_data["_"] += 1
 
     return (
         app_state.source_scenario_options,
