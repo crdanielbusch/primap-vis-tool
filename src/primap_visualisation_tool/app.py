@@ -745,7 +745,7 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
         The currently selected entity in the dropdown menu
 
     source_scenario
-        The currently selected source scenario options.
+        The currently selected source scenario option.
 
     memory_data
         Data stored in browser memory.
@@ -756,11 +756,7 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
 
     Returns
     -------
-    Source scenario_options
-    Source scenario value
-    State variable
-
-
+    New source scenario dropdown options, source scenario value and browser memory state
     """
     if app_state is None:
         app_state = APP_STATE
@@ -775,7 +771,6 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
 
     app_state.update_all_indexes(country, category, entity, source_scenario)
 
-    # Give a default data dict with 0 clicks if there's no data.
     memory_data = memory_data or {"_": 0}
 
     memory_data["_"] += 1
@@ -829,7 +824,7 @@ def update_overview_graph(
     if app_state is None:
         app_state = APP_STATE
 
-    if any(v is None for v in (country, category, entity)):  # , source_scenario)):
+    if any(v is None for v in (country, category, entity)):
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.overview_graph
 

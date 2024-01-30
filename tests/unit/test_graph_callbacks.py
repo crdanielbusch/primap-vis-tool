@@ -99,7 +99,13 @@ def test_update_source_scenario_dropdown(country, category, entity, source_scena
         starting_entity=entity,
         starting_source_scenario=source_scenario,
     )
-
+    res = update_source_scenario_dropdown(
+        country=country,
+        category=category,
+        entity=entity,
+        memory_data=None,
+        app_state=app_state,
+    )
     # This checks that update_all_indexes wasn't called i.e. that the app state
     # hasn't changed
     assert app_state.country != country
@@ -114,6 +120,7 @@ def test_update_overview_graph_can_handle_null_selection(
 ):
     # This callback will not be triggered when None is selected for source_scenario
     # Therefore, there is nothing in the app to deal with this case
+    # TODO: add a test to ensure this logic actually happens
     if source_scenario is None:
         return
 
