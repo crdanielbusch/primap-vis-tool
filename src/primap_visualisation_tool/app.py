@@ -771,9 +771,10 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
 
     app_state.update_all_indexes(country, category, entity, source_scenario)
 
-    memory_data = memory_data or {"_": 0}
-
-    memory_data["_"] += 1
+    if memory_data is None:
+        memory_data = {"_": 0}
+    else:
+        memory_data["_"] += 1
 
     return (
         app_state.source_scenario_options,

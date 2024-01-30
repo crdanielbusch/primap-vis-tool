@@ -3,7 +3,9 @@ Testing of callbacks related to graphs
 """
 from __future__ import annotations
 
+import copy
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
 
@@ -86,51 +88,6 @@ def check_starting_values_dont_clash_with_starting_state(
     assert app_state.category != starting_category
     assert app_state.entity != starting_entity
     assert app_state.source_scenario != starting_source_scenario
-
-
-@dropdowns_with_null_values
-@pytest.mark.parametrize(
-    "memory_data_start, memory_data_exp",
-    (
-        pytest.param(None, {"_": 0}, id="brand_new"),
-        pytest.param({"_": 3}, {"_": 4}, id="increment_existing"),
-    ),
-)
-def test_update_source_scenario_dropdown(  # noqa: PLR0913
-    country, category, entity, source_scenario, memory_data_start, memory_data_exp
-):
-    app_state = get_starting_app_state(
-        overview_graph="Mock starting value",
-    )
-    check_starting_values_dont_clash_with_starting_state(
-        app_state=app_state,
-        starting_country=country,
-        starting_category=category,
-        starting_entity=entity,
-        starting_source_scenario=source_scenario,
-    )
-
-    res = update_source_scenario_dropdown(
-        country=country,
-        category=category,
-        entity=entity,
-        source_scenario=source_scenario,
-        memory_data=memory_data_start,
-        app_state=app_state,
-    )
-
-    # Check that memory data remains the same value
-    assert res[2] == memory_data_start
-
-    # This checks that update_all_indexes wasn't called i.e. that the app state
-    # hasn't changed
-    assert app_state.country != country
-    assert app_state.category != category
-    assert app_state.entity != entity
-    assert app_state.source_scenario != source_scenario
-
-    if country and category and entity and source_scenario:
-        assert res[2] == memory_data_exp
 
 
 @dropdowns_with_null_values
@@ -241,3 +198,79 @@ def test_update_entity_graph_can_handle_null_selection(
     assert app_state.category != category
     assert app_state.entity != entity
     assert app_state.source_scenario != source_scenario
+
+
+@dropdowns_with_null_values
+def test_update_source_scenario_dropdown_can_handle_null_selection(
+    country, category, entity, source_scenario
+):
+    app_state = get_starting_app_state(
+        overview_graph="Mock starting value",
+    )
+    check_starting_values_dont_clash_with_starting_state(
+        app_state=app_state,
+        starting_country=country,
+        starting_category=category,
+        starting_entity=entity,
+        starting_source_scenario=source_scenario,
+    )
+
+    source_scenario_options_pre_call = copy.deepcopy(app_state.source_scenario_options)
+    source_scenario_pre_call = copy.deepcopy(app_state.source_scenario)
+    memory_data_start = {"_": 31}
+
+    res = update_source_scenario_dropdown(
+        country=country,
+        category=category,
+        entity=entity,
+        source_scenario=source_scenario,
+        memory_data=memory_data_start,
+        app_state=app_state,
+    )
+
+    # Check that things remain unchanged
+    assert res[0] == source_scenario_options_pre_call
+    assert res[1] == source_scenario_pre_call
+    assert res[2] == memory_data_start
+
+    # This checks that update_all_indexes wasn't called i.e. that the app state
+    # hasn't changed
+    assert app_state.country != country
+    assert app_state.category != category
+    assert app_state.entity != entity
+    assert app_state.source_scenario != source_scenario
+
+
+@pytest.mark.parametrize(
+    "memory_data_start, memory_data_exp",
+    (
+        pytest.param(None, {"_": 0}, id="brand_new"),
+        pytest.param({"_": 3}, {"_": 4}, id="increment_existing"),
+    ),
+)
+def test_update_source_scenario_dropdown(memory_data_start, memory_data_exp):
+    app_state = Mock()
+
+    country = "AUS"
+    category = "M0EL"
+    entity = "CO2"
+    source_scenario = "PRIMAP-hist_v2.5_final_nr, HISTTP"
+
+    res = update_source_scenario_dropdown(
+        country=country,
+        category=category,
+        entity=entity,
+        source_scenario=source_scenario,
+        memory_data=memory_data_start,
+        app_state=app_state,
+    )
+
+    # check result
+    assert res[0] == app_state.source_scenario_options
+    assert res[1] == app_state.source_scenario
+    assert res[2] == memory_data_exp
+
+    # check calls
+    app_state.update_all_indexes.assert_called_once_with(
+        country, category, entity, source_scenario
+    )
