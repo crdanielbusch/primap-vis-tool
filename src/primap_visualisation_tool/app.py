@@ -473,13 +473,10 @@ class AppState:  # type: ignore
             The information about the xrange of the main figure.
 
         """
-        xmin = layout_data["xaxis.range"][0]
-        xmax = layout_data["xaxis.range"][1]
-
         fig = self.category_graph
 
         fig["layout"].update(  # type: ignore
-            xaxis_range=[xmin, xmax],
+            xaxis_range=layout_data["xaxis.range"],
         )
 
         return fig
@@ -1007,7 +1004,7 @@ def update_entity_graph(  # noqa: PLR0913
 
 
 if __name__ == "__main__":
-    APP_STATE = get_default_app_starting_state(test_ds=False)
+    APP_STATE = get_default_app_starting_state(test_ds=True)
 
     external_stylesheets = [dbc.themes.MINTY]
 
