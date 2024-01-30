@@ -12,6 +12,7 @@ from primap_visualisation_tool.app import (
     update_category_graph,
     update_entity_graph,
     update_overview_graph,
+    update_source_scenario_dropdown,
 )
 
 dropdowns_with_null_values = pytest.mark.parametrize(
@@ -45,6 +46,13 @@ dropdowns_with_null_values = pytest.mark.parametrize(
         pytest.param(None, None, None, None, id="all values are None"),
     ),
 )
+
+# memory_data = pytest.mark.parametrize("memory_data_start, memory_data_exp",
+#     (
+#         pytest.param(None, {"_": 0}, id="brand_new"),
+#         pytest.param({"_": 3}, {"_": 4}, id="increment_existing"),
+#     )
+# )
 
 
 def get_starting_app_state(
@@ -88,7 +96,16 @@ def check_starting_values_dont_clash_with_starting_state(
 
 
 @dropdowns_with_null_values
-def test_update_source_scenario_dropdown(country, category, entity, source_scenario):
+@pytest.mark.parametrize(
+    "memory_data_start, memory_data_exp",
+    (
+        pytest.param(None, {"_": 0}, id="brand_new"),
+        pytest.param({"_": 3}, {"_": 4}, id="increment_existing"),
+    ),
+)
+def test_update_source_scenario_dropdown(  # noqa: PLR0913
+    country, category, entity, source_scenario, memory_data_start, memory_data_exp
+):
     app_state = get_starting_app_state(
         overview_graph="Mock starting value",
     )
@@ -99,13 +116,16 @@ def test_update_source_scenario_dropdown(country, category, entity, source_scena
         starting_entity=entity,
         starting_source_scenario=source_scenario,
     )
-    res = update_source_scenario_dropdown(
+
+    update_source_scenario_dropdown(
         country=country,
         category=category,
         entity=entity,
+        source_scenario=source_scenario,
         memory_data=None,
         app_state=app_state,
     )
+
     # This checks that update_all_indexes wasn't called i.e. that the app state
     # hasn't changed
     assert app_state.country != country
