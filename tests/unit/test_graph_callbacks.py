@@ -12,6 +12,7 @@ from primap_visualisation_tool.app import (
     update_category_graph,
     update_entity_graph,
     update_overview_graph,
+    update_source_scenario_dropdown,
 )
 
 dropdowns_with_null_values = pytest.mark.parametrize(
@@ -88,9 +89,60 @@ def check_starting_values_dont_clash_with_starting_state(
 
 
 @dropdowns_with_null_values
+@pytest.mark.parametrize(
+    "memory_data_start, memory_data_exp",
+    (
+        pytest.param(None, {"_": 0}, id="brand_new"),
+        pytest.param({"_": 3}, {"_": 4}, id="increment_existing"),
+    ),
+)
+def test_update_source_scenario_dropdown(  # noqa: PLR0913
+    country, category, entity, source_scenario, memory_data_start, memory_data_exp
+):
+    app_state = get_starting_app_state(
+        overview_graph="Mock starting value",
+    )
+    check_starting_values_dont_clash_with_starting_state(
+        app_state=app_state,
+        starting_country=country,
+        starting_category=category,
+        starting_entity=entity,
+        starting_source_scenario=source_scenario,
+    )
+
+    res = update_source_scenario_dropdown(
+        country=country,
+        category=category,
+        entity=entity,
+        source_scenario=source_scenario,
+        memory_data=memory_data_start,
+        app_state=app_state,
+    )
+
+    # Check that memory data remains the same value
+    assert res[2] == memory_data_start
+
+    # This checks that update_all_indexes wasn't called i.e. that the app state
+    # hasn't changed
+    assert app_state.country != country
+    assert app_state.category != category
+    assert app_state.entity != entity
+    assert app_state.source_scenario != source_scenario
+
+    if country and category and entity and source_scenario:
+        assert res[2] == memory_data_exp
+
+
+@dropdowns_with_null_values
 def test_update_overview_graph_can_handle_null_selection(
     country, category, entity, source_scenario
 ):
+    # This callback will not be triggered when None is selected for source_scenario
+    # Therefore, there is nothing in the app to deal with this case
+    # TODO: add a test to ensure this logic actually happens
+    if source_scenario is None:
+        return
+
     app_state = get_starting_app_state(
         overview_graph="Mock starting value",
     )
@@ -106,7 +158,7 @@ def test_update_overview_graph_can_handle_null_selection(
         country=country,
         category=category,
         entity=entity,
-        source_scenario=source_scenario,
+        memory_data=0,
         app_state=app_state,
     )
 
@@ -141,6 +193,7 @@ def test_update_category_graph_can_handle_null_selection(
         category=category,
         entity=entity,
         source_scenario=source_scenario,
+        memory_data=0,
         app_state=app_state,
     )
 
@@ -175,6 +228,7 @@ def test_update_entity_graph_can_handle_null_selection(
         category=category,
         entity=entity,
         source_scenario=source_scenario,
+        memory_data=0,
         app_state=app_state,
     )
 

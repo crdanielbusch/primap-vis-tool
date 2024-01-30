@@ -34,7 +34,7 @@ def select_cat_children(
         try:
             children = parent.children[0]
         except IndexError:
-            return []
+            return [parent_category]
 
     output_categories = [
         i.codes[0] for i in children if i.codes[0] in existing_categories

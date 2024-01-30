@@ -382,6 +382,14 @@ class AppState:  # type: ignore
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
+        # TODO! Either delete this or implement exception for all-nan subcategories
+        if filtered_pandas[self.entity].isna().all():
+            print(f"All sub-categories in category {self.category} are nan")
+
+        # Fix for figure not loading at start
+        # https://github.com/plotly/plotly.py/issues/3441
+        fig = go.Figure(layout=dict(template="plotly"))
+
         fig = px.area(
             filtered_pandas,
             x="time",
@@ -462,8 +470,9 @@ def get_default_app_starting_state(
         "country": "EARTH",
         "category": "M.0.EL",
         "entity": "KYOTOGHG (AR6GWP100)",
+        "source_scenario": "PRIMAP-hist_v2.5_final_nr, HISTCR",
     },
-    test_ds: bool = True,
+    test_ds: bool = False,
 ) -> AppState:
     """
     Get default starting state for the application
@@ -521,7 +530,9 @@ def get_default_app_starting_state(
         entity_options=entity_options,
         entity_index=entity_options.index(start_values["entity"]),
         source_scenario_options=source_scenario_options,
-        source_scenario_index=0,
+        source_scenario_index=source_scenario_options.index(
+            start_values["source_scenario"]
+        ),
         ds=combined_ds,
     )
 
@@ -702,19 +713,87 @@ def handle_entity_click(
 
 
 @callback(  # type: ignore
-    Output("graph-overview", "figure"),
     Output("dropdown-source-scenario", "options"),
     Output("dropdown-source-scenario", "value"),
+    Output("memory", "data"),
     Input("dropdown-country", "value"),
     Input("dropdown-category", "value"),
     Input("dropdown-entity", "value"),
-    Input("dropdown-source-scenario", "value"),
+    State("dropdown-source-scenario", "value"),
+    State("memory", "data"),
+)
+def update_source_scenario_dropdown(  # noqa: PLR0913
+    country: str,
+    category: str,
+    entity: str,
+    source_scenario: str,
+    memory_data,
+    app_state: AppState | None = None,
+) -> tuple[tuple[str, ...], str, int]:
+    """
+    Update source scenario options in dropdown and, if necessary, source scenario value in dropdown.
+
+    Parameters
+    ----------
+    country
+        The currently selected country in the dropdown menu
+
+    category
+        The currently selected category in the dropdown menu
+
+    entity
+        The currently selected entity in the dropdown menu
+
+    source_scenario
+        The currently selected source scenario option.
+
+    memory_data
+        Data stored in browser memory.
+
+    app_state
+        The app state to update. If not provided, we use `APP_STATE` i.e.
+        the value from the global namespace.
+
+    Returns
+    -------
+    New source scenario dropdown options, source scenario value and browser memory state
+    """
+    if app_state is None:
+        app_state = APP_STATE
+
+    if any(v is None for v in (country, category, entity, source_scenario)):
+        # User cleared one of the selections in the dropdown, do nothing
+        return (
+            app_state.source_scenario_options,
+            app_state.source_scenario,
+            memory_data,
+        )
+
+    app_state.update_all_indexes(country, category, entity, source_scenario)
+
+    memory_data = memory_data or {"_": 0}
+
+    memory_data["_"] += 1
+
+    return (
+        app_state.source_scenario_options,
+        app_state.source_scenario,
+        memory_data,
+    )
+
+
+@callback(  # type: ignore
+    Output("graph-overview", "figure"),
+    State("dropdown-country", "value"),
+    State("dropdown-category", "value"),
+    State("dropdown-entity", "value"),
+    Input("memory", "data"),
 )
 def update_overview_graph(
     country: str,
     category: str,
     entity: str,
-    source_scenario: str,
+    memory_data,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -731,12 +810,12 @@ def update_overview_graph(
     entity
         The currently selected entity in the dropdown menu
 
+    memory_data
+        Data stored in browser memory.
+
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
         the value from the global namespace.
-
-    source_scenario
-        The currently selected source-scenario in the dropdown menu
 
     Returns
     -------
@@ -745,31 +824,27 @@ def update_overview_graph(
     if app_state is None:
         app_state = APP_STATE
 
-    if any(v is None for v in (country, category, entity, source_scenario)):
+    if any(v is None for v in (country, category, entity)):
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.overview_graph
 
-    app_state.update_all_indexes(country, category, entity, source_scenario)
-
-    return (
-        app_state.update_main_figure(),
-        app_state.source_scenario_options,
-        app_state.source_scenario,
-    )
+    return app_state.update_main_figure()
 
 
 @callback(  # type: ignore
     Output("graph-category-split", "figure"),
-    Input("dropdown-country", "value"),
-    Input("dropdown-category", "value"),
-    Input("dropdown-entity", "value"),
+    State("dropdown-country", "value"),
+    State("dropdown-category", "value"),
+    State("dropdown-entity", "value"),
     Input("dropdown-source-scenario", "value"),
+    Input("memory", "data"),
 )
-def update_category_graph(
+def update_category_graph(  # noqa: PLR0913
     country: str,
     category: str,
     entity: str,
     source_scenario: str,
+    memory_data,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -789,6 +864,9 @@ def update_category_graph(
     source_scenario
         The currently selected source-scenario in the dropdown menu
 
+    memory_data
+        Data stored in browser memory.
+
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
         the value from the global namespace.
@@ -804,23 +882,27 @@ def update_category_graph(
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.category_graph
 
-    app_state.update_all_indexes(country, category, entity, source_scenario)
+    app_state.source_scenario_index = app_state.source_scenario_options.index(
+        source_scenario
+    )
 
     return app_state.update_category_figure()
 
 
 @callback(  # type: ignore
     Output("graph-entity-split", "figure"),
-    Input("dropdown-country", "value"),
-    Input("dropdown-category", "value"),
-    Input("dropdown-entity", "value"),
+    State("dropdown-country", "value"),
+    State("dropdown-category", "value"),
+    State("dropdown-entity", "value"),
     Input("dropdown-source-scenario", "value"),
+    Input("memory", "data"),
 )
-def update_entity_graph(
+def update_entity_graph(  # noqa: PLR0913
     country: str,
     category: str,
     entity: str,
     source_scenario: str,
+    memory_data,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -840,6 +922,9 @@ def update_entity_graph(
     source_scenario
         The currently selected source-scenario in the dropdown menu
 
+    memory_data
+        Data stored in browser memory.
+
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
 
@@ -854,7 +939,9 @@ def update_entity_graph(
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.entity_graph
 
-    app_state.update_all_indexes(country, category, entity, source_scenario)
+    app_state.source_scenario_index = app_state.source_scenario_options.index(
+        source_scenario
+    )
 
     return app_state.update_entity_figure()
 
@@ -879,6 +966,7 @@ if __name__ == "__main__":
                 [
                     dbc.Col(
                         [
+                            dcc.Store(id="memory"),
                             html.H4(children="Country", style={"textAlign": "center"}),
                             dcc.Dropdown(
                                 options=APP_STATE.country_options,
