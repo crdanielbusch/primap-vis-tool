@@ -47,13 +47,6 @@ dropdowns_with_null_values = pytest.mark.parametrize(
     ),
 )
 
-# memory_data = pytest.mark.parametrize("memory_data_start, memory_data_exp",
-#     (
-#         pytest.param(None, {"_": 0}, id="brand_new"),
-#         pytest.param({"_": 3}, {"_": 4}, id="increment_existing"),
-#     )
-# )
-
 
 def get_starting_app_state(
     category_graph: Any | None = None,
@@ -117,14 +110,17 @@ def test_update_source_scenario_dropdown(  # noqa: PLR0913
         starting_source_scenario=source_scenario,
     )
 
-    update_source_scenario_dropdown(
+    res = update_source_scenario_dropdown(
         country=country,
         category=category,
         entity=entity,
         source_scenario=source_scenario,
-        memory_data=None,
+        memory_data=memory_data_start,
         app_state=app_state,
     )
+
+    # Check that memory data remains the same value
+    assert res[2] == memory_data_start
 
     # This checks that update_all_indexes wasn't called i.e. that the app state
     # hasn't changed
@@ -132,6 +128,9 @@ def test_update_source_scenario_dropdown(  # noqa: PLR0913
     assert app_state.category != category
     assert app_state.entity != entity
     assert app_state.source_scenario != source_scenario
+
+    if country and category and entity and source_scenario:
+        assert res[2] == memory_data_exp
 
 
 @dropdowns_with_null_values
