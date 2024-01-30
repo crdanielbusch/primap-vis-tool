@@ -494,13 +494,10 @@ class AppState:  # type: ignore
             The information about the xrange of the main figure.
 
         """
-        xmin = layout_data["xaxis.range"][0]
-        xmax = layout_data["xaxis.range"][1]
-
         fig = self.entity_graph
 
         fig["layout"].update(  # type: ignore
-            xaxis_range=[xmin, xmax],
+            xaxis_range=layout_data["xaxis.range"],
         )
 
         return fig
