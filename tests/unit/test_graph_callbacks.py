@@ -3,9 +3,13 @@ Testing of callbacks related to graphs
 """
 from __future__ import annotations
 
+from contextvars import copy_context
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
+from dash._callback_context import context_value
+from dash._utils import AttributeDict
 
 from primap_visualisation_tool.app import (
     AppState,
@@ -16,16 +20,22 @@ from primap_visualisation_tool.app import (
 )
 
 dropdowns_with_null_values = pytest.mark.parametrize(
-    "country, category, entity, source_scenario",
+    "country, category, entity, source_scenario, prop_id",
     (
         pytest.param(
-            None, "1", "CH4", "PRIMAP-hist_v2.5_final_nr, HISTCR", id="country is None"
+            None,
+            "1",
+            "CH4",
+            "PRIMAP-hist_v2.5_final_nr, HISTCR",
+            "dropdown-country.value",
+            id="country is None",
         ),
         pytest.param(
             "New Zealand",
             None,
             "CH4",
             "PRIMAP-hist_v2.5_final_nr, HISTCR",
+            "dropdown-category.value",
             id="category is None",
         ),
         pytest.param(
@@ -33,17 +43,33 @@ dropdowns_with_null_values = pytest.mark.parametrize(
             "1",
             None,
             "PRIMAP-hist_v2.5_final_nr, HISTCR",
+            "dropdown-entity.value",
             id="entity is None",
         ),
-        pytest.param("New Zealand", "1", "CH4", None, id="source-scenario is None"),
+        pytest.param(
+            "New Zealand",
+            "1",
+            "CH4",
+            None,
+            "dropdown-source-scenario.value",
+            id="source-scenario is None",
+        ),
+        # In my opinion the following two test cases simulate a behavior
+        # that is actually not possible in the app
+        # When the user deletes a dropdown selection,
+        # the callback will be triggered sending with one None value
+        # There is no way to send more than one None value
         pytest.param(
             None,
             "1",
             None,
             "PRIMAP-hist_v2.5_final_nr, HISTCR",
+            "dropdown-category.value",
             id="multiple values are None",
         ),
-        pytest.param(None, None, None, None, id="all values are None"),
+        pytest.param(
+            None, None, None, None, "dropdown-category.value", id="all values are None"
+        ),
     ),
 )
 
@@ -97,7 +123,13 @@ def check_starting_values_dont_clash_with_starting_state(
     ),
 )
 def test_update_source_scenario_dropdown(  # noqa: PLR0913
-    country, category, entity, source_scenario, memory_data_start, memory_data_exp
+    country,
+    category,
+    entity,
+    source_scenario,
+    prop_id,
+    memory_data_start,
+    memory_data_exp,
 ):
     app_state = get_starting_app_state(
         overview_graph="Mock starting value",
@@ -135,7 +167,7 @@ def test_update_source_scenario_dropdown(  # noqa: PLR0913
 
 @dropdowns_with_null_values
 def test_update_overview_graph_can_handle_null_selection(
-    country, category, entity, source_scenario
+    country, category, entity, source_scenario, prop_id
 ):
     # This callback will not be triggered when None is selected for source_scenario
     # Therefore, there is nothing in the app to deal with this case
@@ -175,7 +207,7 @@ def test_update_overview_graph_can_handle_null_selection(
 
 @dropdowns_with_null_values
 def test_update_category_graph_can_handle_null_selection(
-    country, category, entity, source_scenario
+    country, category, entity, source_scenario, prop_id
 ):
     app_state = get_starting_app_state(
         category_graph="Mock starting value",
@@ -188,14 +220,23 @@ def test_update_category_graph_can_handle_null_selection(
         starting_source_scenario=source_scenario,
     )
 
-    res = update_category_graph(
-        country=country,
-        category=category,
-        entity=entity,
-        source_scenario=source_scenario,
-        memory_data=0,
-        app_state=app_state,
-    )
+    # irrelevant for this test, but needs to be dict
+    layout_data = {"mock": "mock"}
+
+    def run_callback():
+        context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
+        return update_category_graph(
+            country=country,
+            category=category,
+            entity=entity,
+            source_scenario=source_scenario,
+            memory_data=0,
+            layout_data=layout_data,
+            app_state=app_state,
+        )
+
+    ctx = copy_context()
+    res = ctx.run(run_callback)
 
     # This checks that the returned value is just taken from the existing figure
     assert res == app_state.category_graph
@@ -210,7 +251,7 @@ def test_update_category_graph_can_handle_null_selection(
 
 @dropdowns_with_null_values
 def test_update_entity_graph_can_handle_null_selection(
-    country, category, entity, source_scenario
+    country, category, entity, source_scenario, prop_id
 ):
     app_state = get_starting_app_state(
         entity_graph="Mock starting value",
@@ -223,14 +264,23 @@ def test_update_entity_graph_can_handle_null_selection(
         starting_source_scenario=source_scenario,
     )
 
-    res = update_entity_graph(
-        country=country,
-        category=category,
-        entity=entity,
-        source_scenario=source_scenario,
-        memory_data=0,
-        app_state=app_state,
-    )
+    # irrelevant for this test, but needs to be dict
+    layout_data = {"mock": "mock"}
+
+    def run_callback():
+        context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
+        return update_entity_graph(
+            country=country,
+            category=category,
+            entity=entity,
+            source_scenario=source_scenario,
+            memory_data=0,
+            layout_data=layout_data,
+            app_state=app_state,
+        )
+
+    ctx = copy_context()
+    res = ctx.run(run_callback)
 
     # This checks that the returned value is just taken from the existing figure
     assert res == app_state.entity_graph
@@ -241,3 +291,63 @@ def test_update_entity_graph_can_handle_null_selection(
     assert app_state.category != category
     assert app_state.entity != entity
     assert app_state.source_scenario != source_scenario
+
+
+def test_update_entity_graph_xrange_is_triggered():
+    app_state = Mock()
+
+    country = "AUS"
+    category = "M0EL"
+    entity = "CO2"
+    source_scenario = "PRIMAP-hist_v2.5_final_nr, HISTTP"
+    memory_data = None
+    layout_data = {"xaxis.range": ["2018-01-09 07:23:20.8123", "2022-01-01"]}
+    prop_id = "graph-overview.relayoutData"
+
+    def run_callback():
+        context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
+        return update_entity_graph(
+            country=country,
+            category=category,
+            entity=entity,
+            source_scenario=source_scenario,
+            memory_data=memory_data,
+            layout_data=layout_data,
+            app_state=app_state,
+        )
+
+    ctx = copy_context()
+    ctx.run(run_callback)
+
+    # check calls
+    app_state.update_entity_xrange.assert_called_once_with(layout_data)
+
+
+def test_update_category_graph_xrange_is_triggered():
+    app_state = Mock()
+
+    country = "AUS"
+    category = "M0EL"
+    entity = "CO2"
+    source_scenario = "PRIMAP-hist_v2.5_final_nr, HISTTP"
+    memory_data = None
+    layout_data = {"xaxis.range": ["2018-01-09 07:23:20.8123", "2022-01-01"]}
+    prop_id = "graph-overview.relayoutData"
+
+    def run_callback():
+        context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
+        return update_category_graph(
+            country=country,
+            category=category,
+            entity=entity,
+            source_scenario=source_scenario,
+            memory_data=memory_data,
+            layout_data=layout_data,
+            app_state=app_state,
+        )
+
+    ctx = copy_context()
+    ctx.run(run_callback)
+
+    # check calls
+    app_state.update_category_xrange.assert_called_once_with(layout_data)

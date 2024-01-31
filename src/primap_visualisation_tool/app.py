@@ -987,6 +987,7 @@ def update_entity_graph(  # noqa: PLR0913
     if app_state is None:
         app_state = APP_STATE
 
+    print(layout_data)
     # when the second condition is not met, the overview graph uses automatic x-range values
     # That's the case when the app starts -> we don't want to update the other figures then
     if (ctx.triggered_id == "graph-overview") and ("xaxis.range" in layout_data):
