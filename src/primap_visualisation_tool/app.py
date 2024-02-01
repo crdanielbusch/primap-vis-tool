@@ -204,7 +204,6 @@ class AppState:  # type: ignore
         -------
 
         """
-        print(f"{legend_value[1]=}")
         lines_in_figure = [i["name"] for i in figure_data["data"]]
 
         lines_to_change = [lines_in_figure[i] for i in legend_value[1]]
@@ -1083,7 +1082,7 @@ def update_visible_lines_dict(
 
 
 if __name__ == "__main__":
-    APP_STATE = get_default_app_starting_state(test_ds=True)
+    APP_STATE = get_default_app_starting_state(test_ds=False)
 
     external_stylesheets = [dbc.themes.MINTY]
 
