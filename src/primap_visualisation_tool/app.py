@@ -19,7 +19,7 @@ import xarray as xr
 from attrs import define
 from dash import Dash, Input, Output, State, callback, ctx, dcc, html  # type: ignore
 
-from primap_visualisation_tool.definitions import SUBENTITIES, index_cols
+from primap_visualisation_tool.definitions import LINES_LAYOUT, SUBENTITIES, index_cols
 from primap_visualisation_tool.functions import apply_gwp, select_cat_children
 
 
@@ -85,6 +85,8 @@ class AppState:  # type: ignore
 
     source_scenario_index: int
     """Index of the current source-scenario"""
+
+    source_scenario_visible: list[str]
 
     ds: xr.Dataset
     """Dataset to plot from"""
@@ -335,6 +337,12 @@ class AppState:  # type: ignore
         fig = go.Figure()
 
         for source_scenario in self.source_scenario_options:
+            # check if layout is defined
+            if source_scenario in LINES_LAYOUT:
+                line_layout = LINES_LAYOUT[source_scenario]
+            else:
+                line_layout = {}  # empty dict creates random layout
+
             df_source_scenario = filtered_pandas.loc[
                 filtered_pandas["SourceScen"] == source_scenario
             ]
@@ -344,6 +352,9 @@ class AppState:  # type: ignore
                     y=list(df_source_scenario[self.entity]),
                     mode="lines",
                     name=source_scenario,
+                    line=line_layout,
+                    visible=self.source_scenario_visible[source_scenario],
+                    # visible=True,
                 )
             )
 
@@ -558,6 +569,13 @@ def get_default_app_starting_state(
 
     source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
 
+    source_scenario_visible = {
+        k: v
+        for (k, v) in zip(
+            source_scenario_options, [True] * len(source_scenario_options)
+        )
+    }
+
     app_state = AppState(
         country_options=country_dropdown_options,
         country_name_iso_mapping=country_name_iso_mapping,
@@ -570,6 +588,7 @@ def get_default_app_starting_state(
         source_scenario_index=source_scenario_options.index(
             start_values["source_scenario"]
         ),
+        source_scenario_visible=source_scenario_visible,
         ds=combined_ds,
     )
 
@@ -1004,6 +1023,46 @@ def update_entity_graph(  # noqa: PLR0913
     return app_state.update_entity_figure()
 
 
+@callback(
+    Output("memory_visible_lines", "data"),
+    Input("graph-overview", "restyleData"),
+    # State("graph-overview", "figure"),
+    State("memory_visible_lines", "data"),
+    prevent_initial_call=True,
+)
+def update_visible_lines_dict(
+    legend_value: dict,
+    figure_data: dict,
+    # memory_layout: dict,
+    app_state: AppState | None = None,
+):
+    """
+    Update which lines are selected in the legend of overview plot.
+
+    Parameters
+    ----------
+    legend_value
+        Information about which line was clicked in legend
+    figure_data
+        The overview plot
+    app_state
+        Application state. If not provided, we use `APP_STATE` from the global namespace.
+    -------
+
+    """
+    if app_state is None:
+        app_state = APP_STATE
+
+    lines_in_figure = [i["name"] for i in figure_data["data"]]
+
+    lines_to_change = [lines_in_figure[i] for i in legend_value[1]]
+
+    print(app_state)
+
+    for source_scenario, new_value in zip(lines_to_change, legend_value[0]["visible"]):
+        app_state.source_scenario_visible[source_scenario] = new_value
+
+
 if __name__ == "__main__":
     APP_STATE = get_default_app_starting_state(test_ds=True)
 
@@ -1025,6 +1084,10 @@ if __name__ == "__main__":
                     dbc.Col(
                         [
                             dcc.Store(id="memory"),
+                            dcc.Store(
+                                id="memory_visible_lines",
+                                data=APP_STATE.source_scenario_visible,
+                            ),
                             html.H4(children="Country", style={"textAlign": "center"}),
                             dcc.Dropdown(
                                 options=APP_STATE.country_options,
