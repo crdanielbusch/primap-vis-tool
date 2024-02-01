@@ -10,6 +10,7 @@ from pathlib import Path
 
 import dash_ag_grid as dag  # type: ignore
 import dash_bootstrap_components as dbc  # type: ignore
+import pandas as pd
 import plotly.express as px  # type: ignore
 import plotly.graph_objects as go  # type: ignore
 import primap2 as pm  # type: ignore
@@ -398,7 +399,6 @@ class AppState:  # type: ignore
         )
 
         fig.update_layout(
-            xaxis=dict(rangeslider=dict(visible=True), type="date"),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
@@ -445,6 +445,8 @@ class AppState:  # type: ignore
             id_vars=index_cols, var_name="time", value_name="value"
         )
 
+        stacked["time"] = stacked["time"].apply(pd.to_datetime)
+
         fig = px.area(
             stacked,
             x="time",
@@ -453,7 +455,6 @@ class AppState:  # type: ignore
         )
 
         fig.update_layout(
-            xaxis=dict(rangeslider=dict(visible=True), type="date"),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
@@ -461,6 +462,42 @@ class AppState:  # type: ignore
         self.entity_graph = fig
 
         return self.entity_graph
+
+    def update_category_xrange(self, layout_data: dict[str, list[str]]) -> go.Figure:  # type: ignore
+        """
+        Update x-range of category figure according to main figure x-range.
+
+        Parameters
+        ----------
+        layout_data
+            The information about the xrange of the main figure.
+
+        """
+        fig = self.category_graph
+
+        fig["layout"].update(  # type: ignore
+            xaxis_range=layout_data["xaxis.range"],
+        )
+
+        return fig
+
+    def update_entity_xrange(self, layout_data: dict[str, list[str]]) -> go.Figure:  # type: ignore
+        """
+        Update x-range of entity figure according to main figure x-range.
+
+        Parameters
+        ----------
+        layout_data
+            The information about the xrange of the main figure.
+
+        """
+        fig = self.entity_graph
+
+        fig["layout"].update(  # type: ignore
+            xaxis_range=layout_data["xaxis.range"],
+        )
+
+        return fig
 
 
 def get_default_app_starting_state(
@@ -727,9 +764,9 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
     category: str,
     entity: str,
     source_scenario: str,
-    memory_data,
+    memory_data: dict[str, int],
     app_state: AppState | None = None,
-) -> tuple[tuple[str, ...], str, int]:
+) -> tuple[tuple[str, ...], str, dict[str, int]]:
     """
     Update source scenario options in dropdown and, if necessary, source scenario value in dropdown.
 
@@ -771,7 +808,7 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
 
     app_state.update_all_indexes(country, category, entity, source_scenario)
 
-    if memory_data is None:
+    if not memory_data:
         memory_data = {"_": 0}
     else:
         memory_data["_"] += 1
@@ -794,7 +831,7 @@ def update_overview_graph(
     country: str,
     category: str,
     entity: str,
-    memory_data,
+    memory_data: dict[str, int],
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -839,13 +876,15 @@ def update_overview_graph(
     State("dropdown-entity", "value"),
     Input("dropdown-source-scenario", "value"),
     Input("memory", "data"),
+    Input("graph-overview", "relayoutData"),
 )
 def update_category_graph(  # noqa: PLR0913
     country: str,
     category: str,
     entity: str,
     source_scenario: str,
-    memory_data,
+    memory_data: dict[str, int],
+    layout_data: dict[str, list[str]],
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -868,6 +907,9 @@ def update_category_graph(  # noqa: PLR0913
     memory_data
         Data stored in browser memory.
 
+    layout_data
+        The information about the main figure's layout.
+
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
         the value from the global namespace.
@@ -878,6 +920,11 @@ def update_category_graph(  # noqa: PLR0913
     """
     if app_state is None:
         app_state = APP_STATE
+
+    # when the second condition is not met, the overview graph uses automatic x range values
+    # That's the case when the app starts -> we don't want to update the other figures then
+    if (ctx.triggered_id == "graph-overview") and ("xaxis.range" in layout_data):
+        return app_state.update_category_xrange(layout_data)
 
     if any(v is None for v in (country, category, entity, source_scenario)):
         # User cleared one of the selections in the dropdown, do nothing
@@ -897,13 +944,15 @@ def update_category_graph(  # noqa: PLR0913
     State("dropdown-entity", "value"),
     Input("dropdown-source-scenario", "value"),
     Input("memory", "data"),
+    Input("graph-overview", "relayoutData"),
 )
 def update_entity_graph(  # noqa: PLR0913
     country: str,
     category: str,
     entity: str,
     source_scenario: str,
-    memory_data,
+    memory_data: dict[str, int],
+    layout_data: dict[str, list[str]],
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -926,6 +975,9 @@ def update_entity_graph(  # noqa: PLR0913
     memory_data
         Data stored in browser memory.
 
+    layout_data
+        The information about the main figure's layout.
+
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
 
@@ -935,6 +987,11 @@ def update_entity_graph(  # noqa: PLR0913
     """
     if app_state is None:
         app_state = APP_STATE
+
+    # when the second condition is not met, the overview graph uses automatic x-range values
+    # That's the case when the app starts -> we don't want to update the other figures then
+    if (ctx.triggered_id == "graph-overview") and ("xaxis.range" in layout_data):
+        return app_state.update_entity_xrange(layout_data)
 
     if any(v is None for v in (country, category, entity, source_scenario)):
         # User cleared one of the selections in the dropdown, do nothing
