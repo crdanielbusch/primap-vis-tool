@@ -185,6 +185,28 @@ class AppState:  # type: ignore
 
         self.source_scenario_options = tuple(new_source_scenario_options)
 
+    def update_source_scenario_visible(self, legend_value: list, figure_data: dict[str, bool]) -> None:
+        """
+        Update the selected lines in the overview plot legend.
+
+        Parameters
+        ----------
+        legend_value
+            The legend value that was clicked and triggered the callback.
+        figure_data
+            The overview plot figure.
+        -------
+
+        """
+        lines_in_figure = [i["name"] for i in figure_data["data"]]
+
+        lines_to_change = [lines_in_figure[i] for i in legend_value[1]]
+
+        for source_scenario, new_value in zip(
+            lines_to_change, legend_value[0]["visible"]
+        ):
+            self.source_scenario_visible[source_scenario] = new_value
+
     def update_all_indexes(
         self, country: str, category: str, entity: str, source_scenario: str
     ) -> None:
@@ -1051,12 +1073,9 @@ def update_visible_lines_dict(
     if app_state is None:
         app_state = APP_STATE
 
-    lines_in_figure = [i["name"] for i in figure_data["data"]]
-
-    lines_to_change = [lines_in_figure[i] for i in legend_value[1]]
-
-    for source_scenario, new_value in zip(lines_to_change, legend_value[0]["visible"]):
-        app_state.source_scenario_visible[source_scenario] = new_value
+    print(legend_value)
+    print(figure_data)
+    app_state.update_source_scenario_visible(legend_value, figure_data)
 
 
 if __name__ == "__main__":
