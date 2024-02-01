@@ -187,6 +187,8 @@ class AppState:  # type: ignore
 
         self.source_scenario_options = tuple(new_source_scenario_options)
 
+    # TODO: remove based on discussion here
+    # https://github.com/crdanielbusch/primap-vis-tool/pull/22/files#r1474566618
     def update_source_scenario_visible(
         self,
         legend_value: list[Any],  # TODO if possible, give more detailed type hint
