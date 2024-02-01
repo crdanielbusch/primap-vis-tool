@@ -80,6 +80,7 @@ def get_starting_app_state(
             "PRIMAP-hist_v2.5_final_nr, HISTCR",
         ),
         source_scenario_index=0,
+        source_scenario_visible={"not": "used"},
         ds="not used",
         category_graph=category_graph,
         overview_graph=overview_graph,

@@ -189,7 +189,7 @@ class AppState:  # type: ignore
     def update_source_scenario_visible(
         self,
         legend_value: list[dict[str, list[str]], list[int]],
-        figure_data: dict[str, bool],
+        figure_data: dict,
     ) -> None:
         """
         Update the selected lines in the overview plot legend.
@@ -1057,7 +1057,7 @@ def update_entity_graph(  # noqa: PLR0913
 )
 def update_visible_lines_dict(
     legend_value: list[dict[str, list[str]], list[int]],
-    figure_data: dict[str, bool],
+    figure_data: dict,
     app_state: AppState | None = None,
 ) -> None:
     """
