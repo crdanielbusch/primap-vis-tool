@@ -210,10 +210,10 @@ def test_update_category_graph_can_handle_null_selection(
     # irrelevant for this test, but needs to be dict
     layout_data = {"mock": "mock"}
 
-    prop_id = "not used"
-
     def run_callback():
-        context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
+        context_value.set(
+            AttributeDict(**{"triggered_inputs": [{"prop_id": "not used"}]})
+        )
         return update_category_graph(
             country=country,
             category=category,
@@ -256,10 +256,10 @@ def test_update_entity_graph_can_handle_null_selection(
     # irrelevant for this test, but needs to be dict
     layout_data = {"mock": "mock"}
 
-    prop_id = "not used"
-
     def run_callback():
-        context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
+        context_value.set(
+            AttributeDict(**{"triggered_inputs": [{"prop_id": "not used"}]})
+        )
         return update_entity_graph(
             country=country,
             category=category,
