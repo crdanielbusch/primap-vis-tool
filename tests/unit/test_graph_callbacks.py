@@ -61,55 +61,6 @@ dropdowns_with_null_values = pytest.mark.parametrize(
     ),
 )
 
-dropdowns_with_null_values_prop_id = pytest.mark.parametrize(
-    "country, category, entity, source_scenario, prop_id",
-    (
-        pytest.param(
-            None,
-            "1",
-            "CH4",
-            "PRIMAP-hist_v2.5_final_nr, HISTCR",
-            "dropdown-country.value",
-            id="country is None",
-        ),
-        pytest.param(
-            "New Zealand",
-            None,
-            "CH4",
-            "PRIMAP-hist_v2.5_final_nr, HISTCR",
-            "dropdown-category.value",
-            id="category is None",
-        ),
-        pytest.param(
-            "New Zealand",
-            "1",
-            None,
-            "PRIMAP-hist_v2.5_final_nr, HISTCR",
-            "dropdown-entity.value",
-            id="entity is None",
-        ),
-        pytest.param(
-            "New Zealand",
-            "1",
-            "CH4",
-            None,
-            "dropdown-source-scenario.value",
-            id="source-scenario is None",
-        ),
-        pytest.param(
-            None,
-            "1",
-            None,
-            "PRIMAP-hist_v2.5_final_nr, HISTCR",
-            "dropdown-category.value",
-            id="multiple values are None",
-        ),
-        pytest.param(
-            None, None, None, None, "dropdown-category.value", id="all values are None"
-        ),
-    ),
-)
-
 
 def get_starting_app_state(
     category_graph: Any | None = None,
@@ -241,9 +192,9 @@ def test_update_overview_graph_can_handle_null_selection(
     assert app_state.source_scenario != source_scenario
 
 
-@dropdowns_with_null_values_prop_id
+@dropdowns_with_null_values
 def test_update_category_graph_can_handle_null_selection(
-    country, category, entity, source_scenario, prop_id
+    country, category, entity, source_scenario
 ):
     app_state = get_starting_app_state(
         category_graph="Mock starting value",
@@ -258,6 +209,8 @@ def test_update_category_graph_can_handle_null_selection(
 
     # irrelevant for this test, but needs to be dict
     layout_data = {"mock": "mock"}
+
+    prop_id = "not used"
 
     def run_callback():
         context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
@@ -285,9 +238,9 @@ def test_update_category_graph_can_handle_null_selection(
     assert app_state.source_scenario != source_scenario
 
 
-@dropdowns_with_null_values_prop_id
+@dropdowns_with_null_values
 def test_update_entity_graph_can_handle_null_selection(
-    country, category, entity, source_scenario, prop_id
+    country, category, entity, source_scenario
 ):
     app_state = get_starting_app_state(
         entity_graph="Mock starting value",
@@ -302,6 +255,8 @@ def test_update_entity_graph_can_handle_null_selection(
 
     # irrelevant for this test, but needs to be dict
     layout_data = {"mock": "mock"}
+
+    prop_id = "not used"
 
     def run_callback():
         context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
