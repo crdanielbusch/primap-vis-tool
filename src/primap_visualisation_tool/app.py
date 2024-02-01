@@ -89,6 +89,9 @@ class AppState:  # type: ignore
     ds: xr.Dataset
     """Dataset to plot from"""
 
+    rangeslider_selection: list
+    """The selected x range in the overview figure"""
+
     overview_graph: go.Figure | None = None  # type: ignore
     """Main graph"""
 
@@ -348,7 +351,11 @@ class AppState:  # type: ignore
             )
 
         fig.update_layout(
-            xaxis=dict(rangeslider=dict(visible=True, thickness=0.05), type="date"),
+            xaxis=dict(
+                rangeslider=dict(visible=True, thickness=0.05),
+                type="date",
+                range=self.rangeslider_selection,
+            ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
@@ -570,6 +577,7 @@ def get_default_app_starting_state(
         source_scenario_index=source_scenario_options.index(
             start_values["source_scenario"]
         ),
+        rangeslider_selection=["2018-01-01", "2022-01-01"],
         ds=combined_ds,
     )
 
@@ -923,6 +931,7 @@ def update_category_graph(  # noqa: PLR0913
     # when the second condition is not met, the overview graph uses automatic x range values
     # That's the case when the app starts -> we don't want to update the other figures then
     if (ctx.triggered_id == "graph-overview") and ("xaxis.range" in layout_data):
+        app_state.rangeslider_selection = layout_data["xaxis.range"]
         return app_state.update_category_xrange(layout_data)
 
     if any(v is None for v in (country, category, entity, source_scenario)):
@@ -987,10 +996,10 @@ def update_entity_graph(  # noqa: PLR0913
     if app_state is None:
         app_state = APP_STATE
 
-    print(layout_data)
     # when the second condition is not met, the overview graph uses automatic x-range values
     # That's the case when the app starts -> we don't want to update the other figures then
     if (ctx.triggered_id == "graph-overview") and ("xaxis.range" in layout_data):
+        app_state.rangeslider_selection = layout_data["xaxis.range"]
         return app_state.update_entity_xrange(layout_data)
 
     if any(v is None for v in (country, category, entity, source_scenario)):
@@ -1002,6 +1011,17 @@ def update_entity_graph(  # noqa: PLR0913
     )
 
     return app_state.update_entity_figure()
+
+
+# @callback(  # type: ignore
+#     Output("rangeslider_memory", "data"),
+#     Input("graph-overview", "relayoutData"),
+#     State("graph-overview", "figure"),
+# )
+# def store_rangeslider_position(layout_data, figure_data):
+#
+#     print(layout_data)
+#     print(figure_data["layout"]["xaxis"]["range"])
 
 
 if __name__ == "__main__":
@@ -1025,6 +1045,7 @@ if __name__ == "__main__":
                     dbc.Col(
                         [
                             dcc.Store(id="memory"),
+                            dcc.Store(id="rangeslider_memory"),
                             html.H4(children="Country", style={"textAlign": "center"}),
                             dcc.Dropdown(
                                 options=APP_STATE.country_options,
