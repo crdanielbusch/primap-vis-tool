@@ -55,7 +55,7 @@ source = ["src"]
 branch = true
 
 [tool.coverage.report]
-fail_under = 30  # TODO: push this back up to 95 over time
+fail_under = 32.5  # TODO: push this back up to 95 over time
 skip_empty = true
 show_missing = true
 # Regexes for lines to exclude from consideration in addition to the defaults
