@@ -203,8 +203,6 @@ class AppState:  # type: ignore
             The legend value that was clicked and triggered the callback.
         figure_data
             The overview plot figure.
-        -------
-
         """
         lines_in_figure = [i["name"] for i in figure_data["data"]]
 
