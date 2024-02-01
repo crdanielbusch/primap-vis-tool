@@ -1026,14 +1026,12 @@ def update_entity_graph(  # noqa: PLR0913
 @callback(
     Output("memory_visible_lines", "data"),
     Input("graph-overview", "restyleData"),
-    # State("graph-overview", "figure"),
     State("memory_visible_lines", "data"),
     prevent_initial_call=True,
 )
 def update_visible_lines_dict(
     legend_value: dict,
     figure_data: dict,
-    # memory_layout: dict,
     app_state: AppState | None = None,
 ):
     """
@@ -1056,8 +1054,6 @@ def update_visible_lines_dict(
     lines_in_figure = [i["name"] for i in figure_data["data"]]
 
     lines_to_change = [lines_in_figure[i] for i in legend_value[1]]
-
-    print(app_state)
 
     for source_scenario, new_value in zip(lines_to_change, legend_value[0]["visible"]):
         app_state.source_scenario_visible[source_scenario] = new_value
