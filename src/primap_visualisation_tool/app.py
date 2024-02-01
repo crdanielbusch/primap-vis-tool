@@ -89,7 +89,7 @@ class AppState:  # type: ignore
     ds: xr.Dataset
     """Dataset to plot from"""
 
-    rangeslider_selection: list
+    rangeslider_selection: list[str]
     """The selected x range in the overview figure"""
 
     overview_graph: go.Figure | None = None  # type: ignore
@@ -406,6 +406,9 @@ class AppState:  # type: ignore
         )
 
         fig.update_layout(
+            xaxis=dict(
+                range=self.rangeslider_selection,
+            ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
@@ -462,6 +465,9 @@ class AppState:  # type: ignore
         )
 
         fig.update_layout(
+            xaxis=dict(
+                range=self.rangeslider_selection,
+            ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
@@ -565,6 +571,11 @@ def get_default_app_starting_state(
 
     source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
 
+    rangeslider_selection = [
+        combined_ds["time"].min().to_numpy(),
+        combined_ds["time"].max().to_numpy(),
+    ]
+
     app_state = AppState(
         country_options=country_dropdown_options,
         country_name_iso_mapping=country_name_iso_mapping,
@@ -577,7 +588,7 @@ def get_default_app_starting_state(
         source_scenario_index=source_scenario_options.index(
             start_values["source_scenario"]
         ),
-        rangeslider_selection=["2018-01-01", "2022-01-01"],
+        rangeslider_selection=rangeslider_selection,
         ds=combined_ds,
     )
 
@@ -1013,17 +1024,6 @@ def update_entity_graph(  # noqa: PLR0913
     return app_state.update_entity_figure()
 
 
-# @callback(  # type: ignore
-#     Output("rangeslider_memory", "data"),
-#     Input("graph-overview", "relayoutData"),
-#     State("graph-overview", "figure"),
-# )
-# def store_rangeslider_position(layout_data, figure_data):
-#
-#     print(layout_data)
-#     print(figure_data["layout"]["xaxis"]["range"])
-
-
 if __name__ == "__main__":
     APP_STATE = get_default_app_starting_state(test_ds=True)
 
@@ -1045,7 +1045,6 @@ if __name__ == "__main__":
                     dbc.Col(
                         [
                             dcc.Store(id="memory"),
-                            dcc.Store(id="rangeslider_memory"),
                             html.H4(children="Country", style={"textAlign": "center"}),
                             dcc.Dropdown(
                                 options=APP_STATE.country_options,
