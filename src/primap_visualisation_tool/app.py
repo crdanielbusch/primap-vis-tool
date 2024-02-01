@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Sized
 from pathlib import Path
+from typing import Any
 
 import dash_ag_grid as dag  # type: ignore
 import dash_bootstrap_components as dbc  # type: ignore
@@ -188,8 +189,8 @@ class AppState:  # type: ignore
 
     def update_source_scenario_visible(
         self,
-        legend_value: list[dict[str, list[str]], list[int]],
-        figure_data: dict,
+        legend_value: list[Any],  # TODO if possible, give more detailed type hint
+        figure_data: dict[str, Any],
     ) -> None:
         """
         Update the selected lines in the overview plot legend.
@@ -203,6 +204,7 @@ class AppState:  # type: ignore
         -------
 
         """
+        print(f"{legend_value[1]=}")
         lines_in_figure = [i["name"] for i in figure_data["data"]]
 
         lines_to_change = [lines_in_figure[i] for i in legend_value[1]]
@@ -1049,15 +1051,15 @@ def update_entity_graph(  # noqa: PLR0913
     return app_state.update_entity_figure()
 
 
-@callback(
+@callback(  # type: ignore
     Output("memory_visible_lines", "data"),
     Input("graph-overview", "restyleData"),
     State("graph-overview", "figure"),
     prevent_initial_call=True,
 )
 def update_visible_lines_dict(
-    legend_value: list[dict[str, list[str]], list[int]],
-    figure_data: dict,
+    legend_value: list[Any],
+    figure_data: dict[str, Any],
     app_state: AppState | None = None,
 ) -> None:
     """
