@@ -187,7 +187,9 @@ class AppState:  # type: ignore
         self.source_scenario_options = tuple(new_source_scenario_options)
 
     def update_source_scenario_visible(
-        self, legend_value: list, figure_data: dict[str, bool]
+        self,
+        legend_value: list[dict[str, list[str]], list[int]],
+        figure_data: dict[str, bool],
     ) -> None:
         """
         Update the selected lines in the overview plot legend.
@@ -1050,12 +1052,12 @@ def update_entity_graph(  # noqa: PLR0913
 @callback(
     Output("memory_visible_lines", "data"),
     Input("graph-overview", "restyleData"),
-    State("memory_visible_lines", "data"),
+    State("graph-overview", "figure"),
     prevent_initial_call=True,
 )
 def update_visible_lines_dict(
     legend_value: list[dict[str, list[str]], list[int]],
-    figure_data: dict,
+    figure_data: dict[str, bool],
     app_state: AppState | None = None,
 ) -> None:
     """
@@ -1075,8 +1077,6 @@ def update_visible_lines_dict(
     if app_state is None:
         app_state = APP_STATE
 
-    print(legend_value)
-    print(figure_data)
     app_state.update_source_scenario_visible(legend_value, figure_data)
 
 
