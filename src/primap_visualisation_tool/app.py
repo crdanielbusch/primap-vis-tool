@@ -86,7 +86,8 @@ class AppState:  # type: ignore
     source_scenario_index: int
     """Index of the current source-scenario"""
 
-    source_scenario_visible: list[str]
+    source_scenario_visible: dict[str, bool]
+    """Selected source scenarios in the overview plot legend"""
 
     ds: xr.Dataset
     """Dataset to plot from"""
@@ -185,7 +186,9 @@ class AppState:  # type: ignore
 
         self.source_scenario_options = tuple(new_source_scenario_options)
 
-    def update_source_scenario_visible(self, legend_value: list, figure_data: dict[str, bool]) -> None:
+    def update_source_scenario_visible(
+        self, legend_value: list, figure_data: dict[str, bool]
+    ) -> None:
         """
         Update the selected lines in the overview plot legend.
 
@@ -376,7 +379,6 @@ class AppState:  # type: ignore
                     name=source_scenario,
                     line=line_layout,
                     visible=self.source_scenario_visible[source_scenario],
-                    # visible=True,
                 )
             )
 
@@ -1052,10 +1054,10 @@ def update_entity_graph(  # noqa: PLR0913
     prevent_initial_call=True,
 )
 def update_visible_lines_dict(
-    legend_value: dict,
+    legend_value: list[dict[str, list[str]], list[int]],
     figure_data: dict,
     app_state: AppState | None = None,
-):
+) -> None:
     """
     Update which lines are selected in the legend of overview plot.
 
