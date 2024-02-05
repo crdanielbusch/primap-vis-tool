@@ -572,7 +572,7 @@ def get_default_app_starting_state(
         "entity": "KYOTOGHG (AR6GWP100)",
         "source_scenario": "PRIMAP-hist_v2.5_final_nr, HISTCR",
     },
-    test_ds: bool = True,
+    test_ds: bool = False,
 ) -> AppState:
     """
     Get default starting state for the application
@@ -1113,7 +1113,7 @@ def update_visible_lines_dict(
 
 
 if __name__ == "__main__":
-    APP_STATE = get_default_app_starting_state(test_ds=True)
+    APP_STATE = get_default_app_starting_state(test_ds=False)
 
     external_stylesheets = [dbc.themes.MINTY]
 
