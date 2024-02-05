@@ -5,7 +5,6 @@ Author: Daniel Busch, Date: 2023-12-21
 """
 from __future__ import annotations
 
-import json
 from collections.abc import Sized
 from datetime import datetime
 from pathlib import Path
@@ -1041,16 +1040,14 @@ def save_notes(
         app_state = APP_STATE
 
     if not text_input:
-        return "Please enter note"
-
-    notes = {"text_input": text_input, "country": app_state.country}
+        return ""
 
     now = datetime.now()
 
-    filename = f'notes_{now.strftime("%Y-%m-%d-%H-%M-%S")}'
+    f'notes_{now.strftime("%Y-%m-%d-%H-%M-%S")}'
 
-    with open(f"{filename}.json", "w") as f:
-        json.dump(notes, f)
+    # with open(f"{filename}.json", "w") as f:
+    #     json.dump(notes, f)
 
     return f"Saved {text_input[:10]}.."
 
@@ -1128,14 +1125,52 @@ if __name__ == "__main__":
                             ),
                             html.Br(),
                         ],
-                        width=3,  # Column will span this many of the 12 grid columns
+                        width=2,  # Column will span this many of the 12 grid columns
+                    ),
+                    dbc.Col(
+                        [
+                            dbc.Row(
+                                html.H4(children="Notes", style={"textAlign": "center"})
+                            ),
+                            dbc.Row(
+                                dcc.Input(
+                                    id="input-for-notes",
+                                    placeholder="Add notes and press save..",
+                                    type="text",
+                                    style={
+                                        "vertical-align": "top",
+                                        "text-align": "left",
+                                    },
+                                ),
+                                style={
+                                    "height": "50%"
+                                },  # This row takes up XX% of column height
+                            ),
+                            dbc.Row(html.Br()),
+                            dbc.Row(
+                                html.Button(
+                                    children="Save",
+                                    id="save_button",
+                                    n_clicks=0,
+                                    style={"width": "50"},
+                                )
+                            ),
+                            dbc.Row(
+                                html.H4(
+                                    id="note-saved-div",
+                                    children="",
+                                    style={"textAlign": "center"},
+                                )
+                            ),
+                        ],
+                        width=2,
                     ),
                     dbc.Col(
                         [
                             html.H4(children="Overview", style={"textAlign": "center"}),
                             dcc.Graph(id="graph-overview"),
                         ],
-                        width=9,
+                        width=8,
                     ),
                 ]
             ),
@@ -1164,24 +1199,24 @@ if __name__ == "__main__":
                 ]
             ),
             dbc.Row(dbc.Col(table)),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        dcc.Input(
-                            id="input-for-notes",
-                            placeholder="save notes",
-                        )
-                    ),
-                    dbc.Col(html.Button(children="Save", id="save_button", n_clicks=0)),
-                    dbc.Col(
-                        html.H4(
-                            id="note-saved-div",
-                            children="",
-                            style={"textAlign": "center"},
-                        )
-                    ),
-                ]
-            ),
+            # dbc.Row(
+            #     [
+            #         dbc.Col(
+            #             dcc.Input(
+            #                 id="input-for-notes",
+            #                 placeholder="save notes",
+            #             )
+            #         ),
+            #         dbc.Col(html.Button(children="Save", id="save_button", n_clicks=0)),
+            #         dbc.Col(
+            #             html.H4(
+            #                 id="note-saved-div",
+            #                 children="",
+            #                 style={"textAlign": "center"},
+            #             )
+            #         ),
+            #     ]
+            # ),
         ],
         style={"max-width": "none", "width": "100%"},
     )
