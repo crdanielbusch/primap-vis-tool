@@ -314,6 +314,7 @@ def test_update_entity_graph_xrange_is_triggered():
 
     # check calls
     app_state.update_entity_xrange.assert_called_once_with(layout_data)
+    app_state.update_rangeslider_selection.assert_called_once_with(layout_data)
 
 
 def test_update_category_graph_xrange_is_triggered():
@@ -344,3 +345,4 @@ def test_update_category_graph_xrange_is_triggered():
 
     # check calls
     app_state.update_category_xrange.assert_called_once_with(layout_data)
+    app_state.update_rangeslider_selection.assert_called_once_with(layout_data)
