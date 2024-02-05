@@ -562,6 +562,37 @@ class AppState:  # type: ignore
         """
         self.rangeslider_selection = layout_data["xaxis.range"]
 
+    def get_table_content(self) -> tuple[pd.DataFrame, list[dict[str, object]]]:
+        """
+        Get the data points for the currently selected app state.
+        """
+        iso_country = self.country_name_iso_mapping[self.country]
+
+        filtered = (
+            self.ds[self.entity]
+            .pr.loc[
+                {
+                    "category": self.category,
+                    "area (ISO3)": iso_country,
+                }
+            ]
+            .squeeze()
+        )
+
+        filtered_pandas = filtered.to_dataframe().reset_index()
+
+        row_data = filtered_pandas.to_dict("records")
+
+        column_defs = [
+            {"field": "time", "sortable": True},
+            {"field": "area (ISO3)", "sortable": True},
+            {"field": "category (IPCC2006_PRIMAP)", "sortable": True},
+            {"field": "SourceScen", "sortable": True},
+            {"field": self.entity, "sortable": True},
+        ]
+
+        return (row_data, column_defs)
+
 
 def get_default_app_starting_state(
     current_version: str = "v2.5_final",
@@ -1112,13 +1143,43 @@ def update_visible_lines_dict(
     app_state.update_source_scenario_visible(legend_value, figure_data)
 
 
+@callback(  # type: ignore
+    Output("grid", "rowData"),
+    Output("grid", "columnDefs"),
+    Input("memory", "data"),
+)
+def update_table(
+    memory_data: dict[str, int],
+    app_state: AppState | None = None,
+) -> tuple[pd.DataFrame, list[dict[str, object]]]:
+    """
+    Update the table when dropdown selection changes.
+
+    Parameters
+    ----------
+    memory_data
+        Data stored in browser memory.
+    app_state
+        Application state. If not provided, we use `APP_STATE` from the global namespace.
+    -------
+
+    """
+    if app_state is None:
+        app_state = APP_STATE
+
+    return app_state.get_table_content()
+
+
 if __name__ == "__main__":
-    APP_STATE = get_default_app_starting_state(test_ds=False)
+    APP_STATE = get_default_app_starting_state(test_ds=True)
 
     external_stylesheets = [dbc.themes.MINTY]
 
     # define table that will show filtered data set
-    table = dag.AgGrid(id="grid")
+    table = dag.AgGrid(
+        id="grid",
+        columnDefs=[],
+    )
 
     # Tell dash that we're using bootstrap for our external stylesheets so
     # that the Col and Row classes function properly
