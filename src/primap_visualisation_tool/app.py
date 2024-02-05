@@ -5,7 +5,9 @@ Author: Daniel Busch, Date: 2023-12-21
 """
 from __future__ import annotations
 
+import json
 from collections.abc import Sized
+from datetime import datetime
 from pathlib import Path
 
 import dash_ag_grid as dag  # type: ignore
@@ -1004,6 +1006,55 @@ def update_entity_graph(  # noqa: PLR0913
     return app_state.update_entity_figure()
 
 
+@callback(  # type: ignore
+    Output(
+        "note-saved-div",
+        "children",
+    ),
+    Input("save_button", "n_clicks"),
+    State("input-for-notes", "value"),
+)
+def save_notes(
+    save_button_clicks: int,
+    text_input: str,
+    app_state: AppState | None = None,
+) -> str:
+    """
+    Save a note and app_state to disk.
+
+    Parameters
+    ----------
+    save_button_clicks
+        The number of clicks on the save button to trigger the callback.
+    text_input
+        The note from the user in the input field.
+    app_state
+        Application state. If not provided, we use `APP_STATE` from the global namespace.
+
+    Returns
+    -------
+        A text to let the user know the note was saved.
+    -------
+
+    """
+    if app_state is None:
+        app_state = APP_STATE
+
+    if not text_input:
+        return "Please enter note"
+
+    notes = {"text_input": text_input, "country": app_state.country}
+
+    now = datetime.now()
+
+    filename = f'notes_{now.strftime("%Y-%m-%d-%H-%M-%S")}'
+
+    with open(f"{filename}.json", "w") as f:
+        json.dump(notes, f)
+
+    return f"Saved {text_input[:10]}.."
+
+
 if __name__ == "__main__":
     APP_STATE = get_default_app_starting_state(test_ds=True)
 
@@ -1113,6 +1164,24 @@ if __name__ == "__main__":
                 ]
             ),
             dbc.Row(dbc.Col(table)),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        dcc.Input(
+                            id="input-for-notes",
+                            placeholder="save notes",
+                        )
+                    ),
+                    dbc.Col(html.Button(children="Save", id="save_button", n_clicks=0)),
+                    dbc.Col(
+                        html.H4(
+                            id="note-saved-div",
+                            children="",
+                            style={"textAlign": "center"},
+                        )
+                    ),
+                ]
+            ),
         ],
         style={"max-width": "none", "width": "100%"},
     )
