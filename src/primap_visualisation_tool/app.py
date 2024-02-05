@@ -1072,8 +1072,6 @@ def update_visible_lines_dict(
         The overview plot
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
-    -------
-
     """
     if app_state is None:
         app_state = APP_STATE
