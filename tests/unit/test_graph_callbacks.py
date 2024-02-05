@@ -85,6 +85,7 @@ def get_starting_app_state(
         category_graph=category_graph,
         overview_graph=overview_graph,
         entity_graph=entity_graph,
+        rangeslider_selection=["not", "used"],
     )
 
     return app_state

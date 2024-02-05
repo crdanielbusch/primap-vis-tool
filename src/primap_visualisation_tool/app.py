@@ -550,6 +550,18 @@ class AppState:  # type: ignore
 
         return fig
 
+    def update_rangeslider_selection(self, layout_data: dict[str, list[str]]) -> None:
+        """
+        Save the selected x-range in the range slider.
+
+        Parameters
+        ----------
+        layout_data
+            The information about the main figure's layout.
+
+        """
+        self.rangeslider_selection = layout_data["xaxis.range"]
+
 
 def get_default_app_starting_state(
     current_version: str = "v2.5_final",
@@ -560,7 +572,7 @@ def get_default_app_starting_state(
         "entity": "KYOTOGHG (AR6GWP100)",
         "source_scenario": "PRIMAP-hist_v2.5_final_nr, HISTCR",
     },
-    test_ds: bool = False,
+    test_ds: bool = True,
 ) -> AppState:
     """
     Get default starting state for the application
@@ -989,7 +1001,7 @@ def update_category_graph(  # noqa: PLR0913
     # when the second condition is not met, the overview graph uses automatic x range values
     # That's the case when the app starts -> we don't want to update the other figures then
     if (ctx.triggered_id == "graph-overview") and ("xaxis.range" in layout_data):
-        app_state.rangeslider_selection = layout_data["xaxis.range"]
+        app_state.update_rangeslider_selection(layout_data)
         return app_state.update_category_xrange(layout_data)
 
     if any(v is None for v in (country, category, entity, source_scenario)):
@@ -1057,7 +1069,7 @@ def update_entity_graph(  # noqa: PLR0913
     # when the second condition is not met, the overview graph uses automatic x-range values
     # That's the case when the app starts -> we don't want to update the other figures then
     if (ctx.triggered_id == "graph-overview") and ("xaxis.range" in layout_data):
-        app_state.rangeslider_selection = layout_data["xaxis.range"]
+        app_state.update_rangeslider_selection(layout_data)
         return app_state.update_entity_xrange(layout_data)
 
     if any(v is None for v in (country, category, entity, source_scenario)):
@@ -1101,7 +1113,7 @@ def update_visible_lines_dict(
 
 
 if __name__ == "__main__":
-    APP_STATE = get_default_app_starting_state(test_ds=False)
+    APP_STATE = get_default_app_starting_state(test_ds=True)
 
     external_stylesheets = [dbc.themes.MINTY]
 
