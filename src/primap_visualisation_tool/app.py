@@ -600,8 +600,6 @@ class AppState:  # type: ignore
         Returns
         -------
             Information about saved notes.
-        -------
-
         """
         now = datetime.now()
         now_str = now.strftime("%Y-%m-%d-%H-%M-%S")

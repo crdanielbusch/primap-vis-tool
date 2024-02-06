@@ -3,13 +3,16 @@ Testing of callbacks related to graphs
 """
 from __future__ import annotations
 
+import os
 from contextvars import copy_context
 from typing import Any
 from unittest.mock import Mock
 
+import pandas as pd
 import pytest
 from dash._callback_context import context_value
 from dash._utils import AttributeDict
+from pandas.testing import assert_frame_equal
 
 from primap_visualisation_tool.app import (
     AppState,
@@ -349,6 +352,17 @@ def test_update_category_graph_xrange_is_triggered():
     app_state.update_category_xrange.assert_called_once_with(layout_data)
     app_state.update_rangeslider_selection.assert_called_once_with(layout_data)
 
+
+def test_update_rangeslider_selection():
+    layout_data = {"xaxis.range": ["2018-01-09 07:23:20.8123", "2022-01-01"]}
+
+    app_state = get_starting_app_state()
+
+    app_state.update_rangeslider_selection(layout_data)
+
+    assert app_state.rangeslider_selection == layout_data["xaxis.range"]
+
+
 def test_save_note_empty_text_area():
     save_button_clicks = 0  # not needed
     app_state = Mock()
@@ -361,8 +375,20 @@ def test_save_note_empty_text_area():
 
 def test_save_note():
     save_button_clicks = 0  # not needed
-    app_state = Mock()
+    app_state = get_starting_app_state()
+
+    # input from user
     text_input = "any text"
+
+    expected_output = pd.DataFrame(
+        {
+            "country": app_state.country_options[app_state.country_index],
+            "category": app_state.category_options[app_state.category_index],
+            "entity": app_state.entity_options[app_state.entity_index],
+            "note": "any text",
+        },
+        index=[0],
+    )
 
     save_note(
         save_button_clicks=save_button_clicks,
@@ -370,15 +396,10 @@ def test_save_note():
         app_state=app_state,
     )
 
-    assert app_state.save_note_to_csv.assert_called_once_with(text_input)
-    assert app_state.get_notification.assert_called_once_with()  
+    filename = f"{app_state.filename[:-3]}_notes.csv"
 
+    output = pd.read_csv(filename, header=0, dtype=str)
 
-def test_update_rangeslider_selection():
-    layout_data = {"xaxis.range": ["2018-01-09 07:23:20.8123", "2022-01-01"]}
+    os.remove(filename)
 
-    app_state = get_starting_app_state()
-
-    app_state.update_rangeslider_selection(layout_data)
-
-    assert app_state.rangeslider_selection == layout_data["xaxis.range"]
+    assert_frame_equal(output, expected_output)
