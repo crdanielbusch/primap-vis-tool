@@ -5,6 +5,7 @@ Author: Daniel Busch, Date: 2023-12-21
 """
 from __future__ import annotations
 
+import csv
 from collections.abc import Sized
 from datetime import datetime
 from pathlib import Path
@@ -89,6 +90,9 @@ class AppState:  # type: ignore
 
     ds: xr.Dataset
     """Dataset to plot from"""
+
+    filename: str
+    """The name of the data set."""
 
     overview_graph: go.Figure | None = None  # type: ignore
     """Main graph"""
@@ -539,13 +543,11 @@ def get_default_app_starting_state(
 
     print("Reading data set")
     if test_ds:
-        combined_ds = pm.open_dataset(root_folder / data_folder / "test_ds.nc")
+        filename = "test_ds.nc"
+        combined_ds = pm.open_dataset(root_folder / data_folder / filename)
     else:
-        combined_ds = pm.open_dataset(
-            root_folder
-            / data_folder
-            / f"combined_data_{current_version}_{old_version}.nc"
-        )
+        filename = f"combined_data_{current_version}_{old_version}.nc"
+        combined_ds = pm.open_dataset(root_folder / data_folder / filename)
     print("Finished reading data set")
 
     combined_ds = combined_ds.drop_vars("provenance")
@@ -572,6 +574,7 @@ def get_default_app_starting_state(
             start_values["source_scenario"]
         ),
         ds=combined_ds,
+        filename=filename,
     )
 
     return app_state
@@ -1042,14 +1045,30 @@ def save_notes(
     if not text_input:
         return ""
 
+    filename = f"{app_state.filename[:-3]}_notes.csv"
+
+    new_row = [
+        app_state.country,
+        app_state.category,
+        app_state.entity,
+        text_input,
+    ]
+
+    # open file in append mode with 'a'
+    with open(filename, "a") as f:
+        writer = csv.writer(f)
+        # add a header if the file has zero rows
+        if f.seek(0, 2) == 0:
+            writer.writerow(["country", "category", "entity", "note"])
+        writer.writerow(new_row)
+
     now = datetime.now()
+    now_str = now.strftime("%Y-%m-%d-%H-%M-%S")
 
-    f'notes_{now.strftime("%Y-%m-%d-%H-%M-%S")}'
-
-    # with open(f"{filename}.json", "w") as f:
-    #     json.dump(notes, f)
-
-    return f"Saved {text_input[:10]}.."
+    return (
+        f"Note saved for {app_state.country} / {app_state.category} /"
+        f" {app_state.entity}  at {now_str}"
+    )
 
 
 if __name__ == "__main__":
@@ -1125,7 +1144,7 @@ if __name__ == "__main__":
                             ),
                             html.Br(),
                         ],
-                        width=2,  # Column will span this many of the 12 grid columns
+                        width=3,  # Column will span this many of the 12 grid columns
                     ),
                     dbc.Col(
                         [
@@ -1133,10 +1152,10 @@ if __name__ == "__main__":
                                 html.H4(children="Notes", style={"textAlign": "center"})
                             ),
                             dbc.Row(
-                                dcc.Input(
+                                dcc.Textarea(
                                     id="input-for-notes",
                                     placeholder="Add notes and press save..",
-                                    type="text",
+                                    # type="text",
                                     style={
                                         "vertical-align": "top",
                                         "text-align": "left",
@@ -1159,7 +1178,11 @@ if __name__ == "__main__":
                                 html.H4(
                                     id="note-saved-div",
                                     children="",
-                                    style={"textAlign": "center"},
+                                    style={
+                                        "textAlign": "center",
+                                        "color": "grey",
+                                        "fontSize": 12,
+                                    },
                                 )
                             ),
                         ],
@@ -1170,7 +1193,7 @@ if __name__ == "__main__":
                             html.H4(children="Overview", style={"textAlign": "center"}),
                             dcc.Graph(id="graph-overview"),
                         ],
-                        width=8,
+                        width=7,
                     ),
                 ]
             ),
