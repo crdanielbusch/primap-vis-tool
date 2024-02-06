@@ -1137,7 +1137,7 @@ if __name__ == "__main__":
                                     style={
                                         "textAlign": "left",
                                         "fontSize": 14,
-                                        "margin-top": 20,
+                                        "margin-top": 20,  # distance to element above
                                     },
                                 ),
                                 dcc.Dropdown(
@@ -1232,7 +1232,7 @@ if __name__ == "__main__":
                                     id="dropdown-source-scenario",
                                 ),
                             ],
-                            gap=1,
+                            gap=1,  # spacing between each item (0 - 5)
                         ),
                         width=2,  # Column will span this many of the 12 grid columns
                         style={"fontSize": 14},
@@ -1248,7 +1248,7 @@ if __name__ == "__main__":
                                     id="input-for-notes",
                                     placeholder="Add notes and press save..",
                                     style={"width": "100%"},
-                                    rows=15,
+                                    rows=15,  # used to define height of text area
                                 ),
                                 dbc.Button(
                                     children="Save",
@@ -1266,39 +1266,6 @@ if __name__ == "__main__":
                                         "fontSize": 12,
                                     },
                                 ),
-                                # dbc.Row(
-                                #     html.B(children="Notes", style={"textAlign": "left", "fontSize": 14})
-                                # ),
-                                # dbc.Row(
-                                #     dcc.Textarea(
-                                #         id="input-for-notes",
-                                #         placeholder="Add notes and press save..",
-                                #     ),
-                                #     style={
-                                #         "height": "50%"
-                                #     },  # This row takes up XX% of column height
-                                # ),
-                                # # dbc.Row(html.Br()),
-                                # dbc.Row(
-                                #     dbc.Button(
-                                #         children="Save",
-                                #         id="save_button",
-                                #         n_clicks=0,
-                                #         color="light",
-                                #         style={"fontsize": "14"},
-                                #     )
-                                # ),
-                                # dbc.Row(
-                                #     html.H4(
-                                #         id="note-saved-div",
-                                #         children="",
-                                #         style={
-                                #             "textAlign": "center",
-                                #             "color": "grey",
-                                #             "fontSize": 12,
-                                #         },
-                                #     )
-                                # ),
                             ],
                             gap=1,
                         ),
@@ -1338,24 +1305,6 @@ if __name__ == "__main__":
                 ]
             ),
             dbc.Row(dbc.Col(table)),
-            # dbc.Row(
-            #     [
-            #         dbc.Col(
-            #             dcc.Input(
-            #                 id="input-for-notes",
-            #                 placeholder="save notes",
-            #             )
-            #         ),
-            #         dbc.Col(html.Button(children="Save", id="save_button", n_clicks=0)),
-            #         dbc.Col(
-            #             html.H4(
-            #                 id="note-saved-div",
-            #                 children="",
-            #                 style={"textAlign": "center"},
-            #             )
-            #         ),
-            #     ]
-            # ),
         ],
         style={"max-width": "none", "width": "100%"},
     )
