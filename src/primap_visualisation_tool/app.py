@@ -567,6 +567,7 @@ class AppState:  # type: ignore
         """
         self.rangeslider_selection = layout_data["xaxis.range"]
 
+
     def save_note_to_csv(self, text_input: str) -> None:
         """
         Save the text from the text area input to disk in a csv file.
@@ -610,7 +611,6 @@ class AppState:  # type: ignore
             f"Note saved for {self.country} / {self.category} /"
             f" {self.entity}  at {now_str}"
         )
-
 
 def get_default_app_starting_state(
     current_version: str = "v2.5_final",
@@ -1159,7 +1159,6 @@ def update_visible_lines_dict(
 
     app_state.update_source_scenario_visible(legend_value, figure_data)
 
-
 @callback(  # type: ignore
     Output(
         "note-saved-div",
@@ -1201,9 +1200,8 @@ def save_note(
 
     return app_state.get_notification()
 
-
 if __name__ == "__main__":
-    APP_STATE = get_default_app_starting_state(test_ds=True)
+    APP_STATE = get_default_app_starting_state(test_ds=False)
 
     external_stylesheets = [dbc.themes.SIMPLEX]
 

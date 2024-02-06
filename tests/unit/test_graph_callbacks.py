@@ -87,6 +87,7 @@ def get_starting_app_state(
         overview_graph=overview_graph,
         entity_graph=entity_graph,
         filename="combined_data_v2.5_final_v2.4.2_final.nc",
+        rangeslider_selection=["not", "used"],
     )
 
     return app_state
@@ -315,6 +316,7 @@ def test_update_entity_graph_xrange_is_triggered():
 
     # check calls
     app_state.update_entity_xrange.assert_called_once_with(layout_data)
+    app_state.update_rangeslider_selection.assert_called_once_with(layout_data)
 
 
 def test_update_category_graph_xrange_is_triggered():
@@ -345,7 +347,7 @@ def test_update_category_graph_xrange_is_triggered():
 
     # check calls
     app_state.update_category_xrange.assert_called_once_with(layout_data)
-
+    app_state.update_rangeslider_selection.assert_called_once_with(layout_data)
 
 def test_save_note_empty_text_area():
     save_button_clicks = 0  # not needed
@@ -369,4 +371,14 @@ def test_save_note():
     )
 
     assert app_state.save_note_to_csv.assert_called_once_with(text_input)
-    assert app_state.get_notification.assert_called_once_with()
+    assert app_state.get_notification.assert_called_once_with()  
+
+
+def test_update_rangeslider_selection():
+    layout_data = {"xaxis.range": ["2018-01-09 07:23:20.8123", "2022-01-01"]}
+
+    app_state = get_starting_app_state()
+
+    app_state.update_rangeslider_selection(layout_data)
+
+    assert app_state.rangeslider_selection == layout_data["xaxis.range"]
