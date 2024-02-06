@@ -504,6 +504,50 @@ class AppState:  # type: ignore
 
         return fig
 
+    def save_text(self, text_input: str) -> None:
+        """
+        Save the text from the text area input to disk in a csv file.
+
+        Parameters
+        ----------
+        text_input
+            Text that the user wrote in the input box.
+        """
+        filename = f"{self.filename[:-3]}_notes.csv"
+
+        new_row = [
+            self.country,
+            self.category,
+            self.entity,
+            text_input,
+        ]
+
+        # open file in append mode with 'a'
+        with open(filename, "a") as f:
+            writer = csv.writer(f)
+            # add a header if the file has zero rows
+            if f.seek(0, 2) == 0:
+                writer.writerow(["country", "category", "entity", "note"])
+            writer.writerow(new_row)
+
+    def get_notification(self) -> str:
+        """
+        Create a text that lets the user know what was saved.
+
+        Returns
+        -------
+            Information about saved notes.
+        -------
+
+        """
+        now = datetime.now()
+        now_str = now.strftime("%Y-%m-%d-%H-%M-%S")
+
+        return (
+            f"Note saved for {self.country} / {self.category} /"
+            f" {self.entity}  at {now_str}"
+        )
+
 
 def get_default_app_starting_state(
     current_version: str = "v2.5_final",
@@ -1016,7 +1060,7 @@ def update_entity_graph(  # noqa: PLR0913
     Input("save_button", "n_clicks"),
     State("input-for-notes", "value"),
 )
-def save_notes(
+def save_text(
     save_button_clicks: int,
     text_input: str,
     app_state: AppState | None = None,
@@ -1045,30 +1089,9 @@ def save_notes(
     if not text_input:
         return ""
 
-    filename = f"{app_state.filename[:-3]}_notes.csv"
+    app_state.save_text(text_input)
 
-    new_row = [
-        app_state.country,
-        app_state.category,
-        app_state.entity,
-        text_input,
-    ]
-
-    # open file in append mode with 'a'
-    with open(filename, "a") as f:
-        writer = csv.writer(f)
-        # add a header if the file has zero rows
-        if f.seek(0, 2) == 0:
-            writer.writerow(["country", "category", "entity", "note"])
-        writer.writerow(new_row)
-
-    now = datetime.now()
-    now_str = now.strftime("%Y-%m-%d-%H-%M-%S")
-
-    return (
-        f"Note saved for {app_state.country} / {app_state.category} /"
-        f" {app_state.entity}  at {now_str}"
-    )
+    return app_state.get_notification()
 
 
 if __name__ == "__main__":
