@@ -504,7 +504,7 @@ class AppState:  # type: ignore
 
         return fig
 
-    def save_text(self, text_input: str) -> None:
+    def save_note_to_csv(self, text_input: str) -> None:
         """
         Save the text from the text area input to disk in a csv file.
 
@@ -1060,7 +1060,7 @@ def update_entity_graph(  # noqa: PLR0913
     Input("save_button", "n_clicks"),
     State("input-for-notes", "value"),
 )
-def save_text(
+def save_note(
     save_button_clicks: int,
     text_input: str,
     app_state: AppState | None = None,
@@ -1089,7 +1089,7 @@ def save_text(
     if not text_input:
         return ""
 
-    app_state.save_text(text_input)
+    app_state.save_note_to_csv(text_input)
 
     return app_state.get_notification()
 

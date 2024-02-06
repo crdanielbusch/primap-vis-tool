@@ -13,6 +13,7 @@ from dash._utils import AttributeDict
 
 from primap_visualisation_tool.app import (
     AppState,
+    save_note,
     update_category_graph,
     update_entity_graph,
     update_overview_graph,
@@ -84,6 +85,7 @@ def get_starting_app_state(
         category_graph=category_graph,
         overview_graph=overview_graph,
         entity_graph=entity_graph,
+        filename="combined_data_v2.5_final_v2.4.2_final.nc",
     )
 
     return app_state
@@ -342,3 +344,28 @@ def test_update_category_graph_xrange_is_triggered():
 
     # check calls
     app_state.update_category_xrange.assert_called_once_with(layout_data)
+
+
+def test_save_note_empty_text_area():
+    save_button_clicks = 0  # not needed
+    app_state = Mock()
+    text_input = None
+
+    res = save_note(save_button_clicks, text_input, app_state)
+
+    assert not res
+
+
+def test_save_note():
+    save_button_clicks = 0  # not needed
+    app_state = Mock()
+    text_input = "any text"
+
+    save_note(
+        save_button_clicks=save_button_clicks,
+        text_input=text_input,
+        app_state=app_state,
+    )
+
+    assert app_state.save_note_to_csv.assert_called_once_with(text_input)
+    assert app_state.get_notification.assert_called_once_with()
