@@ -1055,7 +1055,7 @@ def save_notes(
 if __name__ == "__main__":
     APP_STATE = get_default_app_starting_state(test_ds=True)
 
-    external_stylesheets = [dbc.themes.MINTY]
+    external_stylesheets = [dbc.themes.SIMPLEX]
 
     # define table that will show filtered data set
     table = dag.AgGrid(id="grid")
