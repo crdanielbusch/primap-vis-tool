@@ -95,6 +95,9 @@ class AppState:  # type: ignore
     ds: xr.Dataset
     """Dataset to plot from"""
 
+    rangeslider_selection: list[str]
+    """The selected x range in the overview figure"""
+
     filename: str
     """The name of the data set."""
 
@@ -391,7 +394,11 @@ class AppState:  # type: ignore
             )
 
         fig.update_layout(
-            xaxis=dict(rangeslider=dict(visible=True, thickness=0.05), type="date"),
+            xaxis=dict(
+                rangeslider=dict(visible=True, thickness=0.05),
+                type="date",
+                range=self.rangeslider_selection,
+            ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
@@ -442,6 +449,9 @@ class AppState:  # type: ignore
         )
 
         fig.update_layout(
+            xaxis=dict(
+                range=self.rangeslider_selection,
+            ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
@@ -498,6 +508,9 @@ class AppState:  # type: ignore
         )
 
         fig.update_layout(
+            xaxis=dict(
+                range=self.rangeslider_selection,
+            ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
@@ -541,6 +554,18 @@ class AppState:  # type: ignore
         )
 
         return fig
+
+    def update_rangeslider_selection(self, layout_data: dict[str, list[str]]) -> None:
+        """
+        Save the selected x-range in the range slider.
+
+        Parameters
+        ----------
+        layout_data
+            The information about the main figure's layout.
+
+        """
+        self.rangeslider_selection = layout_data["xaxis.range"]
 
     def save_note_to_csv(self, text_input: str) -> None:
         """
@@ -650,6 +675,11 @@ def get_default_app_starting_state(
         )
     }
 
+    rangeslider_selection = [
+        combined_ds["time"].min().to_numpy(),
+        combined_ds["time"].max().to_numpy(),
+    ]
+
     app_state = AppState(
         country_options=country_dropdown_options,
         country_name_iso_mapping=country_name_iso_mapping,
@@ -663,6 +693,7 @@ def get_default_app_starting_state(
             start_values["source_scenario"]
         ),
         source_scenario_visible=source_scenario_visible,
+        rangeslider_selection=rangeslider_selection,
         ds=combined_ds,
         filename=filename,
     )
@@ -1018,6 +1049,7 @@ def update_category_graph(  # noqa: PLR0913
     # when the second condition is not met, the overview graph uses automatic x range values
     # That's the case when the app starts -> we don't want to update the other figures then
     if (ctx.triggered_id == "graph-overview") and ("xaxis.range" in layout_data):
+        app_state.update_rangeslider_selection(layout_data)
         return app_state.update_category_xrange(layout_data)
 
     if any(v is None for v in (country, category, entity, source_scenario)):
@@ -1085,6 +1117,7 @@ def update_entity_graph(  # noqa: PLR0913
     # when the second condition is not met, the overview graph uses automatic x-range values
     # That's the case when the app starts -> we don't want to update the other figures then
     if (ctx.triggered_id == "graph-overview") and ("xaxis.range" in layout_data):
+        app_state.update_rangeslider_selection(layout_data)
         return app_state.update_entity_xrange(layout_data)
 
     if any(v is None for v in (country, category, entity, source_scenario)):
