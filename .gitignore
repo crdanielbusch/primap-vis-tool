@@ -3,6 +3,9 @@
 
 *.idea
 
+*.lock
+*notes.csv
+
 # Databases
 *.db
 

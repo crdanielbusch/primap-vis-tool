@@ -3,16 +3,20 @@ Testing of callbacks related to graphs
 """
 from __future__ import annotations
 
+import os
 from contextvars import copy_context
 from typing import Any
 from unittest.mock import Mock
 
+import pandas as pd
 import pytest
 from dash._callback_context import context_value
 from dash._utils import AttributeDict
+from pandas.testing import assert_frame_equal
 
 from primap_visualisation_tool.app import (
     AppState,
+    save_note,
     update_category_graph,
     update_entity_graph,
     update_overview_graph,
@@ -85,6 +89,7 @@ def get_starting_app_state(
         category_graph=category_graph,
         overview_graph=overview_graph,
         entity_graph=entity_graph,
+        filename="test_filename",
         rangeslider_selection=["not", "used"],
     )
 
@@ -346,3 +351,57 @@ def test_update_category_graph_xrange_is_triggered():
     # check calls
     app_state.update_category_xrange.assert_called_once_with(layout_data)
     app_state.update_rangeslider_selection.assert_called_once_with(layout_data)
+
+
+def test_update_rangeslider_selection():
+    layout_data = {"xaxis.range": ["2018-01-09 07:23:20.8123", "2022-01-01"]}
+
+    app_state = get_starting_app_state()
+
+    app_state.update_rangeslider_selection(layout_data)
+
+    assert app_state.rangeslider_selection == layout_data["xaxis.range"]
+
+
+def test_save_note_empty_text_area():
+    save_button_clicks = 0  # not needed
+    app_state = Mock()
+    text_input = None
+
+    res = save_note(save_button_clicks, text_input, app_state)
+
+    assert not res
+
+
+def test_save_note():
+    save_button_clicks = 0  # not needed
+    app_state = get_starting_app_state()
+
+    # input from user
+    text_input = "any text"
+
+    expected_output = pd.DataFrame(
+        {
+            "country": app_state.country_options[app_state.country_index],
+            "category": app_state.category_options[app_state.category_index],
+            "entity": app_state.entity_options[app_state.entity_index],
+            "note": "any text",
+        },
+        index=[0],
+    )
+
+    save_note(
+        save_button_clicks=save_button_clicks,
+        text_input=text_input,
+        app_state=app_state,
+    )
+
+    filename = f"{app_state.filename[:-3]}_notes.csv"
+    filename_lock = f"{filename}.lock"
+
+    output = pd.read_csv(filename, header=0, dtype=str)
+
+    os.remove(filename)
+    os.remove(filename_lock)
+
+    assert_frame_equal(output, expected_output)
