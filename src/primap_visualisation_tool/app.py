@@ -5,6 +5,7 @@ Author: Daniel Busch, Date: 2023-12-21
 """
 from __future__ import annotations
 
+import argparse
 import csv
 from collections.abc import Sized
 from datetime import datetime
@@ -612,6 +613,7 @@ class AppState:  # type: ignore
             f"Note saved for {self.country} / {self.category} /"
             f" {self.entity}  at {now_str}"
         )
+
 
     def get_table_content(self) -> tuple[pd.DataFrame, list[dict[str, object]]]:
         """
@@ -1277,7 +1279,18 @@ def save_note(
 
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-p", help="Port number", required=False)
+    args = parser.parse_args()
+
+    if not args.p:
+        port = 8050
+    else:
+        port = args.p
+
     APP_STATE = get_default_app_starting_state(test_ds=True)
+
 
     external_stylesheets = [dbc.themes.SIMPLEX]
 
@@ -1522,4 +1535,4 @@ if __name__ == "__main__":
         style={"max-width": "none", "width": "100%"},
     )
 
-    app.run(debug=True)
+    app.run(debug=True, port=port)
