@@ -620,7 +620,7 @@ class AppState:  # type: ignore
 
         Returns
         -------
-            Data as shown in overview figure and definition for columns in table.
+            Data to show in table and column specifications
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
@@ -1224,7 +1224,10 @@ def update_table(
         Data stored in browser memory.
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
+
+    Returns
     -------
+        Data to show in table and column specifications
 
     """
     if app_state is None:
