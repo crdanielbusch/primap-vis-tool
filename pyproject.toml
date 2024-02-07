@@ -204,6 +204,7 @@ authorized_licenses = [
     "python software foundation",
     "python software foundation license",
     "zpl 2.1",
+    'The Unlicense (Unlicense)',
 ]
 # This starting list is relatively conservative. Depending on the project, it
 # may make sense to move some of these into the authorized list
