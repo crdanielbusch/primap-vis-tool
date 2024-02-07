@@ -19,6 +19,7 @@ climate-categories = "^0.9.2"
 xarray = "^2023.12.0"
 jupyter = "^1.0.0"
 pandas-stubs = "^2.1.4.231227"
+filelock = "^3.13.1"
 
 [tool.poetry.extras]
 plots = ["matplotlib"]
@@ -203,6 +204,7 @@ authorized_licenses = [
     "python software foundation",
     "python software foundation license",
     "zpl 2.1",
+    'The Unlicense (Unlicense)',
 ]
 # This starting list is relatively conservative. Depending on the project, it
 # may make sense to move some of these into the authorized list
