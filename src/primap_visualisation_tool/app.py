@@ -585,8 +585,19 @@ class AppState:  # type: ignore
             by=["SourceScen"]
         )
 
+        # filtered_pandas["time"] = pd.to_datetime(filtered_pandas["time"], format="%Y-%m-%d")
+
+        # print(filtered_pandas.time)
+
         row_data = filtered_pandas.to_dict("records")
 
+        for i in row_data:
+            i["time"] = i["time"].strftime("%Y-%m-%d")
+
+        # row_data = [i["time"].strftime('%Y-%m-%d') for i in row_data]
+        # print(row_data[0]["time"])
+
+        # print(row_data)
         column_defs = [
             {"field": "time", "sortable": True},
             {"field": "area (ISO3)", "sortable": True},
@@ -1183,6 +1194,7 @@ if __name__ == "__main__":
     table = dag.AgGrid(
         id="grid",
         columnDefs=[],
+        columnSize="responsiveSizeToFit",  # continually resize columns to fit the width of the grid
     )
 
     # Tell dash that we're using bootstrap for our external stylesheets so
