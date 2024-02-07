@@ -5,6 +5,7 @@ Author: Daniel Busch, Date: 2023-12-21
 """
 from __future__ import annotations
 
+import argparse
 import csv
 from collections.abc import Sized
 from datetime import datetime
@@ -21,6 +22,7 @@ import pycountry
 import xarray as xr
 from attrs import define
 from dash import Dash, Input, Output, State, callback, ctx, dcc, html  # type: ignore
+from filelock import FileLock
 
 from primap_visualisation_tool.definitions import LINES_LAYOUT, SUBENTITIES, index_cols
 from primap_visualisation_tool.functions import apply_gwp, select_cat_children
@@ -585,13 +587,16 @@ class AppState:  # type: ignore
             text_input,
         ]
 
+        lock = FileLock(f"{filename}.lock")
+
         # open file in append mode with 'a'
-        with open(filename, "a") as f:
-            writer = csv.writer(f)
-            # add a header if the file has zero rows
-            if f.seek(0, 2) == 0:
-                writer.writerow(["country", "category", "entity", "note"])
-            writer.writerow(new_row)
+        with lock:
+            with open(filename, "a") as f:
+                writer = csv.writer(f)
+                # add a header if the file has zero rows
+                if f.seek(0, 2) == 0:
+                    writer.writerow(["country", "category", "entity", "note"])
+                writer.writerow(new_row)
 
     def get_notification(self) -> str:
         """
@@ -1200,6 +1205,15 @@ def save_note(
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-p", help="Port number", required=False)
+    args = parser.parse_args()
+
+    if not args.p:
+        port = 8050
+    else:
+        port = args.p
+
     APP_STATE = get_default_app_starting_state(test_ds=True)
 
     external_stylesheets = [dbc.themes.SIMPLEX]
@@ -1441,4 +1455,4 @@ if __name__ == "__main__":
         style={"max-width": "none", "width": "100%"},
     )
 
-    app.run(debug=True)
+    app.run(debug=True, port=port)
