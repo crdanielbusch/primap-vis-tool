@@ -89,7 +89,7 @@ def get_starting_app_state(
         category_graph=category_graph,
         overview_graph=overview_graph,
         entity_graph=entity_graph,
-        filename="combined_data_v2.5_final_v2.4.2_final.nc",
+        filename="test_filename",
         rangeslider_selection=["not", "used"],
     )
 
@@ -397,9 +397,11 @@ def test_save_note():
     )
 
     filename = f"{app_state.filename[:-3]}_notes.csv"
+    filename_lock = f"{filename}.lock"
 
     output = pd.read_csv(filename, header=0, dtype=str)
 
     os.remove(filename)
+    os.remove(filename_lock)
 
     assert_frame_equal(output, expected_output)
