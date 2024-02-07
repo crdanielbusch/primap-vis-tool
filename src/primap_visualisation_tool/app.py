@@ -581,6 +581,8 @@ class AppState:  # type: ignore
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
+        filtered_pandas = filtered_pandas.dropna(subset=[self.entity])
+
         row_data = filtered_pandas.to_dict("records")
 
         column_defs = [
