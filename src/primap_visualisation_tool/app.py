@@ -614,10 +614,13 @@ class AppState:  # type: ignore
             f" {self.entity}  at {now_str}"
         )
 
-
     def get_table_content(self) -> tuple[pd.DataFrame, list[dict[str, object]]]:
         """
         Get the data points for the currently selected app state.
+
+        Returns
+        -------
+            Data as shown in overview figure and definition for columns in table.
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
@@ -634,23 +637,17 @@ class AppState:  # type: ignore
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
+        # drop rows where SourceScen is NaN and sort by SourceScen name
         filtered_pandas = filtered_pandas.dropna(subset=[self.entity]).sort_values(
             by=["SourceScen"]
         )
 
-        # filtered_pandas["time"] = pd.to_datetime(filtered_pandas["time"], format="%Y-%m-%d")
-
-        # print(filtered_pandas.time)
-
         row_data = filtered_pandas.to_dict("records")
 
+        # bring date in standard format
         for i in row_data:
             i["time"] = i["time"].strftime("%Y-%m-%d")
 
-        # row_data = [i["time"].strftime('%Y-%m-%d') for i in row_data]
-        # print(row_data[0]["time"])
-
-        # print(row_data)
         column_defs = [
             {"field": "time", "sortable": True},
             {"field": "area (ISO3)", "sortable": True},
@@ -1279,7 +1276,6 @@ def save_note(
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", help="Port number", required=False)
     args = parser.parse_args()
@@ -1291,15 +1287,7 @@ if __name__ == "__main__":
 
     APP_STATE = get_default_app_starting_state(test_ds=True)
 
-
     external_stylesheets = [dbc.themes.SIMPLEX]
-
-    # define table that will show filtered data set
-    table = dag.AgGrid(
-        id="grid",
-        columnDefs=[],
-        columnSize="responsiveSizeToFit",  # continually resize columns to fit the width of the grid
-    )
 
     # Tell dash that we're using bootstrap for our external stylesheets so
     # that the Col and Row classes function properly
@@ -1530,7 +1518,16 @@ if __name__ == "__main__":
                     ),
                 ]
             ),
-            dbc.Row(dbc.Col(table)),
+            dbc.Row(
+                dbc.Col(
+                    dag.AgGrid(
+                        id="grid",
+                        columnDefs=[],
+                        # continually resize columns to fit the width of the grid
+                        columnSize="responsiveSizeToFit",
+                    )
+                )
+            ),
         ],
         style={"max-width": "none", "width": "100%"},
     )
