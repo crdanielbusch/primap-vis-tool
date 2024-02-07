@@ -581,7 +581,9 @@ class AppState:  # type: ignore
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
-        filtered_pandas = filtered_pandas.dropna(subset=[self.entity])
+        filtered_pandas = filtered_pandas.dropna(subset=[self.entity]).sort_values(
+            by=["SourceScen"]
+        )
 
         row_data = filtered_pandas.to_dict("records")
 
