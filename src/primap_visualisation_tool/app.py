@@ -1530,6 +1530,7 @@ if __name__ == "__main__":
                         columnDefs=[],
                         # continually resize columns to fit the width of the grid
                         columnSize="responsiveSizeToFit",
+                        defaultColDef={"filter": "agTextColumnFilter"},
                     )
                 )
             ),
