@@ -643,10 +643,12 @@ class AppState:  # type: ignore
         )
 
         row_data = filtered_pandas.to_dict("records")
+        # print(row_data)
 
-        # bring date in standard format
+        # change format
         for i in row_data:
             i["time"] = i["time"].strftime("%Y-%m-%d")
+            i[self.entity] = f"{i[self.entity]:.2e}"
 
         column_defs = [
             {"field": "time", "sortable": True},
