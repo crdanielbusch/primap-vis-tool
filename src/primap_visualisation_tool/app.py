@@ -643,19 +643,18 @@ class AppState:  # type: ignore
         )
 
         row_data = filtered_pandas.to_dict("records")
-        # print(row_data)
 
         # change format
         for i in row_data:
-            i["time"] = i["time"].strftime("%Y-%m-%d")
+            i["time"] = i["time"].strftime("%Y")
             i[self.entity] = f"{i[self.entity]:.2e}"
 
         column_defs = [
-            {"field": "time", "sortable": True},
+            {"field": "time", "sortable": True, "filter": "agNumberColumnFilter"},
             {"field": "area (ISO3)", "sortable": True},
             {"field": "category (IPCC2006_PRIMAP)", "sortable": True},
             {"field": "SourceScen", "sortable": True},
-            {"field": self.entity, "sortable": True},
+            {"field": self.entity, "sortable": True, "filter": "agNumberColumnFilter"},
         ]
 
         return (row_data, column_defs)
