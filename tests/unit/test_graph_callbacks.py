@@ -406,21 +406,21 @@ def test_save_note():
     assert_frame_equal(output, expected_output)
 
 
-# TODO add this test again when making a test data set
-# def test_get_get_column_defs():
-#     app_state = get_starting_app_state()
-#
-#     expected_outcome = [
-#         {"field": "time", "sortable": True, "filter": "agNumberColumnFilter"},
-#         {"field": "area (ISO3)", "sortable": True},
-#         {"field": "category (IPCC2006_PRIMAP)", "sortable": True},
-#         {"field": "SourceScen", "sortable": True},
-#         {"field": app_state.entity, "sortable": True, "filter": "agNumberColumnFilter"},
-#     ]
-#
-#     res = app_state.get_column_defs()
-#
-#     assert res == expected_outcome
+@pytest.mark.xfail
+def test_get_get_column_defs():
+    app_state = get_starting_app_state()
+
+    expected_outcome = [
+        {"field": "time", "sortable": True, "filter": "agNumberColumnFilter"},
+        {"field": "area (ISO3)", "sortable": True},
+        {"field": "category (IPCC2006_PRIMAP)", "sortable": True},
+        {"field": "SourceScen", "sortable": True},
+        {"field": app_state.entity, "sortable": True, "filter": "agNumberColumnFilter"},
+    ]
+
+    res = app_state.get_column_defs()
+
+    assert res == expected_outcome
 
 
 def test_get_row_data():

@@ -677,6 +677,7 @@ class AppState:  # type: ignore
 
 
 def get_default_app_starting_state(
+    filename_inp: str,
     current_version: str = "v2.5_final",
     old_version: str = "v2.4.2_final",
     start_values: dict[str, str] = {
@@ -692,6 +693,9 @@ def get_default_app_starting_state(
 
     Parameters
     ----------
+    filename_inp
+        The name of the file to read in.
+
     start_values
         Intitial values for country, category and entity.
 
@@ -712,11 +716,16 @@ def get_default_app_starting_state(
     root_folder = Path(__file__).parent.parent.parent
     data_folder = Path("data")
 
-    print("Reading data set")
-    if test_ds:
+    print(filename_inp)
+
+    if filename_inp:
+        filename = filename_inp
+    elif test_ds:
         filename = "test_ds.nc"
     else:
         filename = f"combined_data_{current_version}_{old_version}.nc"
+
+    print(f"Reading data set {filename}")
     combined_ds = pm.open_dataset(root_folder / data_folder / filename)
     print("Finished reading data set")
 
@@ -1298,6 +1307,7 @@ def save_note(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", help="Port number", required=False)
+    parser.add_argument("-d", help="Dataset to read", required=False)
     args = parser.parse_args()
 
     if not args.p:
@@ -1305,7 +1315,7 @@ if __name__ == "__main__":
     else:
         port = args.p
 
-    APP_STATE = get_default_app_starting_state(test_ds=True)
+    APP_STATE = get_default_app_starting_state(test_ds=True, filename_inp=args.d)
 
     external_stylesheets = [dbc.themes.SIMPLEX]
 
