@@ -649,7 +649,6 @@ class AppState:  # type: ignore
             i["time"] = i["time"].strftime("%Y")
             i[self.entity] = f"{i[self.entity]:.2e}"
 
-        print(row_data)
         return row_data
 
     def get_column_defs(self) -> list[dict[str, object]]:
