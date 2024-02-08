@@ -669,7 +669,7 @@ class AppState:  # type: ignore
                 "field": self.entity,
                 "sortable": True,
                 "filter": "agNumberColumnFilter",
-                "minWidth": 150,
+                "minWidth": 300,
             },
         ]
 
