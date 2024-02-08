@@ -1482,7 +1482,7 @@ if __name__ == "__main__":
                                     id="input-for-notes",
                                     placeholder="Add notes and press save..",
                                     style={"width": "100%"},
-                                    rows=15,  # used to define height of text area
+                                    rows=8,  # used to define height of text area
                                 ),
                                 dbc.Button(
                                     children="Save",
@@ -1499,6 +1499,68 @@ if __name__ == "__main__":
                                         "color": "grey",
                                         "fontSize": 12,
                                     },
+                                ),
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            dbc.Button(
+                                                id="select-AR4GWP100",
+                                                children="AR4GWP100",
+                                                color="light",
+                                                n_clicks=0,
+                                                style={
+                                                    "fontSize": 14,
+                                                    "height": "37px",
+                                                },
+                                            ),
+                                            width=6,
+                                        ),
+                                        dbc.Col(
+                                            dbc.Button(
+                                                id="select-AR5GWP100",
+                                                children="AR5GWP100",
+                                                color="light",
+                                                n_clicks=0,
+                                                style={
+                                                    "fontSize": 14,
+                                                    "height": "37px",
+                                                },
+                                            ),
+                                            width=6,
+                                        ),
+                                    ]
+                                ),
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            dbc.Button(
+                                                id="select-AR6GWP100",
+                                                children="AR46WP100",
+                                                color="light",
+                                                n_clicks=0,
+                                                style={
+                                                    "fontSize": 14,
+                                                    "height": "37px",
+                                                },
+                                            ),
+                                            width=6,
+                                        ),
+                                        dbc.Col(
+                                            dbc.Button(
+                                                id="select-SARGWP100",
+                                                children="SARGWP100",
+                                                active=True,
+                                                class_name="me-md-2",
+                                                color="light",
+                                                n_clicks=0,
+                                                style={
+                                                    "fontSize": 14,
+                                                    "height": "37px",
+                                                },
+                                            ),
+                                            width=4,
+                                        ),
+                                    ]
                                 ),
                             ],
                             gap=1,
