@@ -664,7 +664,13 @@ class AppState:  # type: ignore
             {"field": "area (ISO3)", "sortable": True},
             {"field": "category (IPCC2006_PRIMAP)", "sortable": True},
             {"field": "SourceScen", "sortable": True},
-            {"field": self.entity, "sortable": True, "filter": "agNumberColumnFilter"},
+            {
+                "headerName": f"{self.entity} [{self.ds[self.entity].pint.units}]",
+                "field": self.entity,
+                "sortable": True,
+                "filter": "agNumberColumnFilter",
+                "minWidth": 150,
+            },
         ]
 
         return column_defs
