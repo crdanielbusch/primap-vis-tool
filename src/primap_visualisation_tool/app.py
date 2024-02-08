@@ -614,13 +614,13 @@ class AppState:  # type: ignore
             f" {self.entity}  at {now_str}"
         )
 
-    def get_table_content(self) -> tuple[pd.DataFrame, list[dict[str, object]]]:
+    def get_row_data(self) -> Any:
         """
-        Get the data points for the currently selected app state.
+        Get the content for data table.
 
         Returns
         -------
-            Data to show in table and column specifications
+            Data to show in table.
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
@@ -649,6 +649,17 @@ class AppState:  # type: ignore
             i["time"] = i["time"].strftime("%Y")
             i[self.entity] = f"{i[self.entity]:.2e}"
 
+        print(row_data)
+        return row_data
+
+    def get_column_defs(self) -> list[dict[str, object]]:
+        """
+        Get the column definitions for the data table.
+
+        Returns
+        -------
+            Column definitions.
+        """
         column_defs = [
             {"field": "time", "sortable": True, "filter": "agNumberColumnFilter"},
             {"field": "area (ISO3)", "sortable": True},
@@ -657,7 +668,7 @@ class AppState:  # type: ignore
             {"field": self.entity, "sortable": True, "filter": "agNumberColumnFilter"},
         ]
 
-        return (row_data, column_defs)
+        return column_defs
 
 
 def get_default_app_starting_state(
@@ -1215,7 +1226,7 @@ def update_visible_lines_dict(
 def update_table(
     memory_data: dict[str, int],
     app_state: AppState | None = None,
-) -> tuple[pd.DataFrame, list[dict[str, object]]]:
+) -> tuple[list[dict[str, object]], Any]:
     """
     Update the table when dropdown selection changes.
 
@@ -1234,7 +1245,7 @@ def update_table(
     if app_state is None:
         app_state = APP_STATE
 
-    return app_state.get_table_content()
+    return (app_state.get_row_data(), app_state.get_column_defs())
 
 
 @callback(  # type: ignore
