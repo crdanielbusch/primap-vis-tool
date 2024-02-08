@@ -21,6 +21,7 @@ from primap_visualisation_tool.app import (
     update_entity_graph,
     update_overview_graph,
     update_source_scenario_dropdown,
+    update_table,
 )
 
 dropdowns_with_null_values = pytest.mark.parametrize(
@@ -397,11 +398,36 @@ def test_save_note():
     )
 
     filename = f"{app_state.filename[:-3]}_notes.csv"
-    filename_lock = f"{filename}.lock"
 
     output = pd.read_csv(filename, header=0, dtype=str)
 
     os.remove(filename)
-    os.remove(filename_lock)
 
     assert_frame_equal(output, expected_output)
+
+
+# TODO add this test again when making a test data set
+# def test_get_get_column_defs():
+#     app_state = get_starting_app_state()
+#
+#     expected_outcome = [
+#         {"field": "time", "sortable": True, "filter": "agNumberColumnFilter"},
+#         {"field": "area (ISO3)", "sortable": True},
+#         {"field": "category (IPCC2006_PRIMAP)", "sortable": True},
+#         {"field": "SourceScen", "sortable": True},
+#         {"field": app_state.entity, "sortable": True, "filter": "agNumberColumnFilter"},
+#     ]
+#
+#     res = app_state.get_column_defs()
+#
+#     assert res == expected_outcome
+
+
+def test_get_row_data():
+    app_state = Mock()
+    memory_data = {"not", "used"}
+
+    update_table(memory_data, app_state)
+
+    app_state.get_row_data.assert_called_once_with()
+    app_state.get_column_defs.assert_called_once_with()

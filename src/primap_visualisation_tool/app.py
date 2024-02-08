@@ -614,6 +614,67 @@ class AppState:  # type: ignore
             f" {self.entity}  at {now_str}"
         )
 
+    def get_row_data(self) -> Any:
+        """
+        Get the content for data table.
+
+        Returns
+        -------
+            Data to show in table.
+        """
+        iso_country = self.country_name_iso_mapping[self.country]
+
+        filtered = (
+            self.ds[self.entity]
+            .pr.loc[
+                {
+                    "category": self.category,
+                    "area (ISO3)": iso_country,
+                }
+            ]
+            .squeeze()
+        )
+
+        filtered_pandas = filtered.to_dataframe().reset_index()
+
+        # drop rows where SourceScen is NaN and sort by SourceScen name
+        filtered_pandas = filtered_pandas.dropna(subset=[self.entity]).sort_values(
+            by=["SourceScen"]
+        )
+
+        row_data = filtered_pandas.to_dict("records")
+
+        # change format
+        for i in row_data:
+            i["time"] = i["time"].strftime("%Y")
+            i[self.entity] = f"{i[self.entity]:.2e}"
+
+        return row_data
+
+    def get_column_defs(self) -> list[dict[str, object]]:
+        """
+        Get the column definitions for the data table.
+
+        Returns
+        -------
+            Column definitions.
+        """
+        column_defs = [
+            {"field": "time", "sortable": True, "filter": "agNumberColumnFilter"},
+            {"field": "area (ISO3)", "sortable": True},
+            {"field": "category (IPCC2006_PRIMAP)", "sortable": True},
+            {"field": "SourceScen", "sortable": True},
+            {
+                "headerName": f"{self.entity} [{self.ds[self.entity].pint.units}]",
+                "field": self.entity,
+                "sortable": True,
+                "filter": "agNumberColumnFilter",
+                "minWidth": 300,
+            },
+        ]
+
+        return column_defs
+
 
 def get_default_app_starting_state(
     current_version: str = "v2.5_final",
@@ -1163,6 +1224,36 @@ def update_visible_lines_dict(
 
 
 @callback(  # type: ignore
+    Output("grid", "rowData"),
+    Output("grid", "columnDefs"),
+    Input("memory", "data"),
+)
+def update_table(
+    memory_data: dict[str, int],
+    app_state: AppState | None = None,
+) -> tuple[list[dict[str, object]], Any]:
+    """
+    Update the table when dropdown selection changes.
+
+    Parameters
+    ----------
+    memory_data
+        Data stored in browser memory.
+    app_state
+        Application state. If not provided, we use `APP_STATE` from the global namespace.
+
+    Returns
+    -------
+        Data to show in table and column specifications
+
+    """
+    if app_state is None:
+        app_state = APP_STATE
+
+    return (app_state.get_row_data(), app_state.get_column_defs())
+
+
+@callback(  # type: ignore
     Output(
         "note-saved-div",
         "children",
@@ -1217,9 +1308,6 @@ if __name__ == "__main__":
     APP_STATE = get_default_app_starting_state(test_ds=True)
 
     external_stylesheets = [dbc.themes.SIMPLEX]
-
-    # define table that will show filtered data set
-    table = dag.AgGrid(id="grid")
 
     # Tell dash that we're using bootstrap for our external stylesheets so
     # that the Col and Row classes function properly
@@ -1450,7 +1538,17 @@ if __name__ == "__main__":
                     ),
                 ]
             ),
-            dbc.Row(dbc.Col(table)),
+            dbc.Row(
+                dbc.Col(
+                    dag.AgGrid(
+                        id="grid",
+                        columnDefs=[],
+                        # continually resize columns to fit the width of the grid
+                        columnSize="responsiveSizeToFit",
+                        defaultColDef={"filter": "agTextColumnFilter"},
+                    )
+                )
+            ),
         ],
         style={"max-width": "none", "width": "100%"},
     )
