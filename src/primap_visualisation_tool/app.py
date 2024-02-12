@@ -1305,7 +1305,7 @@ if __name__ == "__main__":
     else:
         port = args.p
 
-    APP_STATE = get_default_app_starting_state(test_ds=True)
+    APP_STATE = get_default_app_starting_state(test_ds=False)
 
     external_stylesheets = [dbc.themes.SIMPLEX]
 
