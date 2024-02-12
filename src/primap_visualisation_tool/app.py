@@ -1342,33 +1342,27 @@ if __name__ == "__main__":
                                     value=APP_STATE.country,
                                     id="dropdown-country",
                                 ),
-                                dbc.Row(
+                                dbc.ButtonGroup(
                                     [
-                                        dbc.Col(
-                                            dbc.Button(
-                                                id="prev_country",
-                                                children="prev country",
-                                                color="light",
-                                                n_clicks=0,
-                                                style={
-                                                    "fontSize": 14,
-                                                    # "height": "37px",
-                                                },
-                                            ),
-                                            width=6,
+                                        dbc.Button(
+                                            id="prev_country",
+                                            children="prev country",
+                                            color="light",
+                                            n_clicks=0,
+                                            style={
+                                                "fontSize": 12,
+                                                "height": "37px",
+                                            },
                                         ),
-                                        dbc.Col(
-                                            dbc.Button(
-                                                id="next_country",
-                                                children="next country",
-                                                color="light",
-                                                n_clicks=0,
-                                                style={
-                                                    "fontSize": 14,
-                                                    "height": "37px",
-                                                },
-                                            ),
-                                            width=6,
+                                        dbc.Button(
+                                            id="next_country",
+                                            children="next country",
+                                            color="light",
+                                            n_clicks=0,
+                                            style={
+                                                "fontSize": 12,
+                                                "height": "37px",
+                                            },
                                         ),
                                     ]
                                 ),
@@ -1385,33 +1379,27 @@ if __name__ == "__main__":
                                     value=APP_STATE.category,
                                     id="dropdown-category",
                                 ),
-                                dbc.Row(
+                                dbc.ButtonGroup(
                                     [
-                                        dbc.Col(
-                                            dbc.Button(
-                                                id="prev_category",
-                                                children="prev category",
-                                                color="light",
-                                                n_clicks=0,
-                                                style={
-                                                    "fontSize": 14,
-                                                    "height": "37px",
-                                                },
-                                            ),
-                                            width=6,
+                                        dbc.Button(
+                                            id="prev_category",
+                                            children="prev category",
+                                            color="light",
+                                            n_clicks=0,
+                                            style={
+                                                "fontSize": 12,
+                                                "height": "37px",
+                                            },
                                         ),
-                                        dbc.Col(
-                                            dbc.Button(
-                                                id="next_category",
-                                                children="next category",
-                                                color="light",
-                                                n_clicks=0,
-                                                style={
-                                                    "fontSize": 14,
-                                                    "height": "37px",
-                                                },
-                                            ),
-                                            width=6,
+                                        dbc.Button(
+                                            id="next_category",
+                                            children="next category",
+                                            color="light",
+                                            n_clicks=0,
+                                            style={
+                                                "fontSize": 12,
+                                                "height": "37px",
+                                            },
                                         ),
                                     ]
                                 ),
@@ -1428,33 +1416,27 @@ if __name__ == "__main__":
                                     value=APP_STATE.entity,
                                     id="dropdown-entity",
                                 ),
-                                dbc.Row(
+                                dbc.ButtonGroup(
                                     [
-                                        dbc.Col(
-                                            dbc.Button(
-                                                id="prev_entity",
-                                                children="prev entity",
-                                                color="light",
-                                                n_clicks=0,
-                                                style={
-                                                    "fontSize": 14,
-                                                    "height": "37px",
-                                                },
-                                            ),
-                                            width=6,
+                                        dbc.Button(
+                                            id="prev_entity",
+                                            children="prev entity",
+                                            color="light",
+                                            n_clicks=0,
+                                            style={
+                                                "fontSize": 12,
+                                                "height": "37px",
+                                            },
                                         ),
-                                        dbc.Col(
-                                            dbc.Button(
-                                                id="next_entity",
-                                                children="next entity",
-                                                color="light",
-                                                n_clicks=0,
-                                                style={
-                                                    "fontSize": 14,
-                                                    "height": "37px",
-                                                },
-                                            ),
-                                            width=6,
+                                        dbc.Button(
+                                            id="next_entity",
+                                            children="next entity",
+                                            color="light",
+                                            n_clicks=0,
+                                            style={
+                                                "fontSize": 12,
+                                                "height": "37px",
+                                            },
                                         ),
                                     ]
                                 ),
@@ -1495,7 +1477,7 @@ if __name__ == "__main__":
                                     id="save_button",
                                     n_clicks=0,
                                     color="light",
-                                    style={"fontsize": "14", "height": "37px"},
+                                    style={"fontsize": 12, "height": "37px"},
                                 ),
                                 html.H4(
                                     id="note-saved-div",
@@ -1515,7 +1497,7 @@ if __name__ == "__main__":
                                                 color="light",
                                                 n_clicks=0,
                                                 style={
-                                                    "fontSize": 14,
+                                                    "fontSize": 12,
                                                     "height": "37px",
                                                 },
                                             ),
@@ -1528,7 +1510,7 @@ if __name__ == "__main__":
                                                 color="light",
                                                 n_clicks=0,
                                                 style={
-                                                    "fontSize": 14,
+                                                    "fontSize": 12,
                                                     "height": "37px",
                                                 },
                                             ),
@@ -1545,7 +1527,7 @@ if __name__ == "__main__":
                                                 color="light",
                                                 n_clicks=0,
                                                 style={
-                                                    "fontSize": 14,
+                                                    "fontSize": 12,
                                                     "height": "37px",
                                                 },
                                             ),
@@ -1560,7 +1542,7 @@ if __name__ == "__main__":
                                                 color="light",
                                                 n_clicks=0,
                                                 style={
-                                                    "fontSize": 14,
+                                                    "fontSize": 12,
                                                     "height": "37px",
                                                 },
                                             ),
