@@ -65,7 +65,7 @@ The file should be saved in the `data` directory.
 To run the app, run the following command in the root directory
 
 ```bash
-poetry run python app.py
+poetry run python src/primap_visualisation_tool/app.py
 ```
 
 The same command is executed with
@@ -74,6 +74,11 @@ The same command is executed with
 make run-app
 ```
 
+Use `-p` to specifiy the port number and `-f`to select a file in the `data`directory.
+
+```bash
+poetry run python src/primap_visualisation_tool/app.py -p <my-port-number> -f <my-file-name>
+```
 
 
 <!--- sec-end-installation -->
