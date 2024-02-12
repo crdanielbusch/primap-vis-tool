@@ -676,28 +676,23 @@ class AppState:  # type: ignore
         return column_defs
 
 
-def get_default_app_starting_state(
-    filename_inp: str,
+def get_filename(
+    user_input: str,
+    test_ds: bool = False,
     current_version: str = "v2.5_final",
     old_version: str = "v2.4.2_final",
-    start_values: dict[str, str] = {
-        "country": "EARTH",
-        "category": "M.0.EL",
-        "entity": "KYOTOGHG (AR6GWP100)",
-        "source_scenario": "PRIMAP-hist_v2.5_final_nr, HISTCR",
-    },
-    test_ds: bool = False,
-) -> AppState:
+) -> str:
     """
-    Get default starting state for the application
+    Get the filename of the dataset.
 
     Parameters
     ----------
-    filename_inp
-        The name of the file to read in.
+    user_input
+        The filename from the command line.
 
-    start_values
-        Intitial values for country, category and entity.
+    test_ds
+        Should we load a test dataset instead? This is much
+        faster to load.
 
     current_version
         Current version of PRIMAP-hist to inspect
@@ -705,9 +700,37 @@ def get_default_app_starting_state(
     old_version
         Previous version of PRIMAP-hist to compare against
 
-    test_ds
-        Should we load a test dataset instead? This is much
-        faster to load.
+    Returns
+    -------
+        Filename. The name of the data set to read in.
+    """
+    if user_input:
+        return user_input
+    elif test_ds:
+        return "test_ds.nc"
+    else:
+        return f"combined_data_{current_version}_{old_version}.nc"
+
+
+def get_default_app_starting_state(
+    filename: str,
+    start_values: dict[str, str] = {
+        "country": "EARTH",
+        "category": "M.0.EL",
+        "entity": "KYOTOGHG (AR6GWP100)",
+        "source_scenario": "PRIMAP-hist_v2.5_final_nr, HISTCR",
+    },
+) -> AppState:
+    """
+    Get default starting state for the application
+
+    Parameters
+    ----------
+    filename
+        The name of the file to read in.
+
+    start_values
+        Intitial values for country, category and entity.
 
     Returns
     -------
@@ -715,15 +738,6 @@ def get_default_app_starting_state(
     """
     root_folder = Path(__file__).parent.parent.parent
     data_folder = Path("data")
-
-    print(filename_inp)
-
-    if filename_inp:
-        filename = filename_inp
-    elif test_ds:
-        filename = "test_ds.nc"
-    else:
-        filename = f"combined_data_{current_version}_{old_version}.nc"
 
     print(f"Reading data set {filename}")
     combined_ds = pm.open_dataset(root_folder / data_folder / filename)
@@ -1306,16 +1320,14 @@ def save_note(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-p", help="Port number", required=False)
-    parser.add_argument("-d", help="Dataset to read", required=False)
+    parser.add_argument("-p", help="Port number", required=False, default=8050)
+    parser.add_argument("-f", help="Filename of data set", required=False)
     args = parser.parse_args()
 
-    if not args.p:
-        port = 8050
-    else:
-        port = args.p
+    port = args.p
+    filename = get_filename(user_input=args.f, test_ds=True)
 
-    APP_STATE = get_default_app_starting_state(test_ds=True, filename_inp=args.d)
+    APP_STATE = get_default_app_starting_state(filename=filename)
 
     external_stylesheets = [dbc.themes.SIMPLEX]
 
