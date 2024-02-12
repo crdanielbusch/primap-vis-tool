@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import warnings
 from collections.abc import Sized
 from datetime import datetime
 from pathlib import Path
@@ -163,16 +164,17 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        filtered = (
-            self.ds[self.entity]
-            .pr.loc[
-                {
-                    "category": self.category,
-                    "area (ISO3)": iso_country,
-                }
-            ]
-            .squeeze()
-        )
+        with warnings.catch_warnings(action="ignore"):
+            filtered = (
+                self.ds[self.entity]
+                .pr.loc[
+                    {
+                        "category": self.category,
+                        "area (ISO3)": iso_country,
+                    }
+                ]
+                .squeeze()
+            )
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
@@ -359,16 +361,17 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        filtered = (
-            self.ds[self.entity]
-            .pr.loc[
-                {
-                    "category": self.category,
-                    "area (ISO3)": iso_country,
-                }
-            ]
-            .squeeze()
-        )
+        with warnings.catch_warnings(action="ignore"):
+            filtered = (
+                self.ds[self.entity]
+                .pr.loc[
+                    {
+                        "category": self.category,
+                        "area (ISO3)": iso_country,
+                    }
+                ]
+                .squeeze()
+            )
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
@@ -421,17 +424,18 @@ class AppState:  # type: ignore
 
         categories_plot = select_cat_children(self.category, self.category_options)
 
-        filtered = (
-            self.ds[self.entity]
-            .pr.loc[
-                {
-                    "category": categories_plot,
-                    "area (ISO3)": iso_country,
-                    "SourceScen": self.source_scenario,
-                }
-            ]
-            .squeeze()
-        )
+        with warnings.catch_warnings(action="ignore"):
+            filtered = (
+                self.ds[self.entity]
+                .pr.loc[
+                    {
+                        "category": categories_plot,
+                        "area (ISO3)": iso_country,
+                        "SourceScen": self.source_scenario,
+                    }
+                ]
+                .squeeze()
+            )
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
@@ -480,13 +484,14 @@ class AppState:  # type: ignore
             entities_to_plot = [*entities_to_plot, self.entity]
             drop_parent = True
 
-        filtered = self.ds[entities_to_plot].pr.loc[
-            {
-                "category": [self.category],
-                "area (ISO3)": [iso_country],
-                "SourceScen": [self.source_scenario],
-            }
-        ]
+        with warnings.catch_warnings(action="ignore"):
+            filtered = self.ds[entities_to_plot].pr.loc[
+                {
+                    "category": [self.category],
+                    "area (ISO3)": [iso_country],
+                    "SourceScen": [self.source_scenario],
+                }
+            ]
 
         filtered = apply_gwp(filtered, self.entity)
 
@@ -624,16 +629,17 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        filtered = (
-            self.ds[self.entity]
-            .pr.loc[
-                {
-                    "category": self.category,
-                    "area (ISO3)": iso_country,
-                }
-            ]
-            .squeeze()
-        )
+        with warnings.catch_warnings(action="ignore"):
+            filtered = (
+                self.ds[self.entity]
+                .pr.loc[
+                    {
+                        "category": self.category,
+                        "area (ISO3)": iso_country,
+                    }
+                ]
+                .squeeze()
+            )
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
@@ -1305,7 +1311,7 @@ if __name__ == "__main__":
     else:
         port = args.p
 
-    APP_STATE = get_default_app_starting_state(test_ds=False)
+    APP_STATE = get_default_app_starting_state(test_ds=True)
 
     external_stylesheets = [dbc.themes.SIMPLEX]
 
@@ -1346,7 +1352,7 @@ if __name__ == "__main__":
                                                 n_clicks=0,
                                                 style={
                                                     "fontSize": 14,
-                                                    "height": "37px",
+                                                    # "height": "37px",
                                                 },
                                             ),
                                             width=6,
