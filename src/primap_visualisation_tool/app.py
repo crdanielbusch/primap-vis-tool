@@ -677,10 +677,11 @@ class AppState:  # type: ignore
 
 
 def get_filename(
-    user_input: str,
+    user_input: str | None,
     test_ds: bool = False,
     current_version: str = "v2.5_final",
     old_version: str = "v2.4.2_final",
+    test_ds_name: str = "test_ds.nc",
 ) -> str:
     """
     Get the filename of the dataset.
@@ -707,7 +708,7 @@ def get_filename(
     if user_input:
         return user_input
     elif test_ds:
-        return "test_ds.nc"
+        return test_ds_name
     else:
         return f"combined_data_{current_version}_{old_version}.nc"
 
