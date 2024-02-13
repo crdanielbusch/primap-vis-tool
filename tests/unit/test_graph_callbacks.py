@@ -93,6 +93,7 @@ def get_starting_app_state(
         entity_graph=entity_graph,
         filename="test_filename",
         rangeslider_selection=["not", "used"],
+        present_index_cols=["not", "used"],
     )
 
     return app_state
