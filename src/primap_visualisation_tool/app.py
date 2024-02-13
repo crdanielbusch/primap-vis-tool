@@ -1337,7 +1337,7 @@ def save_note(
 
     app_state.save_note_to_csv(text_input)
 
-    return (app_state.get_notification(), "")
+    return (app_state.get_notification(), text_input)
 
 
 if __name__ == "__main__":
