@@ -391,7 +391,6 @@ class AppState:  # type: ignore
             )
 
         for source_scenario in source_scenario_sorted:
-            print(source_scenario)
             # check if layout is defined
             if source_scenario in LINES_LAYOUT:
                 line_layout = LINES_LAYOUT[source_scenario]

@@ -53,15 +53,25 @@ LINES_LAYOUT: dict[str, dict[str, str]] = {
     "FAOSTAT 2022, HISTORY": {"color": "rgb(100,0,255)", "dash": "solid"},
     "Houghton, HISTORY": {"color": "rgb(150,0,255)", "dash": "solid"},
     "MATCH, HISTORY": {"color": "rgb(200,0,255)", "dash": "solid"},
-    "PRIMAP-hist_v2.4.2_final_nr, HISTCR": {"color": "rgb(0, 0, 0)", "dash": "dot"},
+    "PRIMAP-hist_v2.4.2_final_nr, HISTCR": {
+        "color": "rgb(0, 0, 0)",
+        "dash": "dot",
+        "width": 3,
+    },
     "PRIMAP-hist_v2.4.2_final_nr, HISTTP": {
         "color": "rgb(166, 166, 166)",
         "dash": "dot",
+        "width": 3,
     },
-    "PRIMAP-hist_v2.5_final_nr, HISTCR": {"color": "rgb(0, 0, 0)", "dash": "solid"},
+    "PRIMAP-hist_v2.5_final_nr, HISTCR": {
+        "color": "rgb(0, 0, 0)",
+        "dash": "solid",
+        "width": 3,
+    },
     "PRIMAP-hist_v2.5_final_nr, HISTTP": {
         "color": "rgb(166, 166, 166)",
         "dash": "solid",
+        "width": 3,
     },
     "RCP hist, HISTORY": {"color": "rgb(50,50,255)", "dash": "solid"},
     "UNFCCC NAI, 231015": {"color": "rgb(50,200,255)", "dash": "solid"},
