@@ -383,7 +383,7 @@ class AppState:  # type: ignore
         fig = go.Figure()
 
         source_scenario_sorted = list(self.source_scenario_options)
-        # move source scenarios to the front of the list
+        # move primap source scenarios to the front of the list
         # in the same order as specified in LINES_ORDER
         for i in [j for j in LINES_ORDER if j in self.source_scenario_options]:
             source_scenario_sorted.insert(
