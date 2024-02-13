@@ -746,14 +746,8 @@ def get_default_app_starting_state(
     root_folder = Path(__file__).parent.parent.parent
     data_folder = Path("data")
 
-
     present_index_cols = index_cols
 
-    if test_ds:
-        filename = "test_ds.nc"
-    else:
-        filename = f"combined_data_{current_version}_{old_version}.nc"
-        
     print(f"Reading data set {filename}")
     combined_ds = pm.open_dataset(root_folder / data_folder / filename)
     print("Finished reading data set")
