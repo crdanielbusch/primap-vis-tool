@@ -366,18 +366,43 @@ def test_update_rangeslider_selection():
     assert app_state.rangeslider_selection == layout_data["xaxis.range"]
 
 
-def test_save_note_empty_text_area():
+def test_save_note_return_nothing_when_empty_text_area():
     save_button_clicks = 0  # not needed
     app_state = Mock()
     text_input = None
+    memory_data = ["not", "needed"]
 
-    res = save_note(save_button_clicks, text_input, app_state)
+    res = save_note(save_button_clicks, memory_data, text_input, app_state)
 
-    assert not res
+    assert res == ("", "")
+
+
+def test_save_note_clear_when_change_state():
+    save_button_clicks = 0  # not needed
+    app_state = Mock()
+    text_input = "Some text"
+    memory_data = ["not", "needed"]
+
+    def run_callback():
+        context_value.set(
+            AttributeDict(**{"triggered_inputs": [{"prop_id": "memory.data"}]})
+        )
+        return save_note(
+            save_button_clicks=save_button_clicks,
+            memory_data=memory_data,
+            text_input=text_input,
+            app_state=app_state,
+        )
+
+    ctx = copy_context()
+    res = ctx.run(run_callback)
+
+    assert res == ("", "")
 
 
 def test_save_note():
     save_button_clicks = 0  # not needed
+    memory_data = ["not", "needed"]
     app_state = get_starting_app_state()
 
     # input from user
@@ -385,7 +410,9 @@ def test_save_note():
 
     expected_output = pd.DataFrame(
         {
-            "country": app_state.country_options[app_state.country_index],
+            "country": app_state.country_name_iso_mapping[
+                app_state.country_options[app_state.country_index]
+            ],
             "category": app_state.category_options[app_state.category_index],
             "entity": app_state.entity_options[app_state.entity_index],
             "note": "any text",
@@ -393,11 +420,19 @@ def test_save_note():
         index=[0],
     )
 
-    save_note(
-        save_button_clicks=save_button_clicks,
-        text_input=text_input,
-        app_state=app_state,
-    )
+    def run_callback():
+        context_value.set(
+            AttributeDict(**{"triggered_inputs": [{"prop_id": "save_button.n_clicks"}]})
+        )
+        return save_note(
+            save_button_clicks=save_button_clicks,
+            memory_data=memory_data,
+            text_input=text_input,
+            app_state=app_state,
+        )
+
+    ctx = copy_context()
+    ctx.run(run_callback)
 
     filename = f"{app_state.filename[:-3]}_notes.csv"
 
