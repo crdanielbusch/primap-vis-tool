@@ -28,6 +28,8 @@ from filelock import FileLock
 from primap_visualisation_tool.definitions import LINES_LAYOUT, SUBENTITIES, index_cols
 from primap_visualisation_tool.functions import apply_gwp, select_cat_children
 
+warnings.filterwarnings("error")
+
 
 def get_country_options(inds: xr.Dataset) -> dict[str, str]:
     """
@@ -501,9 +503,10 @@ class AppState:  # type: ignore
         if drop_parent:
             filtered = filtered.drop_vars(self.entity)
 
-        stacked = filtered.pr.to_interchange_format().melt(
-            id_vars=index_cols, var_name="time", value_name="value"
-        )
+        with warnings.catch_warnings(action="ignore"):
+            stacked = filtered.pr.to_interchange_format().melt(
+                id_vars=index_cols, var_name="time", value_name="value"
+            )
 
         stacked["time"] = stacked["time"].apply(pd.to_datetime)
 
@@ -1603,4 +1606,5 @@ if __name__ == "__main__":
         style={"max-width": "none", "width": "100%"},
     )
 
-    app.run(debug=True, port=port)
+    with warnings.catch_warnings(action="ignore"):
+        app.run(debug=True, port=port)
