@@ -28,8 +28,6 @@ from filelock import FileLock
 from primap_visualisation_tool.definitions import LINES_LAYOUT, SUBENTITIES, index_cols
 from primap_visualisation_tool.functions import apply_gwp, select_cat_children
 
-warnings.filterwarnings("error")
-
 
 def get_country_options(inds: xr.Dataset) -> dict[str, str]:
     """
