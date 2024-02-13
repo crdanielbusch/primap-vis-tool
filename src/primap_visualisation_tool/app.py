@@ -103,6 +103,9 @@ class AppState:  # type: ignore
     filename: str
     """The name of the data set."""
 
+    present_index_cols: list[str]
+    """index cols that are actually present in the loaded dataset"""
+
     overview_graph: go.Figure | None = None  # type: ignore
     """Main graph"""
 
@@ -175,7 +178,9 @@ class AppState:  # type: ignore
         )
 
         filtered_pandas = filtered.to_dataframe().reset_index()
+        print(filtered_pandas["SourceScen"].unique())
 
+        # TODO there's a bug in the following lines which lists v2.4.2 as null
         null_source_scenario_options = filtered_pandas.groupby(by="SourceScen")[
             self.entity
         ].apply(lambda x: x.isna().all())
@@ -183,8 +188,9 @@ class AppState:  # type: ignore
         null_source_scenario_options = null_source_scenario_options[
             list(null_source_scenario_options)
         ].index
-
+        print(f"null: {null_source_scenario_options}")
         original_source_scenario_options = tuple(self.ds["SourceScen"].to_numpy())
+        print(f"original: {original_source_scenario_options}")
 
         new_source_scenario_options = [
             i
@@ -497,7 +503,7 @@ class AppState:  # type: ignore
             filtered = filtered.drop_vars(self.entity)
 
         stacked = filtered.pr.to_interchange_format().melt(
-            id_vars=index_cols, var_name="time", value_name="value"
+            id_vars=self.present_index_cols, var_name="time", value_name="value"
         )
 
         stacked["time"] = stacked["time"].apply(pd.to_datetime)
@@ -740,11 +746,19 @@ def get_default_app_starting_state(
     root_folder = Path(__file__).parent.parent.parent
     data_folder = Path("data")
 
+    present_index_cols = index_cols
+
     print(f"Reading data set {filename}")
     combined_ds = pm.open_dataset(root_folder / data_folder / filename)
     print("Finished reading data set")
 
-    combined_ds = combined_ds.drop_vars("provenance")
+    if "provenance" in combined_ds.coords:
+        combined_ds = combined_ds.drop_vars("provenance")
+    else:
+        present_index_cols.remove("provenance")
+    # drop_vars only drops the coord not the dimension.
+    # TODO: remove provenance completely from index_cols it's just kept here to run
+    #  with the legacy datasets which contain provenance ("measured" only)
 
     country_name_iso_mapping = get_country_options(combined_ds)
     country_dropdown_options = tuple(sorted(country_name_iso_mapping.keys()))
@@ -754,6 +768,7 @@ def get_default_app_starting_state(
     entity_options = tuple(i for i in combined_ds.data_vars)
 
     source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
+    print("The following sources are present in the dataset:")
 
     source_scenario_visible = {
         k: v
@@ -783,6 +798,7 @@ def get_default_app_starting_state(
         rangeslider_selection=rangeslider_selection,
         ds=combined_ds,
         filename=filename,
+        present_index_cols=present_index_cols,
     )
 
     return app_state
