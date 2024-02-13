@@ -24,7 +24,12 @@ from attrs import define
 from dash import Dash, Input, Output, State, callback, ctx, dcc, html  # type: ignore
 from filelock import FileLock
 
-from primap_visualisation_tool.definitions import LINES_LAYOUT, SUBENTITIES, index_cols
+from primap_visualisation_tool.definitions import (
+    LINES_LAYOUT,
+    LINES_ORDER,
+    SUBENTITIES,
+    index_cols,
+)
 from primap_visualisation_tool.functions import apply_gwp, select_cat_children
 
 
@@ -377,7 +382,16 @@ class AppState:  # type: ignore
 
         fig = go.Figure()
 
-        for source_scenario in self.source_scenario_options:
+        source_scenario_sorted = list(self.source_scenario_options)
+        # move source scenarios to the front of the list
+        # in the same order as specified in LINES_ORDER
+        for i in [j for j in LINES_ORDER if j in self.source_scenario_options]:
+            source_scenario_sorted.insert(
+                0, source_scenario_sorted.pop(source_scenario_sorted.index(i))
+            )
+
+        for source_scenario in source_scenario_sorted:
+            print(source_scenario)
             # check if layout is defined
             if source_scenario in LINES_LAYOUT:
                 line_layout = LINES_LAYOUT[source_scenario]

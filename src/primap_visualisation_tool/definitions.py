@@ -66,3 +66,10 @@ LINES_LAYOUT: dict[str, dict[str, str]] = {
     "RCP hist, HISTORY": {"color": "rgb(50,50,255)", "dash": "solid"},
     "UNFCCC NAI, 231015": {"color": "rgb(50,200,255)", "dash": "solid"},
 }
+
+LINES_ORDER = (
+    "PRIMAP-hist_v2.5_final_nr, HISTCR",
+    "PRIMAP-hist_v2.5_final_nr, HISTTP",
+    "PRIMAP-hist_v2.4.2_final_nr, HISTCR",
+    "PRIMAP-hist_v2.4.2_final_nr, HISTTP",
+)
