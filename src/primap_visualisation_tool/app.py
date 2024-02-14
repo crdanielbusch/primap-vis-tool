@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import warnings
 from collections.abc import Sized
 from datetime import datetime
 from pathlib import Path
@@ -171,16 +172,17 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        filtered = (
-            self.ds[self.entity]
-            .pr.loc[
-                {
-                    "category": self.category,
-                    "area (ISO3)": iso_country,
-                }
-            ]
-            .squeeze()
-        )
+        with warnings.catch_warnings(action="ignore"):  # type: ignore
+            filtered = (
+                self.ds[self.entity]
+                .pr.loc[
+                    {
+                        "category": self.category,
+                        "area (ISO3)": iso_country,
+                    }
+                ]
+                .squeeze()
+            )
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
@@ -367,16 +369,17 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        filtered = (
-            self.ds[self.entity]
-            .pr.loc[
-                {
-                    "category": self.category,
-                    "area (ISO3)": iso_country,
-                }
-            ]
-            .squeeze()
-        )
+        with warnings.catch_warnings(action="ignore"):  # type: ignore
+            filtered = (
+                self.ds[self.entity]
+                .pr.loc[
+                    {
+                        "category": self.category,
+                        "area (ISO3)": iso_country,
+                    }
+                ]
+                .squeeze()
+            )
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
@@ -439,17 +442,18 @@ class AppState:  # type: ignore
 
         categories_plot = select_cat_children(self.category, self.category_options)
 
-        filtered = (
-            self.ds[self.entity]
-            .pr.loc[
-                {
-                    "category": categories_plot,
-                    "area (ISO3)": iso_country,
-                    "SourceScen": self.source_scenario,
-                }
-            ]
-            .squeeze()
-        )
+        with warnings.catch_warnings(action="ignore"):  # type: ignore
+            filtered = (
+                self.ds[self.entity]
+                .pr.loc[
+                    {
+                        "category": categories_plot,
+                        "area (ISO3)": iso_country,
+                        "SourceScen": self.source_scenario,
+                    }
+                ]
+                .squeeze()
+            )
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
@@ -498,13 +502,14 @@ class AppState:  # type: ignore
             entities_to_plot = [*entities_to_plot, self.entity]
             drop_parent = True
 
-        filtered = self.ds[entities_to_plot].pr.loc[
-            {
-                "category": [self.category],
-                "area (ISO3)": [iso_country],
-                "SourceScen": [self.source_scenario],
-            }
-        ]
+        with warnings.catch_warnings(action="ignore"):  # type: ignore
+            filtered = self.ds[entities_to_plot].pr.loc[
+                {
+                    "category": [self.category],
+                    "area (ISO3)": [iso_country],
+                    "SourceScen": [self.source_scenario],
+                }
+            ]
 
         filtered = apply_gwp(filtered, self.entity)
 
@@ -514,9 +519,10 @@ class AppState:  # type: ignore
         if drop_parent:
             filtered = filtered.drop_vars(self.entity)
 
-        stacked = filtered.pr.to_interchange_format().melt(
-            id_vars=self.present_index_cols, var_name="time", value_name="value"
-        )
+        with warnings.catch_warnings(action="ignore"):  # type: ignore
+            stacked = filtered.pr.to_interchange_format().melt(
+                id_vars=index_cols, var_name="time", value_name="value"
+            )
 
         stacked["time"] = stacked["time"].apply(pd.to_datetime)
 
@@ -642,16 +648,17 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        filtered = (
-            self.ds[self.entity]
-            .pr.loc[
-                {
-                    "category": self.category,
-                    "area (ISO3)": iso_country,
-                }
-            ]
-            .squeeze()
-        )
+        with warnings.catch_warnings(action="ignore"):  # type: ignore
+            filtered = (
+                self.ds[self.entity]
+                .pr.loc[
+                    {
+                        "category": self.category,
+                        "area (ISO3)": iso_country,
+                    }
+                ]
+                .squeeze()
+            )
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
@@ -1401,33 +1408,27 @@ if __name__ == "__main__":
                                     value=APP_STATE.country,
                                     id="dropdown-country",
                                 ),
-                                dbc.Row(
+                                dbc.ButtonGroup(
                                     [
-                                        dbc.Col(
-                                            dbc.Button(
-                                                id="prev_country",
-                                                children="prev country",
-                                                color="light",
-                                                n_clicks=0,
-                                                style={
-                                                    "fontSize": 14,
-                                                    "height": "37px",
-                                                },
-                                            ),
-                                            width=6,
+                                        dbc.Button(
+                                            id="prev_country",
+                                            children="prev country",
+                                            color="light",
+                                            n_clicks=0,
+                                            style={
+                                                "fontSize": 12,
+                                                "height": "37px",
+                                            },
                                         ),
-                                        dbc.Col(
-                                            dbc.Button(
-                                                id="next_country",
-                                                children="next country",
-                                                color="light",
-                                                n_clicks=0,
-                                                style={
-                                                    "fontSize": 14,
-                                                    "height": "37px",
-                                                },
-                                            ),
-                                            width=6,
+                                        dbc.Button(
+                                            id="next_country",
+                                            children="next country",
+                                            color="light",
+                                            n_clicks=0,
+                                            style={
+                                                "fontSize": 12,
+                                                "height": "37px",
+                                            },
                                         ),
                                     ]
                                 ),
@@ -1444,33 +1445,27 @@ if __name__ == "__main__":
                                     value=APP_STATE.category,
                                     id="dropdown-category",
                                 ),
-                                dbc.Row(
+                                dbc.ButtonGroup(
                                     [
-                                        dbc.Col(
-                                            dbc.Button(
-                                                id="prev_category",
-                                                children="prev category",
-                                                color="light",
-                                                n_clicks=0,
-                                                style={
-                                                    "fontSize": 14,
-                                                    "height": "37px",
-                                                },
-                                            ),
-                                            width=6,
+                                        dbc.Button(
+                                            id="prev_category",
+                                            children="prev category",
+                                            color="light",
+                                            n_clicks=0,
+                                            style={
+                                                "fontSize": 12,
+                                                "height": "37px",
+                                            },
                                         ),
-                                        dbc.Col(
-                                            dbc.Button(
-                                                id="next_category",
-                                                children="next category",
-                                                color="light",
-                                                n_clicks=0,
-                                                style={
-                                                    "fontSize": 14,
-                                                    "height": "37px",
-                                                },
-                                            ),
-                                            width=6,
+                                        dbc.Button(
+                                            id="next_category",
+                                            children="next category",
+                                            color="light",
+                                            n_clicks=0,
+                                            style={
+                                                "fontSize": 12,
+                                                "height": "37px",
+                                            },
                                         ),
                                     ]
                                 ),
@@ -1487,33 +1482,27 @@ if __name__ == "__main__":
                                     value=APP_STATE.entity,
                                     id="dropdown-entity",
                                 ),
-                                dbc.Row(
+                                dbc.ButtonGroup(
                                     [
-                                        dbc.Col(
-                                            dbc.Button(
-                                                id="prev_entity",
-                                                children="prev entity",
-                                                color="light",
-                                                n_clicks=0,
-                                                style={
-                                                    "fontSize": 14,
-                                                    "height": "37px",
-                                                },
-                                            ),
-                                            width=6,
+                                        dbc.Button(
+                                            id="prev_entity",
+                                            children="prev entity",
+                                            color="light",
+                                            n_clicks=0,
+                                            style={
+                                                "fontSize": 12,
+                                                "height": "37px",
+                                            },
                                         ),
-                                        dbc.Col(
-                                            dbc.Button(
-                                                id="next_entity",
-                                                children="next entity",
-                                                color="light",
-                                                n_clicks=0,
-                                                style={
-                                                    "fontSize": 14,
-                                                    "height": "37px",
-                                                },
-                                            ),
-                                            width=6,
+                                        dbc.Button(
+                                            id="next_entity",
+                                            children="next entity",
+                                            color="light",
+                                            n_clicks=0,
+                                            style={
+                                                "fontSize": 12,
+                                                "height": "37px",
+                                            },
                                         ),
                                     ]
                                 ),
@@ -1547,14 +1536,14 @@ if __name__ == "__main__":
                                     id="input-for-notes",
                                     placeholder="Add notes and press save..",
                                     style={"width": "100%"},
-                                    rows=15,  # used to define height of text area
+                                    rows=8,  # used to define height of text area
                                 ),
                                 dbc.Button(
                                     children="Save",
                                     id="save_button",
                                     n_clicks=0,
                                     color="light",
-                                    style={"fontsize": "14", "height": "37px"},
+                                    style={"fontsize": 12, "height": "37px"},
                                 ),
                                 html.H4(
                                     id="note-saved-div",
@@ -1564,6 +1553,68 @@ if __name__ == "__main__":
                                         "color": "grey",
                                         "fontSize": 12,
                                     },
+                                ),
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            dbc.Button(
+                                                id="select-AR4GWP100",
+                                                children="AR4GWP100",
+                                                color="light",
+                                                n_clicks=0,
+                                                style={
+                                                    "fontSize": 12,
+                                                    "height": "37px",
+                                                },
+                                            ),
+                                            width=6,
+                                        ),
+                                        dbc.Col(
+                                            dbc.Button(
+                                                id="select-AR5GWP100",
+                                                children="AR5GWP100",
+                                                color="light",
+                                                n_clicks=0,
+                                                style={
+                                                    "fontSize": 12,
+                                                    "height": "37px",
+                                                },
+                                            ),
+                                            width=6,
+                                        ),
+                                    ]
+                                ),
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            dbc.Button(
+                                                id="select-AR6GWP100",
+                                                children="AR46WP100",
+                                                color="light",
+                                                n_clicks=0,
+                                                style={
+                                                    "fontSize": 12,
+                                                    "height": "37px",
+                                                },
+                                            ),
+                                            width=6,
+                                        ),
+                                        dbc.Col(
+                                            dbc.Button(
+                                                id="select-SARGWP100",
+                                                children="SARGWP100",
+                                                active=True,
+                                                class_name="me-md-2",
+                                                color="light",
+                                                n_clicks=0,
+                                                style={
+                                                    "fontSize": 12,
+                                                    "height": "37px",
+                                                },
+                                            ),
+                                            width=4,
+                                        ),
+                                    ]
                                 ),
                             ],
                             gap=1,
@@ -1618,4 +1669,5 @@ if __name__ == "__main__":
         style={"max-width": "none", "width": "100%"},
     )
 
-    app.run(debug=True, port=port)
+    with warnings.catch_warnings(action="ignore"):  # type: ignore
+        app.run(debug=True, port=port)
