@@ -167,7 +167,7 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        with warnings.catch_warnings(action="ignore"):
+        with warnings.catch_warnings(action="ignore"):  # type: ignore
             filtered = (
                 self.ds[self.entity]
                 .pr.loc[
@@ -364,7 +364,7 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        with warnings.catch_warnings(action="ignore"):
+        with warnings.catch_warnings(action="ignore"):  # type: ignore
             filtered = (
                 self.ds[self.entity]
                 .pr.loc[
@@ -427,7 +427,7 @@ class AppState:  # type: ignore
 
         categories_plot = select_cat_children(self.category, self.category_options)
 
-        with warnings.catch_warnings(action="ignore"):
+        with warnings.catch_warnings(action="ignore"):  # type: ignore
             filtered = (
                 self.ds[self.entity]
                 .pr.loc[
@@ -487,7 +487,7 @@ class AppState:  # type: ignore
             entities_to_plot = [*entities_to_plot, self.entity]
             drop_parent = True
 
-        with warnings.catch_warnings(action="ignore"):
+        with warnings.catch_warnings(action="ignore"):  # type: ignore
             filtered = self.ds[entities_to_plot].pr.loc[
                 {
                     "category": [self.category],
@@ -504,7 +504,7 @@ class AppState:  # type: ignore
         if drop_parent:
             filtered = filtered.drop_vars(self.entity)
 
-        with warnings.catch_warnings(action="ignore"):
+        with warnings.catch_warnings(action="ignore"):  # type: ignore
             stacked = filtered.pr.to_interchange_format().melt(
                 id_vars=index_cols, var_name="time", value_name="value"
             )
@@ -633,7 +633,7 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        with warnings.catch_warnings(action="ignore"):
+        with warnings.catch_warnings(action="ignore"):  # type: ignore
             filtered = (
                 self.ds[self.entity]
                 .pr.loc[
@@ -1654,5 +1654,5 @@ if __name__ == "__main__":
         style={"max-width": "none", "width": "100%"},
     )
 
-    with warnings.catch_warnings(action="ignore"):
+    with warnings.catch_warnings(action="ignore"):  # type: ignore
         app.run(debug=True, port=port)
