@@ -16,6 +16,7 @@ from pandas.testing import assert_frame_equal
 
 from primap_visualisation_tool.app import (
     AppState,
+    get_filename,
     save_note,
     update_category_graph,
     update_entity_graph,
@@ -92,6 +93,7 @@ def get_starting_app_state(
         entity_graph=entity_graph,
         filename="test_filename",
         rangeslider_selection=["not", "used"],
+        present_index_cols=["not", "used"],
     )
 
     return app_state
@@ -364,18 +366,43 @@ def test_update_rangeslider_selection():
     assert app_state.rangeslider_selection == layout_data["xaxis.range"]
 
 
-def test_save_note_empty_text_area():
+def test_save_note_return_nothing_when_empty_text_area():
     save_button_clicks = 0  # not needed
     app_state = Mock()
     text_input = None
+    memory_data = ["not", "needed"]
 
-    res = save_note(save_button_clicks, text_input, app_state)
+    res = save_note(save_button_clicks, memory_data, text_input, app_state)
 
-    assert not res
+    assert res == ("", "")
+
+
+def test_save_note_clear_when_change_state():
+    save_button_clicks = 0  # not needed
+    app_state = Mock()
+    text_input = "Some text"
+    memory_data = ["not", "needed"]
+
+    def run_callback():
+        context_value.set(
+            AttributeDict(**{"triggered_inputs": [{"prop_id": "memory.data"}]})
+        )
+        return save_note(
+            save_button_clicks=save_button_clicks,
+            memory_data=memory_data,
+            text_input=text_input,
+            app_state=app_state,
+        )
+
+    ctx = copy_context()
+    res = ctx.run(run_callback)
+
+    assert res == ("", "")
 
 
 def test_save_note():
     save_button_clicks = 0  # not needed
+    memory_data = ["not", "needed"]
     app_state = get_starting_app_state()
 
     # input from user
@@ -383,7 +410,9 @@ def test_save_note():
 
     expected_output = pd.DataFrame(
         {
-            "country": app_state.country_options[app_state.country_index],
+            "country": app_state.country_name_iso_mapping[
+                app_state.country_options[app_state.country_index]
+            ],
             "category": app_state.category_options[app_state.category_index],
             "entity": app_state.entity_options[app_state.entity_index],
             "note": "any text",
@@ -391,11 +420,19 @@ def test_save_note():
         index=[0],
     )
 
-    save_note(
-        save_button_clicks=save_button_clicks,
-        text_input=text_input,
-        app_state=app_state,
-    )
+    def run_callback():
+        context_value.set(
+            AttributeDict(**{"triggered_inputs": [{"prop_id": "save_button.n_clicks"}]})
+        )
+        return save_note(
+            save_button_clicks=save_button_clicks,
+            memory_data=memory_data,
+            text_input=text_input,
+            app_state=app_state,
+        )
+
+    ctx = copy_context()
+    ctx.run(run_callback)
 
     filename = f"{app_state.filename[:-3]}_notes.csv"
 
@@ -406,21 +443,21 @@ def test_save_note():
     assert_frame_equal(output, expected_output)
 
 
-# TODO add this test again when making a test data set
-# def test_get_get_column_defs():
-#     app_state = get_starting_app_state()
-#
-#     expected_outcome = [
-#         {"field": "time", "sortable": True, "filter": "agNumberColumnFilter"},
-#         {"field": "area (ISO3)", "sortable": True},
-#         {"field": "category (IPCC2006_PRIMAP)", "sortable": True},
-#         {"field": "SourceScen", "sortable": True},
-#         {"field": app_state.entity, "sortable": True, "filter": "agNumberColumnFilter"},
-#     ]
-#
-#     res = app_state.get_column_defs()
-#
-#     assert res == expected_outcome
+@pytest.mark.xfail
+def test_get_get_column_defs():
+    app_state = get_starting_app_state()
+
+    expected_outcome = [
+        {"field": "time", "sortable": True, "filter": "agNumberColumnFilter"},
+        {"field": "area (ISO3)", "sortable": True},
+        {"field": "category (IPCC2006_PRIMAP)", "sortable": True},
+        {"field": "SourceScen", "sortable": True},
+        {"field": app_state.entity, "sortable": True, "filter": "agNumberColumnFilter"},
+    ]
+
+    res = app_state.get_column_defs()
+
+    assert res == expected_outcome
 
 
 def test_get_row_data():
@@ -431,3 +468,58 @@ def test_get_row_data():
 
     app_state.get_row_data.assert_called_once_with()
     app_state.get_column_defs.assert_called_once_with()
+
+
+@pytest.mark.parametrize(
+    "user_input, test_ds, current_version, old_version, test_ds_name, expected_res",
+    (
+        pytest.param(
+            "mock_dataset_name.nc",
+            False,
+            "not needed",
+            "not needed",
+            "not needed",
+            "mock_dataset_name.nc",
+            id="User input, test data set False",
+        ),
+        pytest.param(
+            "mock_dataset_name.nc",
+            True,
+            "not needed",
+            "not needed",
+            "not needed",
+            "mock_dataset_name.nc",
+            id="User input, test data set True",
+        ),
+        pytest.param(
+            None,
+            True,
+            "not needed",
+            "not needed",
+            "test_ds.nc",
+            "test_ds.nc",
+            id="No user input, test data set True",
+        ),
+        pytest.param(
+            None,
+            False,
+            "v2.5_final",
+            "v2.4.2_final",
+            "not needed",
+            "combined_data_v2.5_final_v2.4.2_final.nc",
+            id="No user input, test data set False",
+        ),
+    ),
+)
+def test_get_filename(  # noqa: PLR0913
+    user_input, test_ds, expected_res, current_version, old_version, test_ds_name
+):
+    res = get_filename(
+        user_input=user_input,
+        test_ds=test_ds,
+        current_version=current_version,
+        old_version=old_version,
+        test_ds_name=test_ds_name,
+    )
+
+    assert res == expected_res

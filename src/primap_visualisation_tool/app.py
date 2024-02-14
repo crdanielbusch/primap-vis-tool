@@ -104,6 +104,9 @@ class AppState:  # type: ignore
     filename: str
     """The name of the data set."""
 
+    present_index_cols: list[str]
+    """index cols that are actually present in the loaded dataset"""
+
     overview_graph: go.Figure | None = None  # type: ignore
     """Main graph"""
 
@@ -587,7 +590,7 @@ class AppState:  # type: ignore
         filename = f"{self.filename[:-3]}_notes.csv"
 
         new_row = [
-            self.country,
+            self.country_name_iso_mapping[self.country],
             self.category,
             self.entity,
             text_input,
@@ -683,24 +686,24 @@ class AppState:  # type: ignore
         return column_defs
 
 
-def get_default_app_starting_state(
+def get_filename(
+    user_input: str | None,
+    test_ds: bool = False,
     current_version: str = "v2.5_final",
     old_version: str = "v2.4.2_final",
-    start_values: dict[str, str] = {
-        "country": "EARTH",
-        "category": "M.0.EL",
-        "entity": "KYOTOGHG (AR6GWP100)",
-        "source_scenario": "PRIMAP-hist_v2.5_final_nr, HISTCR",
-    },
-    test_ds: bool = False,
-) -> AppState:
+    test_ds_name: str = "test_ds.nc",
+) -> str:
     """
-    Get default starting state for the application
+    Get the filename of the dataset.
 
     Parameters
     ----------
-    start_values
-        Intitial values for country, category and entity.
+    user_input
+        The filename from the command line.
+
+    test_ds
+        Should we load a test dataset instead? This is much
+        faster to load.
 
     current_version
         Current version of PRIMAP-hist to inspect
@@ -708,9 +711,37 @@ def get_default_app_starting_state(
     old_version
         Previous version of PRIMAP-hist to compare against
 
-    test_ds
-        Should we load a test dataset instead? This is much
-        faster to load.
+    Returns
+    -------
+        Filename. The name of the data set to read in.
+    """
+    if user_input:
+        return user_input
+    elif test_ds:
+        return test_ds_name
+    else:
+        return f"combined_data_{current_version}_{old_version}.nc"
+
+
+def get_default_app_starting_state(
+    filename: str,
+    start_values: dict[str, str] = {
+        "country": "EARTH",
+        "category": "M.0.EL",
+        "entity": "KYOTOGHG (AR6GWP100)",
+        "source_scenario": "PRIMAP-hist_v2.5_final_nr, HISTCR",
+    },
+) -> AppState:
+    """
+    Get default starting state for the application
+
+    Parameters
+    ----------
+    filename
+        The name of the file to read in.
+
+    start_values
+        Intitial values for country, category and entity.
 
     Returns
     -------
@@ -719,15 +750,19 @@ def get_default_app_starting_state(
     root_folder = Path(__file__).parent.parent.parent
     data_folder = Path("data")
 
-    print("Reading data set")
-    if test_ds:
-        filename = "test_ds.nc"
-    else:
-        filename = f"combined_data_{current_version}_{old_version}.nc"
+    present_index_cols = index_cols
+
+    print(f"Reading data set {filename}")
     combined_ds = pm.open_dataset(root_folder / data_folder / filename)
     print("Finished reading data set")
 
-    combined_ds = combined_ds.drop_vars("provenance")
+    if "provenance" in combined_ds.coords:
+        combined_ds = combined_ds.drop_vars("provenance")
+    else:
+        present_index_cols.remove("provenance")
+    # drop_vars only drops the coord not the dimension.
+    # TODO: remove provenance completely from index_cols it's just kept here to run
+    #  with the legacy datasets which contain provenance ("measured" only)
 
     country_name_iso_mapping = get_country_options(combined_ds)
     country_dropdown_options = tuple(sorted(country_name_iso_mapping.keys()))
@@ -737,6 +772,7 @@ def get_default_app_starting_state(
     entity_options = tuple(i for i in combined_ds.data_vars)
 
     source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
+    print("The following sources are present in the dataset:")
 
     source_scenario_visible = {
         k: v
@@ -766,6 +802,7 @@ def get_default_app_starting_state(
         rangeslider_selection=rangeslider_selection,
         ds=combined_ds,
         filename=filename,
+        present_index_cols=present_index_cols,
     )
 
     return app_state
@@ -980,7 +1017,8 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
         The currently selected source scenario option.
 
     memory_data
-        Data stored in browser memory.
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
 
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
@@ -1044,7 +1082,8 @@ def update_overview_graph(
         The currently selected entity in the dropdown menu
 
     memory_data
-        Data stored in browser memory.
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
 
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
@@ -1100,7 +1139,8 @@ def update_category_graph(  # noqa: PLR0913
         The currently selected source-scenario in the dropdown menu
 
     memory_data
-        Data stored in browser memory.
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
 
     layout_data
         The information about the main figure's layout.
@@ -1169,7 +1209,8 @@ def update_entity_graph(  # noqa: PLR0913
         The currently selected source-scenario in the dropdown menu
 
     memory_data
-        Data stored in browser memory.
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
 
     layout_data
         The information about the main figure's layout.
@@ -1245,7 +1286,8 @@ def update_table(
     Parameters
     ----------
     memory_data
-        Data stored in browser memory.
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
 
@@ -1265,14 +1307,17 @@ def update_table(
         "note-saved-div",
         "children",
     ),
+    Output("input-for-notes", "value"),
     Input("save_button", "n_clicks"),
+    Input("memory", "data"),
     State("input-for-notes", "value"),
 )
 def save_note(
     save_button_clicks: int,
+    memory_data: dict[str, int],
     text_input: str,
     app_state: AppState | None = None,
-) -> str:
+) -> tuple[str, str]:
     """
     Save a note and app_state to disk.
 
@@ -1280,6 +1325,9 @@ def save_note(
     ----------
     save_button_clicks
         The number of clicks on the save button to trigger the callback.
+    memory_data
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
     text_input
         The note from the user in the input field.
     app_state
@@ -1294,25 +1342,27 @@ def save_note(
     if app_state is None:
         app_state = APP_STATE
 
-    if not text_input:
-        return ""
+    # Do nothing when Input is empty (initial callback) or
+    # clear input when memory variable changes
+    # (triggered by change country or category or entity)
+    if not text_input or ctx.triggered_id == "memory":
+        return "", ""
 
     app_state.save_note_to_csv(text_input)
 
-    return app_state.get_notification()
+    return (app_state.get_notification(), text_input)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-p", help="Port number", required=False)
+    parser.add_argument("-p", help="Port number", required=False, default=8050)
+    parser.add_argument("-f", help="Filename of data set", required=False)
     args = parser.parse_args()
 
-    if not args.p:
-        port = 8050
-    else:
-        port = args.p
+    port = args.p
+    filename = get_filename(user_input=args.f, test_ds=True)
 
-    APP_STATE = get_default_app_starting_state(test_ds=True)
+    APP_STATE = get_default_app_starting_state(filename=filename)
 
     external_stylesheets = [dbc.themes.SIMPLEX]
 
