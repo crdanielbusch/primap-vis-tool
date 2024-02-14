@@ -41,7 +41,7 @@ index_cols: list[str] = [
 """Columns to use as the index when creating stacked plots"""
 
 
-LINES_LAYOUT: dict[str, dict[str, Union[str, Any]]] = {
+LINES_LAYOUT: dict[str, dict[str, Union[str, int]]] = {
     "Andrew cement, HISTORY": {"color": "rgb(0,0,255)", "dash": "solid"},
     "CDIAC 2020, HISTORY": {"color": "rgb(255, 0, 0)", "dash": "solid"},
     "CEDS 2020, HISTORY": {"color": "rgb(0, 0, 255)", "dash": "solid"},
