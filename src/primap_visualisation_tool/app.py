@@ -178,9 +178,7 @@ class AppState:  # type: ignore
         )
 
         filtered_pandas = filtered.to_dataframe().reset_index()
-        print(filtered_pandas["SourceScen"].unique())
 
-        # TODO there's a bug in the following lines which lists v2.4.2 as null
         null_source_scenario_options = filtered_pandas.groupby(by="SourceScen")[
             self.entity
         ].apply(lambda x: x.isna().all())
@@ -188,9 +186,8 @@ class AppState:  # type: ignore
         null_source_scenario_options = null_source_scenario_options[
             list(null_source_scenario_options)
         ].index
-        print(f"null: {null_source_scenario_options}")
+
         original_source_scenario_options = tuple(self.ds["SourceScen"].to_numpy())
-        print(f"original: {original_source_scenario_options}")
 
         new_source_scenario_options = [
             i
@@ -587,7 +584,7 @@ class AppState:  # type: ignore
         filename = f"{self.filename[:-3]}_notes.csv"
 
         new_row = [
-            self.country,
+            self.country_name_iso_mapping[self.country],
             self.category,
             self.entity,
             text_input,
@@ -1013,7 +1010,8 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
         The currently selected source scenario option.
 
     memory_data
-        Data stored in browser memory.
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
 
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
@@ -1077,7 +1075,8 @@ def update_overview_graph(
         The currently selected entity in the dropdown menu
 
     memory_data
-        Data stored in browser memory.
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
 
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
@@ -1133,7 +1132,8 @@ def update_category_graph(  # noqa: PLR0913
         The currently selected source-scenario in the dropdown menu
 
     memory_data
-        Data stored in browser memory.
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
 
     layout_data
         The information about the main figure's layout.
@@ -1202,7 +1202,8 @@ def update_entity_graph(  # noqa: PLR0913
         The currently selected source-scenario in the dropdown menu
 
     memory_data
-        Data stored in browser memory.
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
 
     layout_data
         The information about the main figure's layout.
@@ -1278,7 +1279,8 @@ def update_table(
     Parameters
     ----------
     memory_data
-        Data stored in browser memory.
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
 
@@ -1298,14 +1300,17 @@ def update_table(
         "note-saved-div",
         "children",
     ),
+    Output("input-for-notes", "value"),
     Input("save_button", "n_clicks"),
+    Input("memory", "data"),
     State("input-for-notes", "value"),
 )
 def save_note(
     save_button_clicks: int,
+    memory_data: dict[str, int],
     text_input: str,
     app_state: AppState | None = None,
-) -> str:
+) -> tuple[str, str]:
     """
     Save a note and app_state to disk.
 
@@ -1313,6 +1318,9 @@ def save_note(
     ----------
     save_button_clicks
         The number of clicks on the save button to trigger the callback.
+    memory_data
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
     text_input
         The note from the user in the input field.
     app_state
@@ -1327,12 +1335,15 @@ def save_note(
     if app_state is None:
         app_state = APP_STATE
 
-    if not text_input:
-        return ""
+    # Do nothing when Input is empty (initial callback) or
+    # clear input when memory variable changes
+    # (triggered by change country or category or entity)
+    if not text_input or ctx.triggered_id == "memory":
+        return "", ""
 
     app_state.save_note_to_csv(text_input)
 
-    return app_state.get_notification()
+    return (app_state.get_notification(), text_input)
 
 
 if __name__ == "__main__":
