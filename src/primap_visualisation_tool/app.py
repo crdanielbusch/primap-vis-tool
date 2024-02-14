@@ -22,7 +22,7 @@ import primap2 as pm  # type: ignore
 import pycountry
 import xarray as xr
 from attrs import define
-from dash import Dash, Input, Output, State, callback, ctx, dcc, html  # type: ignore
+from dash import Dash, Input, Output, State, callback, ctx, dcc, html, ALL  # type: ignore
 from filelock import FileLock
 
 from primap_visualisation_tool.definitions import LINES_LAYOUT, SUBENTITIES, index_cols
@@ -1352,6 +1352,31 @@ def save_note(
 
     return (app_state.get_notification(), text_input)
 
+@callback(
+    Output({'type': 'graph', 'index': ALL}, 'relayoutData'),
+    Output({'type': 'graph', 'index': ALL}, 'figure'),
+    Input({'type': 'graph', 'index': ALL}, 'relayoutData'),
+    State({'type': 'graph', 'index': ALL}, 'figure'))
+def LinkedZoom(relayout_data, figure_states):
+    unique_data = None
+    for data in relayout_data:
+      if relayout_data.count(data) == 1:
+        unique_data = data
+    if unique_data:
+      for figure_state in figure_states:
+        if unique_data.get('xaxis.autorange'):
+          figure_state['layout']['xaxis']['autorange'] = True
+          figure_state['layout']['yaxis']['autorange'] = True
+        else:
+          figure_state['layout']['xaxis']['range'] = [
+              unique_data['xaxis.range[0]'], unique_data['xaxis.range[1]']]
+          figure_state['layout']['xaxis']['autorange'] = False
+          figure_state['layout']['yaxis']['range'] = [
+              unique_data['yaxis.range[0]'], unique_data['yaxis.range[1]']]
+          figure_state['layout']['yaxis']['autorange'] = False
+      return [unique_data] * len(relayout_data), figure_states
+    return relayout_data, figure_states
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -1609,7 +1634,7 @@ if __name__ == "__main__":
                     dbc.Col(
                         [
                             html.B(children="Overview", style={"textAlign": "center"}),
-                            dcc.Graph(id="graph-overview"),
+                            dcc.Graph(id="graph-overview", type="graph"),
                         ],
                         width=8,
                     ),
@@ -1623,7 +1648,7 @@ if __name__ == "__main__":
                             html.B(
                                 children="Category split", style={"textAlign": "center"}
                             ),
-                            dcc.Graph(id="graph-category-split"),
+                            dcc.Graph(id="graph-category-split", type="graph"),
                         ],
                         width=6,
                     ),
@@ -1633,7 +1658,7 @@ if __name__ == "__main__":
                             html.B(
                                 children="Entity split", style={"textAlign": "center"}
                             ),
-                            dcc.Graph(id="graph-entity-split"),
+                            dcc.Graph(id="graph-entity-split", type="graph"),
                         ],
                         width=6,
                     ),
