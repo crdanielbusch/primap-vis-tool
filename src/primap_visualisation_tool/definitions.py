@@ -76,6 +76,7 @@ LINES_LAYOUT: dict[str, dict[str, Union[str, object]]] = {
     "RCP hist, HISTORY": {"color": "rgb(50,50,255)", "dash": "solid"},
     "UNFCCC NAI, 231015": {"color": "rgb(50,200,255)", "dash": "solid"},
 }
+"""Layout for the line plot in the main figure - Add new source scenarios for each release!"""
 
 LINES_ORDER = (
     "PRIMAP-hist_v2.5_final_nr, HISTCR",
@@ -83,3 +84,4 @@ LINES_ORDER = (
     "PRIMAP-hist_v2.4.2_final_nr, HISTCR",
     "PRIMAP-hist_v2.4.2_final_nr, HISTTP",
 )
+"""The order to plot the lines in the main figure, from background to foreground"""
