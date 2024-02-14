@@ -1010,7 +1010,8 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
         The currently selected source scenario option.
 
     memory_data
-        Data stored in browser memory.
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
 
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
@@ -1074,7 +1075,8 @@ def update_overview_graph(
         The currently selected entity in the dropdown menu
 
     memory_data
-        Data stored in browser memory.
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
 
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
@@ -1130,7 +1132,8 @@ def update_category_graph(  # noqa: PLR0913
         The currently selected source-scenario in the dropdown menu
 
     memory_data
-        Data stored in browser memory.
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
 
     layout_data
         The information about the main figure's layout.
@@ -1199,7 +1202,8 @@ def update_entity_graph(  # noqa: PLR0913
         The currently selected source-scenario in the dropdown menu
 
     memory_data
-        Data stored in browser memory.
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
 
     layout_data
         The information about the main figure's layout.
@@ -1275,7 +1279,8 @@ def update_table(
     Parameters
     ----------
     memory_data
-        Data stored in browser memory.
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
 
@@ -1314,7 +1319,8 @@ def save_note(
     save_button_clicks
         The number of clicks on the save button to trigger the callback.
     memory_data
-        Data stored in browser memory.
+        A variable stored in the browser that changes whenever country, category or entity changes.
+        It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
     text_input
         The note from the user in the input field.
     app_state
