@@ -578,10 +578,21 @@ class AppState:  # type: ignore
         """
         fig = self.overview_graph
 
-        fig["layout"].update(  # type: ignore
-            xaxis_range=[layout_data["xaxis.range[0]"], layout_data["xaxis.range[1]"]],
-            yaxis_range=[layout_data["yaxis.range[0]"], layout_data["yaxis.range[1]"]],
-        )
+        if "xaxis.range[0]" in layout_data:
+            fig["layout"].update(  # type: ignore
+                xaxis_range=[
+                    layout_data["xaxis.range[0]"],
+                    layout_data["xaxis.range[1]"],
+                ],
+            )
+
+        if "yaxis.range[0]" in layout_data:
+            fig["layout"].update(  # type: ignore
+                yaxis_range=[
+                    layout_data["yaxis.range[0]"],
+                    layout_data["yaxis.range[1]"],
+                ],
+            )
 
         return fig
 
@@ -1079,13 +1090,15 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
     State("dropdown-entity", "value"),
     Input("memory", "data"),
     Input("graph-category-split", "relayoutData"),
+    Input("graph-entity-split", "relayoutData"),
 )
 def update_overview_graph(  # noqa: PLR0913
     country: str,
     category: str,
     entity: str,
     memory_data: dict[str, int],
-    layout_data,
+    layout_data_category,
+    layout_data_entity,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -1121,13 +1134,12 @@ def update_overview_graph(  # noqa: PLR0913
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.overview_graph
 
-    if not layout_data:
-        return app_state.overview_graph
-
-    if (ctx.triggered_id == "graph-category-split") and (
-        "xaxis.range[0]" in layout_data
-    ):
-        return app_state.update_overview_zoom(layout_data)
+    if (ctx.triggered_id == "graph-category-split") and layout_data_category:
+        if "xaxis.range[0]" in layout_data_category:
+            return app_state.update_overview_zoom(layout_data_category)
+    elif (ctx.triggered_id == "graph-entity-split") and layout_data_entity:
+        if "xaxis.range[0]" in layout_data_entity:
+            return app_state.update_overview_zoom(layout_data_entity)
 
     return app_state.update_main_figure()
 
