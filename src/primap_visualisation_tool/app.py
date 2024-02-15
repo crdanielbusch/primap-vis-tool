@@ -107,6 +107,9 @@ class AppState:  # type: ignore
     present_index_cols: list[str]
     """index cols that are actually present in the loaded dataset"""
 
+    xyrange: dict | None = None
+    """The selected x and y range for all figures"""
+
     overview_graph: go.Figure | None = None  # type: ignore
     """Main graph"""
 
@@ -405,11 +408,21 @@ class AppState:  # type: ignore
             xaxis=dict(
                 rangeslider=dict(visible=True, thickness=0.05),
                 type="date",
-                range=self.rangeslider_selection,
             ),
+            # yaxis=dict(
+            #     autorange=False,
+            # ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
+
+        # In the initial callback this property will be None
+        if self.xyrange:
+            fig.update_layout(
+                xaxis=dict(
+                    range=self.xyrange["xaxis"],
+                ),
+            )
 
         self.overview_graph = fig
 
@@ -530,43 +543,23 @@ class AppState:  # type: ignore
 
         return self.entity_graph
 
-    def update_category_xrange(self, layout_data: dict[str, list[str]]) -> go.Figure:  # type: ignore
-        """
-        Update x-range of category figure according to main figure x-range.
 
-        Parameters
-        ----------
-        layout_data
-            The information about the xrange of the main figure.
-
-        """
-        fig = self.category_graph
+    def update_xy_range(self, fig, layout_data):
 
         fig["layout"].update(  # type: ignore
-            xaxis_range=layout_data["xaxis.range"],
+            xaxis_range=[
+                layout_data["xaxis"][0],
+                layout_data["xaxis"][1],
+            ],
+            yaxis_range=[
+                layout_data["yaxis"][0],
+                layout_data["yaxis"][1],
+            ],
         )
 
         return fig
 
-    def update_entity_xrange(self, layout_data: dict[str, list[str]]) -> go.Figure:  # type: ignore
-        """
-        Update x-range of entity figure according to main figure x-range.
-
-        Parameters
-        ----------
-        layout_data
-            The information about the xrange of the main figure.
-
-        """
-        fig = self.entity_graph
-
-        fig["layout"].update(  # type: ignore
-            xaxis_range=layout_data["xaxis.range"],
-        )
-
-        return fig
-
-    def update_overview_zoom(self, layout_data: dict[str, list[str]]) -> go.Figure:  # type: ignore
+    def update_overview_range(self, layout_data: dict[str, list[str]]) -> go.Figure:  # type: ignore
         """
         Update x-range of overview figure according to main figure x-range.
 
@@ -578,23 +571,35 @@ class AppState:  # type: ignore
         """
         fig = self.overview_graph
 
-        if "xaxis.range[0]" in layout_data:
-            fig["layout"].update(  # type: ignore
-                xaxis_range=[
-                    layout_data["xaxis.range[0]"],
-                    layout_data["xaxis.range[1]"],
-                ],
-            )
+        return self.update_xy_range(fig, layout_data)
 
-        if "yaxis.range[0]" in layout_data:
-            fig["layout"].update(  # type: ignore
-                yaxis_range=[
-                    layout_data["yaxis.range[0]"],
-                    layout_data["yaxis.range[1]"],
-                ],
-            )
+    def update_category_range(self, layout_data: dict[str, list[str]]) -> go.Figure:  # type: ignore
+        """
+        Update x-range of overview figure according to main figure x-range.
 
-        return fig
+        Parameters
+        ----------
+        layout_data
+            The information about the xrange of the main figure.
+
+        """
+        fig = self.category_graph
+
+        return self.update_xy_range(fig, layout_data)
+
+    def update_entity_range(self, layout_data: dict[str, list[str]]) -> go.Figure:  # type: ignore
+        """
+        Update x-range of overview figure according to main figure x-range.
+
+        Parameters
+        ----------
+        layout_data
+            The information about the xrange of the main figure.
+
+        """
+        fig = self.entity_graph
+
+        return self.update_xy_range(fig, layout_data)
 
     def update_rangeslider_selection(self, layout_data: dict[str, list[str]]) -> None:
         """
@@ -802,7 +807,6 @@ def get_default_app_starting_state(
     entity_options = tuple(i for i in combined_ds.data_vars)
 
     source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
-    # print("The following sources are present in the dataset:")
 
     source_scenario_visible = {
         k: v
@@ -1089,16 +1093,14 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
     State("dropdown-category", "value"),
     State("dropdown-entity", "value"),
     Input("memory", "data"),
-    Input("graph-category-split", "relayoutData"),
-    Input("graph-entity-split", "relayoutData"),
+    Input("zoom", "data"),
 )
 def update_overview_graph(  # noqa: PLR0913
     country: str,
     category: str,
     entity: str,
     memory_data: dict[str, int],
-    layout_data_category,
-    layout_data_entity,
+    range_data,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -1134,12 +1136,8 @@ def update_overview_graph(  # noqa: PLR0913
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.overview_graph
 
-    if (ctx.triggered_id == "graph-category-split") and layout_data_category:
-        if "xaxis.range[0]" in layout_data_category:
-            return app_state.update_overview_zoom(layout_data_category)
-    elif (ctx.triggered_id == "graph-entity-split") and layout_data_entity:
-        if "xaxis.range[0]" in layout_data_entity:
-            return app_state.update_overview_zoom(layout_data_entity)
+    if ctx.triggered_id == "zoom" and range_data:
+        return app_state.update_overview_range(range_data)
 
     return app_state.update_main_figure()
 
@@ -1151,7 +1149,7 @@ def update_overview_graph(  # noqa: PLR0913
     State("dropdown-entity", "value"),
     Input("dropdown-source-scenario", "value"),
     Input("memory", "data"),
-    Input("graph-overview", "relayoutData"),
+    Input("zoom", "data"),
 )
 def update_category_graph(  # noqa: PLR0913
     country: str,
@@ -1159,7 +1157,7 @@ def update_category_graph(  # noqa: PLR0913
     entity: str,
     source_scenario: str,
     memory_data: dict[str, int],
-    layout_data: dict[str, list[str]],
+    range_data,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -1197,11 +1195,8 @@ def update_category_graph(  # noqa: PLR0913
     if app_state is None:
         app_state = APP_STATE
 
-    # when the second condition is not met, the overview graph uses automatic x range values
-    # That's the case when the app starts -> we don't want to update the other figures then
-    if (ctx.triggered_id == "graph-overview") and ("xaxis.range" in layout_data):
-        app_state.update_rangeslider_selection(layout_data)
-        return app_state.update_category_xrange(layout_data)
+    if ctx.triggered_id == "zoom" and range_data:
+        return app_state.update_category_range(range_data)
 
     if any(v is None for v in (country, category, entity, source_scenario)):
         # User cleared one of the selections in the dropdown, do nothing
@@ -1221,7 +1216,7 @@ def update_category_graph(  # noqa: PLR0913
     State("dropdown-entity", "value"),
     Input("dropdown-source-scenario", "value"),
     Input("memory", "data"),
-    Input("graph-overview", "relayoutData"),
+    Input("zoom", "data"),
 )
 def update_entity_graph(  # noqa: PLR0913
     country: str,
@@ -1229,7 +1224,7 @@ def update_entity_graph(  # noqa: PLR0913
     entity: str,
     source_scenario: str,
     memory_data: dict[str, int],
-    layout_data: dict[str, list[str]],
+    range_data,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -1266,11 +1261,8 @@ def update_entity_graph(  # noqa: PLR0913
     if app_state is None:
         app_state = APP_STATE
 
-    # when the second condition is not met, the overview graph uses automatic x-range values
-    # That's the case when the app starts -> we don't want to update the other figures then
-    if (ctx.triggered_id == "graph-overview") and ("xaxis.range" in layout_data):
-        app_state.update_rangeslider_selection(layout_data)
-        return app_state.update_entity_xrange(layout_data)
+    if ctx.triggered_id == "zoom" and range_data:
+        return app_state.update_entity_range(range_data)
 
     if any(v is None for v in (country, category, entity, source_scenario)):
         # User cleared one of the selections in the dropdown, do nothing
@@ -1410,51 +1402,26 @@ def store_axes_range(
     figure_overview_dict,
     figure_category_dict,
     figure_entity_dict,
+    app_state: AppState | None = None,
 ):
+    if app_state is None:
+        app_state = APP_STATE
+
     if any(v is None for v in (layout_data_overview, layout_data_category, layout_data_entity, figure_overview_dict, figure_category_dict, figure_entity_dict)):
         return
 
     if ctx.triggered_id == "graph-overview":
-        print("Overview layout changed")
-        # print(figure_overview_dict["layout"]["xaxis"]["range"])
-        # print(figure_overview_dict["layout"]["yaxis"]["range"])
-        return {"xaxis": figure_overview_dict["layout"]["xaxis"]["range"],
-                "yaxis": figure_overview_dict["layout"]["yaxis"]["range"]}
+        xyrange = {"xaxis": figure_overview_dict["layout"]["xaxis"]["range"],
+                   "yaxis": figure_overview_dict["layout"]["yaxis"]["range"]}
     elif ctx.triggered_id == "graph-category-split":
-        print("Category layout changed")
-        return {"xaxis": figure_category_dict["layout"]["xaxis"]["range"],
-                "yaxis": figure_category_dict["layout"]["yaxis"]["range"]}
+        xyrange = {"xaxis": figure_category_dict["layout"]["xaxis"]["range"],
+                   "yaxis": figure_category_dict["layout"]["yaxis"]["range"]}
     elif ctx.triggered_id == "graph-entity-split":
-        print("Entity layout changed")
-        return {"xaxis": figure_entity_dict["layout"]["xaxis"]["range"],
-                "yaxis": figure_entity_dict["layout"]["yaxis"]["range"]}
+        xyrange = {"xaxis": figure_entity_dict["layout"]["xaxis"]["range"],
+                   "yaxis": figure_entity_dict["layout"]["yaxis"]["range"]}
 
-
-# @callback(
-#     Output({'type': 'graph', 'index': ALL}, 'relayoutData'),
-#     Output({'type': 'graph', 'index': ALL}, 'figure'),
-#     Input({'type': 'graph', 'index': ALL}, 'relayoutData'),
-#     State({'type': 'graph', 'index': ALL}, 'figure'))
-# def Linked_zoom(relayout_data, figure_states):
-#     unique_data = None
-#     for data in relayout_data:
-#       if relayout_data.count(data) == 1:
-#         unique_data = data
-#     if unique_data:
-#       for figure_state in figure_states:
-#         if unique_data.get('xaxis.autorange'):
-#           figure_state['layout']['xaxis']['autorange'] = True
-#           figure_state['layout']['yaxis']['autorange'] = True
-#         else:
-#           figure_state['layout']['xaxis']['range'] = [
-#               unique_data['xaxis.range[0]'], unique_data['xaxis.range[1]']]
-#           figure_state['layout']['xaxis']['autorange'] = False
-#           figure_state['layout']['yaxis']['range'] = [
-#               unique_data['yaxis.range[0]'], unique_data['yaxis.range[1]']]
-#           figure_state['layout']['yaxis']['autorange'] = False
-#       return [unique_data] * len(relayout_data), figure_states
-#     return relayout_data, figure_states
-
+    app_state.xyrange = xyrange
+    return xyrange
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
