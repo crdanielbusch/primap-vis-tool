@@ -22,7 +22,7 @@ import primap2 as pm  # type: ignore
 import pycountry
 import xarray as xr
 from attrs import define
-from dash import Dash, Input, Output, State, callback, ctx, dcc, html, ALL  # type: ignore
+from dash import Dash, Input, Output, State, callback, ctx, dcc, html  # type: ignore
 from filelock import FileLock
 
 from primap_visualisation_tool.definitions import LINES_LAYOUT, SUBENTITIES, index_cols
@@ -566,6 +566,25 @@ class AppState:  # type: ignore
 
         return fig
 
+    def update_overview_zoom(self, layout_data: dict[str, list[str]]) -> go.Figure:  # type: ignore
+        """
+        Update x-range of overview figure according to main figure x-range.
+
+        Parameters
+        ----------
+        layout_data
+            The information about the xrange of the main figure.
+
+        """
+        fig = self.overview_graph
+
+        fig["layout"].update(  # type: ignore
+            xaxis_range=[layout_data["xaxis.range[0]"], layout_data["xaxis.range[1]"]],
+            yaxis_range=[layout_data["yaxis.range[0]"], layout_data["yaxis.range[1]"]],
+        )
+
+        return fig
+
     def update_rangeslider_selection(self, layout_data: dict[str, list[str]]) -> None:
         """
         Save the selected x-range in the range slider.
@@ -772,7 +791,7 @@ def get_default_app_starting_state(
     entity_options = tuple(i for i in combined_ds.data_vars)
 
     source_scenario_options = tuple(combined_ds["SourceScen"].to_numpy())
-    print("The following sources are present in the dataset:")
+    # print("The following sources are present in the dataset:")
 
     source_scenario_visible = {
         k: v
@@ -1059,12 +1078,14 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
     State("dropdown-category", "value"),
     State("dropdown-entity", "value"),
     Input("memory", "data"),
+    Input("graph-category-split", "relayoutData"),
 )
-def update_overview_graph(
+def update_overview_graph(  # noqa: PLR0913
     country: str,
     category: str,
     entity: str,
     memory_data: dict[str, int],
+    layout_data,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -1099,6 +1120,14 @@ def update_overview_graph(
     if any(v is None for v in (country, category, entity)):
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.overview_graph
+
+    if not layout_data:
+        return app_state.overview_graph
+
+    if (ctx.triggered_id == "graph-category-split") and (
+        "xaxis.range[0]" in layout_data
+    ):
+        return app_state.update_overview_zoom(layout_data)
 
     return app_state.update_main_figure()
 
@@ -1352,30 +1381,32 @@ def save_note(
 
     return (app_state.get_notification(), text_input)
 
-@callback(
-    Output({'type': 'graph', 'index': ALL}, 'relayoutData'),
-    Output({'type': 'graph', 'index': ALL}, 'figure'),
-    Input({'type': 'graph', 'index': ALL}, 'relayoutData'),
-    State({'type': 'graph', 'index': ALL}, 'figure'))
-def LinkedZoom(relayout_data, figure_states):
-    unique_data = None
-    for data in relayout_data:
-      if relayout_data.count(data) == 1:
-        unique_data = data
-    if unique_data:
-      for figure_state in figure_states:
-        if unique_data.get('xaxis.autorange'):
-          figure_state['layout']['xaxis']['autorange'] = True
-          figure_state['layout']['yaxis']['autorange'] = True
-        else:
-          figure_state['layout']['xaxis']['range'] = [
-              unique_data['xaxis.range[0]'], unique_data['xaxis.range[1]']]
-          figure_state['layout']['xaxis']['autorange'] = False
-          figure_state['layout']['yaxis']['range'] = [
-              unique_data['yaxis.range[0]'], unique_data['yaxis.range[1]']]
-          figure_state['layout']['yaxis']['autorange'] = False
-      return [unique_data] * len(relayout_data), figure_states
-    return relayout_data, figure_states
+
+#
+# @callback(
+#     Output({'type': 'graph', 'index': ALL}, 'relayoutData'),
+#     Output({'type': 'graph', 'index': ALL}, 'figure'),
+#     Input({'type': 'graph', 'index': ALL}, 'relayoutData'),
+#     State({'type': 'graph', 'index': ALL}, 'figure'))
+# def Linked_zoom(relayout_data, figure_states):
+#     unique_data = None
+#     for data in relayout_data:
+#       if relayout_data.count(data) == 1:
+#         unique_data = data
+#     if unique_data:
+#       for figure_state in figure_states:
+#         if unique_data.get('xaxis.autorange'):
+#           figure_state['layout']['xaxis']['autorange'] = True
+#           figure_state['layout']['yaxis']['autorange'] = True
+#         else:
+#           figure_state['layout']['xaxis']['range'] = [
+#               unique_data['xaxis.range[0]'], unique_data['xaxis.range[1]']]
+#           figure_state['layout']['xaxis']['autorange'] = False
+#           figure_state['layout']['yaxis']['range'] = [
+#               unique_data['yaxis.range[0]'], unique_data['yaxis.range[1]']]
+#           figure_state['layout']['yaxis']['autorange'] = False
+#       return [unique_data] * len(relayout_data), figure_states
+#     return relayout_data, figure_states
 
 
 if __name__ == "__main__":
@@ -1634,7 +1665,7 @@ if __name__ == "__main__":
                     dbc.Col(
                         [
                             html.B(children="Overview", style={"textAlign": "center"}),
-                            dcc.Graph(id="graph-overview", type="graph"),
+                            dcc.Graph(id="graph-overview"),
                         ],
                         width=8,
                     ),
@@ -1648,7 +1679,7 @@ if __name__ == "__main__":
                             html.B(
                                 children="Category split", style={"textAlign": "center"}
                             ),
-                            dcc.Graph(id="graph-category-split", type="graph"),
+                            dcc.Graph(id="graph-category-split"),
                         ],
                         width=6,
                     ),
@@ -1658,7 +1689,7 @@ if __name__ == "__main__":
                             html.B(
                                 children="Entity split", style={"textAlign": "center"}
                             ),
-                            dcc.Graph(id="graph-entity-split", type="graph"),
+                            dcc.Graph(id="graph-entity-split"),
                         ],
                         width=6,
                     ),
