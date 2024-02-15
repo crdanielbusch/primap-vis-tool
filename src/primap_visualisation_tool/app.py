@@ -1394,7 +1394,42 @@ def save_note(
     return (app_state.get_notification(), text_input)
 
 
-#
+@callback(
+    Output("zoom", "data"),
+    Input("graph-overview", "relayoutData"),
+    Input("graph-category-split", "relayoutData"),
+    Input("graph-entity-split", "relayoutData"),
+    State("graph-overview", "figure"),
+    State("graph-category-split", "figure"),
+    State("graph-entity-split", "figure"),
+)
+def store_axes_range(
+    layout_data_overview,
+    layout_data_category,
+    layout_data_entity,
+    figure_overview_dict,
+    figure_category_dict,
+    figure_entity_dict,
+):
+    if any(v is None for v in (layout_data_overview, layout_data_category, layout_data_entity, figure_overview_dict, figure_category_dict, figure_entity_dict)):
+        return
+
+    if ctx.triggered_id == "graph-overview":
+        print("Overview layout changed")
+        # print(figure_overview_dict["layout"]["xaxis"]["range"])
+        # print(figure_overview_dict["layout"]["yaxis"]["range"])
+        return {"xaxis": figure_overview_dict["layout"]["xaxis"]["range"],
+                "yaxis": figure_overview_dict["layout"]["yaxis"]["range"]}
+    elif ctx.triggered_id == "graph-category-split":
+        print("Category layout changed")
+        return {"xaxis": figure_category_dict["layout"]["xaxis"]["range"],
+                "yaxis": figure_category_dict["layout"]["yaxis"]["range"]}
+    elif ctx.triggered_id == "graph-entity-split":
+        print("Entity layout changed")
+        return {"xaxis": figure_entity_dict["layout"]["xaxis"]["range"],
+                "yaxis": figure_entity_dict["layout"]["yaxis"]["range"]}
+
+
 # @callback(
 #     Output({'type': 'graph', 'index': ALL}, 'relayoutData'),
 #     Output({'type': 'graph', 'index': ALL}, 'figure'),
@@ -1452,6 +1487,7 @@ if __name__ == "__main__":
                                     id="memory_visible_lines",
                                     data=APP_STATE.source_scenario_visible,
                                 ),
+                                dcc.Store(id="zoom"),
                                 html.B(
                                     children="Country",
                                     style={"textAlign": "left", "fontSize": 14},
