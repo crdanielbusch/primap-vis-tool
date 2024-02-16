@@ -12,6 +12,7 @@ from collections.abc import Sized
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+import json
 
 import dash_ag_grid as dag  # type: ignore
 import dash_bootstrap_components as dbc  # type: ignore
@@ -23,6 +24,7 @@ import pycountry
 import xarray as xr
 from attrs import define
 from dash import Dash, Input, Output, State, callback, ctx, dcc, html  # type: ignore
+from dash.exceptions import PreventUpdate
 from filelock import FileLock
 
 from primap_visualisation_tool.definitions import LINES_LAYOUT, SUBENTITIES, index_cols
@@ -365,6 +367,7 @@ class AppState:  # type: ignore
         -------
             Overview figure. A plotly graph object.
         """
+        print("update_main_figure")
         iso_country = self.country_name_iso_mapping[self.country]
 
         with warnings.catch_warnings(action="ignore"):  # type: ignore
@@ -409,9 +412,9 @@ class AppState:  # type: ignore
                 rangeslider=dict(visible=True, thickness=0.05),
                 type="date",
             ),
-            # yaxis=dict(
-            #     autorange=False,
-            # ),
+            yaxis=dict(
+                autorange=True,
+            ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
@@ -471,12 +474,20 @@ class AppState:  # type: ignore
         )
 
         fig.update_layout(
-            xaxis=dict(
-                range=self.rangeslider_selection,
-            ),
+            # xaxis=dict(
+            #     range=self.rangeslider_selection,
+            # ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
+
+        # In the initial callback this property will be None
+        if self.xyrange:
+            fig.update_layout(
+                xaxis=dict(
+                    range=self.xyrange["xaxis"],
+                ),
+            )
 
         self.category_graph = fig
 
@@ -532,12 +543,20 @@ class AppState:  # type: ignore
         )
 
         fig.update_layout(
-            xaxis=dict(
-                range=self.rangeslider_selection,
-            ),
+            # xaxis=dict(
+            #     range=self.rangeslider_selection,
+            # ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
+
+        # In the initial callback this property will be None
+        if self.xyrange:
+            fig.update_layout(
+                xaxis=dict(
+                    range=self.xyrange["xaxis"],
+                ),
+            )
 
         self.entity_graph = fig
 
@@ -545,6 +564,8 @@ class AppState:  # type: ignore
 
 
     def update_xy_range(self, fig, layout_data):
+
+        layout_data = json.loads(layout_data)
 
         fig["layout"].update(  # type: ignore
             xaxis_range=[
@@ -1093,7 +1114,7 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
     State("dropdown-category", "value"),
     State("dropdown-entity", "value"),
     Input("memory", "data"),
-    Input("zoom", "data"),
+    Input("xyrange", "data"),
 )
 def update_overview_graph(  # noqa: PLR0913
     country: str,
@@ -1136,7 +1157,7 @@ def update_overview_graph(  # noqa: PLR0913
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.overview_graph
 
-    if ctx.triggered_id == "zoom" and range_data:
+    if ctx.triggered_id == "xyrange" and range_data:
         return app_state.update_overview_range(range_data)
 
     return app_state.update_main_figure()
@@ -1149,7 +1170,7 @@ def update_overview_graph(  # noqa: PLR0913
     State("dropdown-entity", "value"),
     Input("dropdown-source-scenario", "value"),
     Input("memory", "data"),
-    Input("zoom", "data"),
+    Input("xyrange", "data"),
 )
 def update_category_graph(  # noqa: PLR0913
     country: str,
@@ -1195,7 +1216,7 @@ def update_category_graph(  # noqa: PLR0913
     if app_state is None:
         app_state = APP_STATE
 
-    if ctx.triggered_id == "zoom" and range_data:
+    if ctx.triggered_id == "xyrange" and range_data:
         return app_state.update_category_range(range_data)
 
     if any(v is None for v in (country, category, entity, source_scenario)):
@@ -1216,7 +1237,7 @@ def update_category_graph(  # noqa: PLR0913
     State("dropdown-entity", "value"),
     Input("dropdown-source-scenario", "value"),
     Input("memory", "data"),
-    Input("zoom", "data"),
+    Input("xyrange", "data"),
 )
 def update_entity_graph(  # noqa: PLR0913
     country: str,
@@ -1261,7 +1282,7 @@ def update_entity_graph(  # noqa: PLR0913
     if app_state is None:
         app_state = APP_STATE
 
-    if ctx.triggered_id == "zoom" and range_data:
+    if ctx.triggered_id == "xyrange" and range_data:
         return app_state.update_entity_range(range_data)
 
     if any(v is None for v in (country, category, entity, source_scenario)):
@@ -1387,7 +1408,7 @@ def save_note(
 
 
 @callback(
-    Output("zoom", "data"),
+    Output("xyrange", "data"),
     Input("graph-overview", "relayoutData"),
     Input("graph-category-split", "relayoutData"),
     Input("graph-entity-split", "relayoutData"),
@@ -1411,17 +1432,33 @@ def store_axes_range(
         return
 
     if ctx.triggered_id == "graph-overview":
-        xyrange = {"xaxis": figure_overview_dict["layout"]["xaxis"]["range"],
-                   "yaxis": figure_overview_dict["layout"]["yaxis"]["range"]}
+        # A change in the rangeslider will return dict with keys 'xaxis.range[0]'
+        # A change with the zoom function will return a dict with 'xaxis.range'
+        # Click on autoscale will return 'xaxis.autorange'
+        if ('xaxis.range[0]' in layout_data_overview) or ('xaxis.range' in layout_data_overview) or ('xaxis.autorange' in layout_data_overview):
+            xyrange = {"xaxis": figure_overview_dict["layout"]["xaxis"]["range"],
+                       "yaxis": figure_overview_dict["layout"]["yaxis"]["range"]}
+        else:
+            # In this case, the user clicked on zoom or pan and xy range did not change
+            raise PreventUpdate
     elif ctx.triggered_id == "graph-category-split":
-        xyrange = {"xaxis": figure_category_dict["layout"]["xaxis"]["range"],
-                   "yaxis": figure_category_dict["layout"]["yaxis"]["range"]}
+        if ('xaxis.range[0]' in layout_data_category) or ('xaxis.autorange' in layout_data_category):
+            xyrange = {"xaxis": figure_category_dict["layout"]["xaxis"]["range"],
+                       "yaxis": figure_category_dict["layout"]["yaxis"]["range"]}
+        else:
+            raise PreventUpdate
     elif ctx.triggered_id == "graph-entity-split":
-        xyrange = {"xaxis": figure_entity_dict["layout"]["xaxis"]["range"],
-                   "yaxis": figure_entity_dict["layout"]["yaxis"]["range"]}
+        if ('xaxis.range[0]' in layout_data_entity) or ('xaxis.autorange' in layout_data_entity):
+            xyrange = {"xaxis": figure_entity_dict["layout"]["xaxis"]["range"],
+                       "yaxis": figure_entity_dict["layout"]["yaxis"]["range"]}
+        else:
+            raise PreventUpdate
 
     app_state.xyrange = xyrange
-    return xyrange
+
+    # According to the Dash docs data sharing via the browser memory should be handled with json
+    # https://dash.plotly.com/sharing-data-between-callbacks
+    return json.dumps(xyrange)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -1454,7 +1491,7 @@ if __name__ == "__main__":
                                     id="memory_visible_lines",
                                     data=APP_STATE.source_scenario_visible,
                                 ),
-                                dcc.Store(id="zoom"),
+                                dcc.Store(id="xyrange"),
                                 html.B(
                                     children="Country",
                                     style={"textAlign": "left", "fontSize": 14},
