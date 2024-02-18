@@ -24,7 +24,7 @@ import pycountry
 import xarray as xr
 from attrs import define
 from dash import Dash, Input, Output, State, callback, ctx, dcc, html  # type: ignore
-from dash.exceptions import PreventUpdate
+from dash.exceptions import PreventUpdate  # type: ignore
 from filelock import FileLock
 
 from primap_visualisation_tool.definitions import (
@@ -483,7 +483,6 @@ class AppState:  # type: ignore
             x="time",
             y=self.entity,
             color="category (IPCC2006_PRIMAP)",
-
         )
 
         fig.update_traces(
@@ -581,8 +580,25 @@ class AppState:  # type: ignore
 
         return self.entity_graph
 
-    def update_xy_range(self, fig, layout_data):
-        layout_data = json.loads(layout_data)
+    def update_xy_range(self, fig: Any, xyrange: dict[str, Any]) -> go.Figure:
+        """
+        Update the y-axis limits and x-axis limits in the plot.
+
+        Parameters
+        ----------
+        fig
+            The figure that should be updated.
+        xyrange
+            The minimum and maximum value for the x- and y-axis
+
+
+        Returns
+        -------
+            The same figure with update x- and y-axis
+        -------
+
+        """
+        layout_data = json.loads(xyrange)
 
         fig["layout"].update(  # type: ignore
             xaxis_range=[
@@ -1433,7 +1449,7 @@ def save_note(
     State("graph-category-split", "figure"),
     State("graph-entity-split", "figure"),
 )
-def store_xy_range(
+def store_xy_range(  # noqa: PLR0913
     layout_data_overview,
     layout_data_category,
     layout_data_entity,
@@ -1441,7 +1457,35 @@ def store_xy_range(
     figure_category_dict,
     figure_entity_dict,
     app_state: AppState | None = None,
-):
+) -> dict[str, list[str |  float]]:
+    """
+    Store the x and y range when user interacts with plot.
+
+    Parameters
+    ----------
+    layout_data_overview
+        Information about how the layout changed after user clicks on
+        interactive buttons in the overview plot.
+    layout_data_category
+        Information about how the layout changed after user clicks on
+        interactive buttons in the category plot.
+    layout_data_entity
+        Information about how the layout changed after user clicks on
+        interactive buttons in the entity plot.
+    figure_overview_dict
+        Dictionary with all details of the overview plot.
+    figure_category_dict
+        Dictionary with all details of the category plot.
+    figure_entity_dict
+        Dictionary with all details of the entity plot.
+    app_state
+        Application state. If not provided, we use `APP_STATE` from the global namespace.
+
+    Returns
+    -------
+        x and y range.
+
+    """
     if app_state is None:
         app_state = APP_STATE
 
@@ -1496,7 +1540,7 @@ def store_xy_range(
             }
         else:
             raise PreventUpdate
-
+    print(xyrange)
     # According to the Dash docs data sharing via the browser memory should be handled with json
     # https://dash.plotly.com/sharing-data-between-callbacks
     return json.dumps(xyrange)
