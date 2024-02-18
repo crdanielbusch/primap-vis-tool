@@ -483,11 +483,17 @@ class AppState:  # type: ignore
             x="time",
             y=self.entity,
             color="category (IPCC2006_PRIMAP)",
+
+        )
+
+        fig.update_traces(
+            hovertemplate="%{y:.2e} ",
         )
 
         fig.update_layout(
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
+            hovermode="x",
         )
 
         # In the initial callback this property will be None
@@ -555,6 +561,11 @@ class AppState:  # type: ignore
         fig.update_layout(
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
+            hovermode="x",
+        )
+
+        fig.update_traces(
+            hovertemplate="%{y:.2e} ",
         )
 
         # In the initial callback this property will be None
