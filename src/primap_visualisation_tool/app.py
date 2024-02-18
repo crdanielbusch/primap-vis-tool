@@ -27,7 +27,12 @@ from dash import Dash, Input, Output, State, callback, ctx, dcc, html  # type: i
 from dash.exceptions import PreventUpdate
 from filelock import FileLock
 
-from primap_visualisation_tool.definitions import LINES_LAYOUT, SUBENTITIES, index_cols
+from primap_visualisation_tool.definitions import (
+    LINES_LAYOUT,
+    LINES_ORDER,
+    SUBENTITIES,
+    index_cols,
+)
 from primap_visualisation_tool.functions import apply_gwp, select_cat_children
 
 
@@ -382,7 +387,15 @@ class AppState:  # type: ignore
 
         fig = go.Figure()
 
-        for source_scenario in self.source_scenario_options:
+        source_scenario_sorted = list(self.source_scenario_options)
+        # move primap source scenarios to the front of the list
+        # in the same order as specified in LINES_ORDER
+        for i in [j for j in LINES_ORDER if j in self.source_scenario_options]:
+            source_scenario_sorted.insert(
+                0, source_scenario_sorted.pop(source_scenario_sorted.index(i))
+            )
+
+        for source_scenario in source_scenario_sorted:
             # check if layout is defined
             if source_scenario in LINES_LAYOUT:
                 line_layout = LINES_LAYOUT[source_scenario]
@@ -400,6 +413,7 @@ class AppState:  # type: ignore
                     name=source_scenario,
                     line=line_layout,
                     visible=self.source_scenario_visible[source_scenario],
+                    hovertemplate="%{y:.2e} ",
                 )
             )
 
@@ -413,6 +427,7 @@ class AppState:  # type: ignore
             ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
+            hovermode="x",
         )
 
         # In the initial callback this property will be None
@@ -471,9 +486,6 @@ class AppState:  # type: ignore
         )
 
         fig.update_layout(
-            # xaxis=dict(
-            #     range=self.rangeslider_selection,
-            # ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
@@ -541,9 +553,6 @@ class AppState:  # type: ignore
         )
 
         fig.update_layout(
-            # xaxis=dict(
-            #     range=self.rangeslider_selection,
-            # ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
         )
@@ -1479,7 +1488,6 @@ def store_xy_range(
 
     # According to the Dash docs data sharing via the browser memory should be handled with json
     # https://dash.plotly.com/sharing-data-between-callbacks
-    print(xyrange)
     return json.dumps(xyrange)
 
 
