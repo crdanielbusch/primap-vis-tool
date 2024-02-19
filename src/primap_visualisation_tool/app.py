@@ -105,9 +105,6 @@ class AppState:  # type: ignore
     ds: xr.Dataset
     """Dataset to plot from"""
 
-    rangeslider_selection: list[str]
-    """The selected x range in the overview figure"""
-
     filename: str
     """The name of the data set."""
 
@@ -581,21 +578,52 @@ class AppState:  # type: ignore
 
         return self.entity_graph
 
-    def update_xy_range(self, fig: Any, xyrange: str) -> go.Figure:  # type: ignore
+    def update_x_range(self, fig: Any, xyrange: str) -> go.Figure:  # type: ignore
         """
-        Update the y-axis limits and x-axis limits in the plot.
+        Update the x-axis limits in the plot.
+
+        Parameters
+        ----------
+        fig
+            The figure that should be updated.
+        xrange
+            The minimum and maximum value for the x- and y-axis.
+
+
+        Returns
+        -------
+            The same figure with update x-axis
+        -------
+
+        """
+        layout_data = json.loads(xyrange)
+
+        fig["layout"].update(
+            xaxis=dict(
+                range=[
+                    layout_data["xaxis"][0],
+                    layout_data["xaxis"][1],
+                ],
+            ),
+        )
+
+        return fig
+
+    def update_y_range(self, fig: Any, xyrange: str) -> go.Figure:  # type: ignore
+        """
+        Update the y-axis limits in the plot.
 
         Parameters
         ----------
         fig
             The figure that should be updated.
         xyrange
-            The minimum and maximum value for the x- and y-axis
+            The minimum and maximum value for the x- and y-axis.
 
 
         Returns
         -------
-            The same figure with update x- and y-axis
+            The same figure with updated y-axis.
         -------
 
         """
@@ -608,12 +636,6 @@ class AppState:  # type: ignore
                     layout_data["yaxis"][1],
                 ],
                 autorange=False,
-            ),
-            xaxis=dict(
-                range=[
-                    layout_data["xaxis"][0],
-                    layout_data["xaxis"][1],
-                ],
             ),
         )
 
@@ -631,7 +653,11 @@ class AppState:  # type: ignore
         """
         fig = self.overview_graph
 
-        return self.update_xy_range(fig, xyrange_data)
+        fig = self.update_x_range(fig, xyrange_data)
+
+        fig = self.update_y_range(fig, xyrange_data)
+
+        return fig
 
     def update_category_range(self, xyrange_data: str) -> go.Figure:  # type: ignore
         """
@@ -645,7 +671,9 @@ class AppState:  # type: ignore
         """
         fig = self.category_graph
 
-        return self.update_xy_range(fig, xyrange_data)
+        fig = self.update_x_range(fig, xyrange_data)
+
+        return fig
 
     def update_entity_range(self, xyrange_data: str) -> go.Figure:  # type: ignore
         """
@@ -659,19 +687,9 @@ class AppState:  # type: ignore
         """
         fig = self.entity_graph
 
-        return self.update_xy_range(fig, xyrange_data)
+        fig = self.update_x_range(fig, xyrange_data)
 
-    def update_rangeslider_selection(self, layout_data: dict[str, list[str]]) -> None:
-        """
-        Save the selected x-range in the range slider.
-
-        Parameters
-        ----------
-        layout_data
-            The information about the main figure's layout.
-
-        """
-        self.rangeslider_selection = layout_data["xaxis.range"]
+        return fig
 
     def save_note_to_csv(self, text_input: str) -> None:
         """
@@ -875,11 +893,6 @@ def get_default_app_starting_state(
         )
     }
 
-    rangeslider_selection = [
-        combined_ds["time"].min().to_numpy(),
-        combined_ds["time"].max().to_numpy(),
-    ]
-
     app_state = AppState(
         country_options=country_dropdown_options,
         country_name_iso_mapping=country_name_iso_mapping,
@@ -893,7 +906,6 @@ def get_default_app_starting_state(
             start_values["source_scenario"]
         ),
         source_scenario_visible=source_scenario_visible,
-        rangeslider_selection=rangeslider_selection,
         ds=combined_ds,
         filename=filename,
         present_index_cols=present_index_cols,
@@ -1551,7 +1563,6 @@ def store_xy_range(  # noqa: PLR0913
             }
         else:
             raise PreventUpdate
-    print(xyrange)
     # According to the Dash docs data sharing via the browser memory should be handled with json
     # https://dash.plotly.com/sharing-data-between-callbacks
     return json.dumps(xyrange)
