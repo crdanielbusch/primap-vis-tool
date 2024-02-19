@@ -174,7 +174,7 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = (
                 self.ds[self.entity]
                 .pr.loc[
@@ -371,7 +371,7 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = (
                 self.ds[self.entity]
                 .pr.loc[
@@ -456,7 +456,7 @@ class AppState:  # type: ignore
 
         categories_plot = select_cat_children(self.category, self.category_options)
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = (
                 self.ds[self.entity]
                 .pr.loc[
@@ -527,7 +527,7 @@ class AppState:  # type: ignore
             entities_to_plot = [*entities_to_plot, self.entity]
             drop_parent = True
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = self.ds[entities_to_plot].pr.loc[
                 {
                     "category": [self.category],
@@ -544,7 +544,7 @@ class AppState:  # type: ignore
         if drop_parent:
             filtered = filtered.drop_vars(self.entity)
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             stacked = filtered.pr.to_interchange_format().melt(
                 id_vars=index_cols, var_name="time", value_name="value"
             )
@@ -581,7 +581,7 @@ class AppState:  # type: ignore
 
         return self.entity_graph
 
-    def update_xy_range(self, fig: Any, xyrange: dict[str, Any]) -> go.Figure:
+    def update_xy_range(self, fig: Any, xyrange: str) -> go.Figure:  # type: ignore
         """
         Update the y-axis limits and x-axis limits in the plot.
 
@@ -601,26 +601,27 @@ class AppState:  # type: ignore
         """
         layout_data = json.loads(xyrange)
 
-        fig["layout"].update(  # type: ignore
-            yaxis=dict(range=[
-                layout_data["yaxis"][0],
-                layout_data["yaxis"][1],
+        fig["layout"].update(
+            yaxis=dict(
+                range=[
+                    layout_data["yaxis"][0],
+                    layout_data["yaxis"][1],
                 ],
-                autorange=False
+                autorange=False,
             ),
             xaxis=dict(
                 range=[
-                layout_data["xaxis"][0],
-                layout_data["xaxis"][1],
-            ],
+                    layout_data["xaxis"][0],
+                    layout_data["xaxis"][1],
+                ],
             ),
         )
 
         return fig
 
-    def update_overview_range(self, layout_data: dict[str, list[str]]) -> go.Figure:  # type: ignore
+    def update_overview_range(self, xyrange_data: str) -> go.Figure:  # type: ignore
         """
-        Update x-range of overview figure according to main figure x-range.
+        Update xy-range of overview figure according to main figure x-range.
 
         Parameters
         ----------
@@ -629,12 +630,12 @@ class AppState:  # type: ignore
 
         """
         fig = self.overview_graph
-        print("updating overview range xy")
-        return self.update_xy_range(fig, layout_data)
 
-    def update_category_range(self, layout_data: dict[str, list[str]]) -> go.Figure:  # type: ignore
+        return self.update_xy_range(fig, xyrange_data)
+
+    def update_category_range(self, xyrange_data: str) -> go.Figure:  # type: ignore
         """
-        Update x-range of overview figure according to main figure x-range.
+        Update xy-range of overview figure according to main figure x-range.
 
         Parameters
         ----------
@@ -644,9 +645,9 @@ class AppState:  # type: ignore
         """
         fig = self.category_graph
 
-        return self.update_xy_range(fig, layout_data)
+        return self.update_xy_range(fig, xyrange_data)
 
-    def update_entity_range(self, layout_data: dict[str, list[str]]) -> go.Figure:  # type: ignore
+    def update_entity_range(self, xyrange_data: str) -> go.Figure:  # type: ignore
         """
         Update x-range of overview figure according to main figure x-range.
 
@@ -658,7 +659,7 @@ class AppState:  # type: ignore
         """
         fig = self.entity_graph
 
-        return self.update_xy_range(fig, layout_data)
+        return self.update_xy_range(fig, xyrange_data)
 
     def update_rangeslider_selection(self, layout_data: dict[str, list[str]]) -> None:
         """
@@ -727,7 +728,7 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = (
                 self.ds[self.entity]
                 .pr.loc[
@@ -1445,7 +1446,7 @@ def save_note(
     return (app_state.get_notification(), text_input)
 
 
-@callback(
+@callback(  # type: ignore
     Output("xyrange", "data"),
     Input("graph-overview", "relayoutData"),
     Input("graph-category-split", "relayoutData"),
@@ -1455,14 +1456,14 @@ def save_note(
     State("graph-entity-split", "figure"),
 )
 def store_xy_range(  # noqa: PLR0913
-    layout_data_overview,
-    layout_data_category,
-    layout_data_entity,
-    figure_overview_dict,
-    figure_category_dict,
-    figure_entity_dict,
+    layout_data_overview: dict[str, Any],
+    layout_data_category: dict[str, Any],
+    layout_data_entity: dict[str, Any],
+    figure_overview_dict: dict[str, Any],
+    figure_category_dict: dict[str, Any],
+    figure_entity_dict: dict[str, Any],
     app_state: AppState | None = None,
-) -> dict[str, list[str |  float]]:
+) -> str:
     """
     Store the x and y range when user interacts with plot.
 
@@ -1527,9 +1528,11 @@ def store_xy_range(  # noqa: PLR0913
             raise PreventUpdate
     elif ctx.triggered_id == "graph-category-split":
         print(layout_data_category)
-        if ("xaxis.range[0]" in layout_data_category) or (
-            "xaxis.autorange" in layout_data_category
-        ) or ("yaxis.range[0]" in layout_data_category):
+        if (
+            ("xaxis.range[0]" in layout_data_category)
+            or ("xaxis.autorange" in layout_data_category)
+            or ("yaxis.range[0]" in layout_data_category)
+        ):
             xyrange = {
                 "xaxis": figure_category_dict["layout"]["xaxis"]["range"],
                 "yaxis": figure_category_dict["layout"]["yaxis"]["range"],
@@ -1537,9 +1540,11 @@ def store_xy_range(  # noqa: PLR0913
         else:
             raise PreventUpdate
     elif ctx.triggered_id == "graph-entity-split":
-        if ("xaxis.range[0]" in layout_data_entity) or (
-            "xaxis.autorange" in layout_data_entity
-        ) or ("yaxis.range[0]" in layout_data_category):
+        if (
+            ("xaxis.range[0]" in layout_data_entity)
+            or ("xaxis.autorange" in layout_data_entity)
+            or ("yaxis.range[0]" in layout_data_category)
+        ):
             xyrange = {
                 "xaxis": figure_entity_dict["layout"]["xaxis"]["range"],
                 "yaxis": figure_entity_dict["layout"]["yaxis"]["range"],
@@ -1854,5 +1859,5 @@ if __name__ == "__main__":
         style={"max-width": "none", "width": "100%"},
     )
 
-    with warnings.catch_warnings(action="ignore"):  # type: ignore
+    with warnings.catch_warnings(action="ignore"):
         app.run(debug=True, port=port)
