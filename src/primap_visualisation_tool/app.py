@@ -1539,7 +1539,6 @@ def store_xy_range(  # noqa: PLR0913
             # In this case, the user selected but did not yet use zoom or pan
             raise PreventUpdate
     elif ctx.triggered_id == "graph-category-split":
-        print(layout_data_category)
         if (
             ("xaxis.range[0]" in layout_data_category)
             or ("xaxis.autorange" in layout_data_category)
@@ -1555,7 +1554,7 @@ def store_xy_range(  # noqa: PLR0913
         if (
             ("xaxis.range[0]" in layout_data_entity)
             or ("xaxis.autorange" in layout_data_entity)
-            or ("yaxis.range[0]" in layout_data_category)
+            or ("yaxis.range[0]" in layout_data_entity)
         ):
             xyrange = {
                 "xaxis": figure_entity_dict["layout"]["xaxis"]["range"],
