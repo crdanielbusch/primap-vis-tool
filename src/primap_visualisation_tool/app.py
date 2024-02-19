@@ -431,6 +431,7 @@ class AppState:  # type: ignore
         )
 
         # In the initial callback this property will be None
+        # more on initial callbacks here: https://github.com/plotly/dash/issues/468
         if xyrange_data:
             xyrange_data_dict = json.loads(xyrange_data)
             fig.update_layout(
@@ -601,14 +602,18 @@ class AppState:  # type: ignore
         layout_data = json.loads(xyrange)
 
         fig["layout"].update(  # type: ignore
-            xaxis_range=[
+            yaxis=dict(range=[
+                layout_data["yaxis"][0],
+                layout_data["yaxis"][1],
+                ],
+                autorange=False
+            ),
+            xaxis=dict(
+                range=[
                 layout_data["xaxis"][0],
                 layout_data["xaxis"][1],
             ],
-            yaxis_range=[
-                layout_data["yaxis"][0],
-                layout_data["yaxis"][1],
-            ],
+            ),
         )
 
         return fig
@@ -624,7 +629,7 @@ class AppState:  # type: ignore
 
         """
         fig = self.overview_graph
-
+        print("updating overview range xy")
         return self.update_xy_range(fig, layout_data)
 
     def update_category_range(self, layout_data: dict[str, list[str]]) -> go.Figure:  # type: ignore
@@ -1521,9 +1526,10 @@ def store_xy_range(  # noqa: PLR0913
             # In this case, the user selected but did not yet use zoom or pan
             raise PreventUpdate
     elif ctx.triggered_id == "graph-category-split":
+        print(layout_data_category)
         if ("xaxis.range[0]" in layout_data_category) or (
             "xaxis.autorange" in layout_data_category
-        ):
+        ) or ("yaxis.range[0]" in layout_data_category):
             xyrange = {
                 "xaxis": figure_category_dict["layout"]["xaxis"]["range"],
                 "yaxis": figure_category_dict["layout"]["yaxis"]["range"],
@@ -1533,7 +1539,7 @@ def store_xy_range(  # noqa: PLR0913
     elif ctx.triggered_id == "graph-entity-split":
         if ("xaxis.range[0]" in layout_data_entity) or (
             "xaxis.autorange" in layout_data_entity
-        ):
+        ) or ("yaxis.range[0]" in layout_data_category):
             xyrange = {
                 "xaxis": figure_entity_dict["layout"]["xaxis"]["range"],
                 "yaxis": figure_entity_dict["layout"]["yaxis"]["range"],
