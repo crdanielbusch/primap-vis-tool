@@ -92,7 +92,6 @@ def get_starting_app_state(
         overview_graph=overview_graph,
         entity_graph=entity_graph,
         filename="test_filename",
-        rangeslider_selection=["not", "used"],
         present_index_cols=["not", "used"],
     )
 
@@ -188,6 +187,7 @@ def test_update_overview_graph_can_handle_null_selection(
         category=category,
         entity=entity,
         memory_data=0,
+        xyrange_data={"not", "used"},
         app_state=app_state,
     )
 
@@ -217,9 +217,6 @@ def test_update_category_graph_can_handle_null_selection(
         starting_source_scenario=source_scenario,
     )
 
-    # irrelevant for this test, but needs to be dict
-    layout_data = {"mock": "mock"}
-
     def run_callback():
         context_value.set(
             AttributeDict(**{"triggered_inputs": [{"prop_id": "not used"}]})
@@ -230,7 +227,7 @@ def test_update_category_graph_can_handle_null_selection(
             entity=entity,
             source_scenario=source_scenario,
             memory_data=0,
-            layout_data=layout_data,
+            xyrange_data={"not", "used"},
             app_state=app_state,
         )
 
@@ -263,9 +260,6 @@ def test_update_entity_graph_can_handle_null_selection(
         starting_source_scenario=source_scenario,
     )
 
-    # irrelevant for this test, but needs to be dict
-    layout_data = {"mock": "mock"}
-
     def run_callback():
         context_value.set(
             AttributeDict(**{"triggered_inputs": [{"prop_id": "not used"}]})
@@ -276,7 +270,7 @@ def test_update_entity_graph_can_handle_null_selection(
             entity=entity,
             source_scenario=source_scenario,
             memory_data=0,
-            layout_data=layout_data,
+            xyrange_data={"not", "used"},
             app_state=app_state,
         )
 
@@ -294,7 +288,7 @@ def test_update_entity_graph_can_handle_null_selection(
     assert app_state.source_scenario != source_scenario
 
 
-def test_update_entity_graph_xrange_is_triggered():
+def test_update_entity_graph_is_triggered():
     app_state = Mock()
 
     country = "AUS"
@@ -302,8 +296,8 @@ def test_update_entity_graph_xrange_is_triggered():
     entity = "CO2"
     source_scenario = "PRIMAP-hist_v2.5_final_nr, HISTTP"
     memory_data = None
-    layout_data = {"xaxis.range": ["2018-01-09 07:23:20.8123", "2022-01-01"]}
-    prop_id = "graph-overview.relayoutData"
+    xyrange_data = {"not", "used"}
+    prop_id = "xyrange.data"
 
     def run_callback():
         context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
@@ -313,7 +307,7 @@ def test_update_entity_graph_xrange_is_triggered():
             entity=entity,
             source_scenario=source_scenario,
             memory_data=memory_data,
-            layout_data=layout_data,
+            xyrange_data={"not", "used"},
             app_state=app_state,
         )
 
@@ -321,11 +315,10 @@ def test_update_entity_graph_xrange_is_triggered():
     ctx.run(run_callback)
 
     # check calls
-    app_state.update_entity_xrange.assert_called_once_with(layout_data)
-    app_state.update_rangeslider_selection.assert_called_once_with(layout_data)
+    app_state.update_entity_range.assert_called_once_with(xyrange_data)
 
 
-def test_update_category_graph_xrange_is_triggered():
+def test_update_category_graph_update_range_is_triggered():
     app_state = Mock()
 
     country = "AUS"
@@ -333,8 +326,8 @@ def test_update_category_graph_xrange_is_triggered():
     entity = "CO2"
     source_scenario = "PRIMAP-hist_v2.5_final_nr, HISTTP"
     memory_data = None
-    layout_data = {"xaxis.range": ["2018-01-09 07:23:20.8123", "2022-01-01"]}
-    prop_id = "graph-overview.relayoutData"
+    xyrange_data = {"not", "used"}
+    prop_id = "xyrange.data"
 
     def run_callback():
         context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
@@ -344,7 +337,7 @@ def test_update_category_graph_xrange_is_triggered():
             entity=entity,
             source_scenario=source_scenario,
             memory_data=memory_data,
-            layout_data=layout_data,
+            xyrange_data=xyrange_data,
             app_state=app_state,
         )
 
@@ -352,18 +345,7 @@ def test_update_category_graph_xrange_is_triggered():
     ctx.run(run_callback)
 
     # check calls
-    app_state.update_category_xrange.assert_called_once_with(layout_data)
-    app_state.update_rangeslider_selection.assert_called_once_with(layout_data)
-
-
-def test_update_rangeslider_selection():
-    layout_data = {"xaxis.range": ["2018-01-09 07:23:20.8123", "2022-01-01"]}
-
-    app_state = get_starting_app_state()
-
-    app_state.update_rangeslider_selection(layout_data)
-
-    assert app_state.rangeslider_selection == layout_data["xaxis.range"]
+    app_state.update_category_range.assert_called_once_with(xyrange_data)
 
 
 def test_save_note_return_nothing_when_empty_text_area():
