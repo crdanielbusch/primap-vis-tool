@@ -500,7 +500,7 @@ class AppState:  # type: ignore
             x="time",
             y=self.entity,
             color="category (IPCC2006_PRIMAP)",
-            markers=True,
+            # markers=True,
         )
 
         fig.update_traces(
@@ -558,6 +558,7 @@ class AppState:  # type: ignore
                 }
             ]
 
+        # print(f"{filtered.to_dataframe().reset_index()}")
         filtered = apply_gwp(filtered, self.entity)
 
         # Drop the parent entity out before plotting (as otherwise the
@@ -571,11 +572,12 @@ class AppState:  # type: ignore
                 id_vars=index_cols, var_name="time", value_name="value"
             )
 
+        # if all values are NaN
         if stacked["value"].isna().all():
             print(f"All sub-entities for {self.entity} are nan")
-
+            # filter again but only for parent entity
             with warnings.catch_warnings(action="ignore"):  # type: ignore
-                filtered = self.ds[entities_to_plot].pr.loc[
+                filtered = self.ds[self.entity].pr.loc[
                     {
                         "category": [self.category],
                         "area (ISO3)": [iso_country],
@@ -583,14 +585,19 @@ class AppState:  # type: ignore
                     }
                 ]
 
-            filtered = apply_gwp(filtered, self.entity)
+            # filtered = apply_gwp(filtered, self.entity)
 
-            with warnings.catch_warnings(action="ignore"):  # type: ignore
-                stacked = filtered.pr.to_interchange_format().melt(
-                    id_vars=index_cols, var_name="time", value_name="value"
-                )
+            filtered = filtered.to_dataframe().reset_index()
+            filtered = filtered.rename(columns={self.entity: "value"})
+            stacked = filtered
+            print(stacked)
+
+        # if stacked["value"].isna().all():
+        #     print(f"All values for parent entity {} are NaN")
 
         stacked["time"] = stacked["time"].apply(pd.to_datetime)
+
+        print(stacked)
 
         xrange = [min(stacked["time"]), max(stacked["time"])]
         stacked = stacked.dropna(subset=["value"])
@@ -600,7 +607,7 @@ class AppState:  # type: ignore
             x="time",
             y="value",
             color="entity",
-            markers=True,
+            # markers=True,
         )
 
         fig.update_layout(
