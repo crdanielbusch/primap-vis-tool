@@ -472,15 +472,35 @@ class AppState:  # type: ignore
         if filtered_pandas[self.entity].isna().all():
             print(f"All sub-categories in category {self.category} are nan")
 
+            # filter again but only for parent category
+            with warnings.catch_warnings(action="ignore"):  # type: ignore
+                filtered = (
+                    self.ds[self.entity]
+                    .pr.loc[
+                        {
+                            "category": self.category,
+                            "area (ISO3)": iso_country,
+                            "SourceScen": self.source_scenario,
+                        }
+                    ]
+                    .squeeze()
+                )
+
+            filtered_pandas = filtered.to_dataframe().reset_index()
+
         # Fix for figure not loading at start
         # https://github.com/plotly/plotly.py/issues/3441
         fig = go.Figure(layout=dict(template="plotly"))
+
+        xrange = [min(filtered_pandas["time"]), max(filtered_pandas["time"])]
+        filtered_pandas = filtered_pandas.dropna(subset=[self.entity])
 
         fig = px.area(
             filtered_pandas,
             x="time",
             y=self.entity,
             color="category (IPCC2006_PRIMAP)",
+            markers=True,
         )
 
         fig.update_traces(
@@ -491,6 +511,11 @@ class AppState:  # type: ignore
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
             hovermode="x",
+            # in some cases the last values will be nan and must be dropped
+            # the xrange, however, should remain
+            xaxis=dict(
+                range=xrange,
+            ),
         )
 
         # In the initial callback this property will be None
@@ -546,19 +571,47 @@ class AppState:  # type: ignore
                 id_vars=index_cols, var_name="time", value_name="value"
             )
 
+        if stacked["value"].isna().all():
+            print(f"All sub-entities for {self.entity} are nan")
+
+            with warnings.catch_warnings(action="ignore"):  # type: ignore
+                filtered = self.ds[entities_to_plot].pr.loc[
+                    {
+                        "category": [self.category],
+                        "area (ISO3)": [iso_country],
+                        "SourceScen": [self.source_scenario],
+                    }
+                ]
+
+            filtered = apply_gwp(filtered, self.entity)
+
+            with warnings.catch_warnings(action="ignore"):  # type: ignore
+                stacked = filtered.pr.to_interchange_format().melt(
+                    id_vars=index_cols, var_name="time", value_name="value"
+                )
+
         stacked["time"] = stacked["time"].apply(pd.to_datetime)
+
+        xrange = [min(stacked["time"]), max(stacked["time"])]
+        stacked = stacked.dropna(subset=["value"])
 
         fig = px.area(
             stacked,
             x="time",
             y="value",
             color="entity",
+            markers=True,
         )
 
         fig.update_layout(
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
             hovermode="x",
+            # in some cases the last values will be nan and must be dropped
+            # the xrange, however, should remain
+            xaxis=dict(
+                range=xrange,
+            ),
         )
 
         fig.update_traces(
