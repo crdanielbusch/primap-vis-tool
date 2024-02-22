@@ -297,7 +297,7 @@ def test_update_entity_graph_is_triggered():
     source_scenario = "PRIMAP-hist_v2.5_final_nr, HISTTP"
     memory_data = None
     xyrange_data = {"not", "used"}
-    prop_id = "xyrange.data"
+    prop_id = "xyrange-entity.data"
 
     def run_callback():
         context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
@@ -327,7 +327,7 @@ def test_update_category_graph_update_range_is_triggered():
     source_scenario = "PRIMAP-hist_v2.5_final_nr, HISTTP"
     memory_data = None
     xyrange_data = {"not", "used"}
-    prop_id = "xyrange.data"
+    prop_id = "xyrange-category.data"
 
     def run_callback():
         context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
