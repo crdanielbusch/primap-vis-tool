@@ -582,7 +582,7 @@ class AppState:  # type: ignore
 
         return self.entity_graph
 
-    def update_x_range(self, fig: Any, xyrange: str) -> go.Figure:  # type: ignore
+    def update_x_range(self, fig: Any, xyrange: dict[str, list[str | float]]) -> go.Figure:  # type: ignore
         """
         Update the x-axis limits in the plot.
 
@@ -600,7 +600,7 @@ class AppState:  # type: ignore
         -------
 
         """
-
+        print(xyrange)
         fig["layout"].update(
             xaxis=dict(
                 range=[
@@ -613,7 +613,7 @@ class AppState:  # type: ignore
 
         return fig
 
-    def update_y_range(self, fig: Any, xyrange: str) -> go.Figure:  # type: ignore
+    def update_y_range(self, fig: Any, xyrange: dict[str, list[str | float]]) -> go.Figure:  # type: ignore
         """
         Update the y-axis limits in the plot.
 
@@ -631,7 +631,6 @@ class AppState:  # type: ignore
         -------
 
         """
-
         fig["layout"].update(
             yaxis=dict(
                 range=[
@@ -660,7 +659,7 @@ class AppState:  # type: ignore
 
         # autorange indicates user clicked on Autoscale or Reset axes
         if "autorange" in layout_data.keys():
-            fig["layout"].update(
+            fig["layout"].update(  # type: ignore
                 yaxis=dict(
                     autorange=True,
                 ),
@@ -690,7 +689,7 @@ class AppState:  # type: ignore
 
         # autorange indicates user clicked on Autoscale or Reset axes
         if "autorange" in layout_data.keys():
-            fig["layout"].update(
+            fig["layout"].update(  # type: ignore
                 yaxis=dict(
                     autorange=True,
                 ),
@@ -720,7 +719,7 @@ class AppState:  # type: ignore
 
         # autorange indicates user clicked on Autoscale or Reset axes
         if "autorange" in layout_data.keys():
-            fig["layout"].update(
+            fig["layout"].update(  # type: ignore
                 yaxis=dict(
                     autorange=True,
                 ),
@@ -1244,7 +1243,6 @@ def update_overview_graph(  # noqa: PLR0913
     -------
         Overview figure.
     """
-    print(xyrange_data)
     if app_state is None:
         app_state = APP_STATE
 
@@ -1502,9 +1500,6 @@ def save_note(
     return (app_state.get_notification(), text_input)
 
 
-# The following three callbacks describe how to change a figure`s layout (Output)
-# when one of the two other figures' layout changes (Input).
-# Change in category or entity figure layout -> adjust overview figure layout.
 @callback(  # type: ignore
     Output("xyrange-overview", "data"),
     Input("graph-overview", "relayoutData"),
@@ -1514,7 +1509,7 @@ def save_note(
     State("graph-category-split", "figure"),
     State("graph-entity-split", "figure"),
 )
-def update_xyrange_overview_figure(
+def update_xyrange_overview_figure(  # noqa: PLR0913 PLR0912
     layout_data_overview: dict[str, Any],
     layout_data_category: dict[str, Any],
     layout_data_entity: dict[str, Any],
@@ -1522,7 +1517,31 @@ def update_xyrange_overview_figure(
     figure_category_dict: dict[str, Any],
     figure_entity_dict: dict[str, Any],
     app_state: AppState | None = None,
-):
+) -> str:
+    """
+    Set the x- and y-range of overview figure according to category or entity figure.
+
+    Parameters
+    ----------
+    layout_data_overview
+        Information how the user interacted with the layout options in the overview figure.
+    layout_data_category
+        Information how the user interacted with the layout options in the category figure.
+    layout_data_entity
+        Information how the user interacted with the layout options in the entity figure.
+    figure_overview_dict
+        The overview figure as dictionary.
+    figure_category_dict
+        The overview figure as dictionary.
+    figure_entity_dict
+        The overview figure as dictionary.
+    app_state
+        Application state. If not provided, we use `APP_STATE` from the global namespace.
+
+    Returns
+    -------
+        The x- and y-limits to which the overview figure is updated.
+    """
     if app_state is None:
         app_state = APP_STATE
 
@@ -1539,7 +1558,8 @@ def update_xyrange_overview_figure(
     ):
         raise PreventUpdate
 
-    # A change in the overview plot needs to be registered as well
+    # Different to the callbacks for category and entity figure, a change in
+    # the overview plot needs to be registered as well,
     # so the values for x- and y-range remain when clicking through the pages.
     if ctx.triggered_id == "graph-overview":
         # User changes rangeslider selection in overview figure
@@ -1548,7 +1568,6 @@ def update_xyrange_overview_figure(
                 "xaxis": figure_overview_dict["layout"]["xaxis"]["range"],
                 "yaxis": figure_overview_dict["layout"]["yaxis"]["range"],
             }
-            # return new values for x- and y-range
             return json.dumps(xyrange_overview)
         else:
             raise PreventUpdate
@@ -1588,7 +1607,6 @@ def update_xyrange_overview_figure(
             raise PreventUpdate
 
 
-# change in overview or entity figure layout -> adjust category figure layout
 @callback(  # type: ignore
     Output("xyrange-category", "data"),
     Input("graph-overview", "relayoutData"),
@@ -1597,14 +1615,36 @@ def update_xyrange_overview_figure(
     State("graph-category-split", "figure"),
     State("graph-entity-split", "figure"),
 )
-def update_xyrange_category_figure(
+def update_xyrange_category_figure(  # noqa: PLR0913
     layout_data_overview: dict[str, Any],
     layout_data_entity: dict[str, Any],
     figure_overview_dict: dict[str, Any],
     figure_category_dict: dict[str, Any],
     figure_entity_dict: dict[str, Any],
     app_state: AppState | None = None,
-):
+) -> str:
+    """
+    Set the x- and y-range of category figure according to overview or entity figure.
+
+    Parameters
+    ----------
+    layout_data_overview
+        Information how the user interacted with the layout options in the overview figure.
+    layout_data_entity
+        Information how the user interacted with the layout options in the entity figure.
+    figure_overview_dict
+        The overview figure as dictionary.
+    figure_category_dict
+        The overview figure as dictionary.
+    figure_entity_dict
+        The overview figure as dictionary.
+    app_state
+        Application state. If not provided, we use `APP_STATE` from the global namespace.
+
+    Returns
+    -------
+        The x- and y-limits to which the category figure is updated.
+    """
     if app_state is None:
         app_state = APP_STATE
 
@@ -1621,14 +1661,12 @@ def update_xyrange_category_figure(
         raise PreventUpdate
 
     if ctx.triggered_id == "graph-overview":
-        if (
-            ("xaxis.range[0]" in layout_data_overview)
-            or ("yaxis.range[0]" in layout_data_overview)  # this may never happen actually?
-            or ("xaxis.range" in layout_data_overview)  # that's the rangeslider
-        ):
+        if ("xaxis.range[0]" in layout_data_overview) or (
+            "xaxis.range" in layout_data_overview
+        ):  # that's the rangeslider
             xyrange_category = {
                 "xaxis": figure_overview_dict["layout"]["xaxis"]["range"],
-                # Take Y from the same plot, main plot needs different view
+                # Take Y from the category plot, main plot needs different view
                 "yaxis": figure_category_dict["layout"]["yaxis"]["range"],
             }
             return json.dumps(xyrange_category)
@@ -1661,7 +1699,6 @@ def update_xyrange_category_figure(
             raise PreventUpdate
 
 
-# change in overview or category figure layout -> adjust entity figure layout
 @callback(  # type: ignore
     Output("xyrange-entity", "data"),
     Input("graph-overview", "relayoutData"),
@@ -1670,14 +1707,36 @@ def update_xyrange_category_figure(
     State("graph-category-split", "figure"),
     State("graph-entity-split", "figure"),
 )
-def update_xyrange_entity_figure(
+def update_xyrange_entity_figure(  # noqa: PLR0913
     layout_data_overview: dict[str, Any],
     layout_data_category: dict[str, Any],
     figure_overview_dict: dict[str, Any],
     figure_category_dict: dict[str, Any],
     figure_entity_dict: dict[str, Any],
     app_state: AppState | None = None,
-):
+) -> str:
+    """
+    Set the x- and y-range of category figure according to overview or entity figure.
+
+    Parameters
+    ----------
+    layout_data_overview
+        Information how the user interacted with the layout options in the overview figure.
+    layout_data_category
+        Information how the user interacted with the layout options in the category figure.
+    figure_overview_dict
+        The overview figure as dictionary.
+    figure_category_dict
+        The overview figure as dictionary.
+    figure_entity_dict
+        The overview figure as dictionary.
+    app_state
+        Application state. If not provided, we use `APP_STATE` from the global namespace.
+
+    Returns
+    -------
+        The x- and y-limits to which the category figure is updated.
+    """
     if app_state is None:
         app_state = APP_STATE
 
