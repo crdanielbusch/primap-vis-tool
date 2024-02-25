@@ -228,6 +228,7 @@ def test_update_category_graph_can_handle_null_selection(
             source_scenario=source_scenario,
             memory_data=0,
             xyrange_data={"not", "used"},
+            xyrange_data_entity={"not", "used"},
             app_state=app_state,
         )
 
@@ -271,6 +272,7 @@ def test_update_entity_graph_can_handle_null_selection(
             source_scenario=source_scenario,
             memory_data=0,
             xyrange_data={"not", "used"},
+            xyrange_data_category={"not", "used"},
             app_state=app_state,
         )
 
@@ -308,6 +310,7 @@ def test_update_entity_graph_is_triggered():
             source_scenario=source_scenario,
             memory_data=memory_data,
             xyrange_data={"not", "used"},
+            xyrange_data_category={"not", "used"},
             app_state=app_state,
         )
 
@@ -327,6 +330,7 @@ def test_update_category_graph_update_range_is_triggered():
     source_scenario = "PRIMAP-hist_v2.5_final_nr, HISTTP"
     memory_data = None
     xyrange_data = {"not", "used"}
+    xyrange_data_entity = {"not", "used"}
     prop_id = "xyrange-category.data"
 
     def run_callback():
@@ -338,6 +342,7 @@ def test_update_category_graph_update_range_is_triggered():
             source_scenario=source_scenario,
             memory_data=memory_data,
             xyrange_data=xyrange_data,
+            xyrange_data_entity=xyrange_data_entity,
             app_state=app_state,
         )
 
@@ -505,3 +510,56 @@ def test_get_filename(  # noqa: PLR0913
     )
 
     assert res == expected_res
+
+
+#
+# @pytest.mark.parametrize(
+#     "user_input, test_ds, current_version, old_version, test_ds_name, expected_res",
+#     (
+#         pytest.param(
+#             "mock_dataset_name.nc",
+#             False,
+#             "not needed",
+#             "not needed",
+#             "not needed",
+#             "mock_dataset_name.nc",
+#             id="User input, test data set False",
+#         ),
+#         pytest.param(
+#             "mock_dataset_name.nc",
+#             True,
+#             "not needed",
+#             "not needed",
+#             "not needed",
+#             "mock_dataset_name.nc",
+#             id="User input, test data set True",
+#         ),
+#         pytest.param(
+#             None,
+#             True,
+#             "not needed",
+#             "not needed",
+#             "test_ds.nc",
+#             "test_ds.nc",
+#             id="No user input, test data set True",
+#         ),
+#         pytest.param(
+#             None,
+#             False,
+#             "v2.5_final",
+#             "v2.4.2_final",
+#             "not needed",
+#             "combined_data_v2.5_final_v2.4.2_final.nc",
+#             id="No user input, test data set False",
+#         ),
+#     ),
+# )
+
+# def test_update_xyrange_overview_figure():
+
+# rangeslider in overview figure
+# {'xaxis.range': ['2018-09-11 09:06:26.6349', '2021-08-01 17:45:23.6277']}
+# {'xaxis.autorange': True}
+# {'dragmode': 'pan'}
+# {'dragmode': 'zoom'}
+# {'xaxis.autorange': True, 'xaxis.showspikes': False}
