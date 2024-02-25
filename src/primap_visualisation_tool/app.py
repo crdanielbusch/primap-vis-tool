@@ -733,7 +733,10 @@ class AppState:  # type: ignore
         return fig
 
     def get_xyrange_from_figure(
-        self, x_source_figure=None, y_source_figure=None, autorange=False
+        self,
+        x_source_figure: dict[str, Any] | None = None,
+        y_source_figure: dict[str, Any] | None = None,
+        autorange: bool = False,
     ) -> str:
         """
         Get x- and y-axis limits from a figure and set autorange.
@@ -1606,7 +1609,7 @@ def update_xyrange_overview_figure(  # noqa: PLR0913 PLR0912
             figure_entity_dict,
         )
     ):
-        app_state.prevent_update()
+        raise PreventUpdate
 
     if ctx.triggered_id == "graph-overview":
         # User changes rangeslider selection in overview figure
@@ -1623,9 +1626,9 @@ def update_xyrange_overview_figure(  # noqa: PLR0913 PLR0912
                 autorange=True,
             )
         else:
-            app_state.prevent_update()
-            # raise PreventUpdate
+            raise PreventUpdate
     elif ctx.triggered_id == "graph-category-split":
+        print(layout_data_category)
         if (
             all(
                 keys in layout_data_category
@@ -1649,7 +1652,7 @@ def update_xyrange_overview_figure(  # noqa: PLR0913 PLR0912
                 autorange=True,
             )
         else:
-            app_state.prevent_update()
+            raise PreventUpdate
     elif ctx.triggered_id == "graph-entity-split":
         if (
             all(
@@ -1674,7 +1677,7 @@ def update_xyrange_overview_figure(  # noqa: PLR0913 PLR0912
                 autorange=True,
             )
         else:
-            app_state.prevent_update()
+            raise PreventUpdate
 
 
 @callback(  # type: ignore
@@ -1688,7 +1691,6 @@ def update_xyrange_overview_figure(  # noqa: PLR0913 PLR0912
 )
 def update_xyrange_category_figure(  # noqa: PLR0913
     layout_data_overview: dict[str, Any],
-    # layout_data_category,
     layout_data_entity: dict[str, Any],
     figure_overview_dict: dict[str, Any],
     figure_category_dict: dict[str, Any],
@@ -1730,33 +1732,15 @@ def update_xyrange_category_figure(  # noqa: PLR0913
             figure_entity_dict,
         )
     ):
-        app_state.prevent_update()
+        raise PreventUpdate
 
-    # if ctx.triggered_id == "graph-category":
-    #     raise PreventUpdate
-    # if all(
-    #         keys in layout_data_category
-    #         for keys in ("xaxis.range[0]", "xaxis.range[1]")
-    #     ) or all(
-    #         keys in layout_data_category
-    #         for keys in ("yaxis.range[0]", "yaxis.range[1]")):
-    #
-    #     return app_state.get_xyrange_from_figure(
-    #         x_source_figure=figure_category_dict,
-    #         y_source_figure=figure_category_dict,  # note that Y is from the category plot
-    #         autorange=False,
-    #     )
-    # else:
-    #     raise PreventUpdate
     elif ctx.triggered_id == "graph-overview":
         if (
             all(
                 keys in layout_data_overview
                 for keys in ("xaxis.range[0]", "xaxis.range[1]")
             )
-        ) or (
-            "xaxis.range" in layout_data_overview
-        ):  # that's the rangeslider
+        ) or ("xaxis.range" in layout_data_overview):
             return app_state.get_xyrange_from_figure(
                 x_source_figure=figure_overview_dict,
                 y_source_figure=figure_category_dict,  # note that Y is from the category plot
@@ -1769,7 +1753,7 @@ def update_xyrange_category_figure(  # noqa: PLR0913
                 autorange=True,
             )
         else:
-            app_state.prevent_update()
+            raise PreventUpdate
     elif ctx.triggered_id == "graph-entity-split":
         if (
             all(
@@ -1794,7 +1778,7 @@ def update_xyrange_category_figure(  # noqa: PLR0913
                 autorange=True,
             )
         else:
-            app_state.prevent_update()
+            raise PreventUpdate
 
 
 @callback(  # type: ignore
