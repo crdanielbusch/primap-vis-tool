@@ -682,7 +682,7 @@ def test_update_xyrange_overview_figure(  # noqa: PLR0913
     figure_category_dict = "mock figure_category_dict"
     figure_entity_dict = "mock figure_entity_dict"
 
-    # dict to assign varibale to test scenario
+    # dict to assign variables to test scenario
     figure_dicts = {
         "figure_overview_dict": figure_overview_dict,
         "figure_category_dict": figure_category_dict,
@@ -730,13 +730,13 @@ def test_update_xyrange_overview_figure(  # noqa: PLR0913
             "graph-overview.relayoutData",
             "{'dragmode': 'zoom'}",
             "not needed",
-            id="User uses buttons in overview figure but layout stays",
+            id="User selects zoom in overview figure.",
         ),
         pytest.param(
             "graph-entity-split.relayoutData",
             "not needed",
             "{'dragmode': 'zoom'}",
-            id="User uses buttons in entity figure but layout stays",
+            id="User selects zoom in entity figure.",
         ),
     ),
 )
@@ -997,11 +997,3 @@ def test_update_xyrange_entity_figure(  # noqa: PLR0913
         y_source_figure=figure_dicts[y_source_figure],
         autorange=autorange,
     )
-
-
-# rangeslider in overview figure
-# {'xaxis.range': ['2018-09-11 09:06:26.6349', '2021-08-01 17:45:23.6277']}
-# {'xaxis.autorange': True}
-# {'dragmode': 'pan'}
-# {'dragmode': 'zoom'}
-# {'xaxis.autorange': True, 'xaxis.showspikes': False}

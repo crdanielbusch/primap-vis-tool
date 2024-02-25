@@ -428,7 +428,6 @@ class AppState:  # type: ignore
         )
 
         # In the initial callback this property will be None
-        # more on initial callbacks here: https://github.com/plotly/dash/issues/468
         if xyrange_data:
             xyrange_data_dict = json.loads(xyrange_data)
             fig.update_layout(
@@ -810,12 +809,6 @@ class AppState:  # type: ignore
             f"Note saved for {self.country} / {self.category} /"
             f" {self.entity}  at {now_str}"
         )
-
-    def prevent_update(self) -> None:
-        """
-        Interrupt the callback and don't return output.
-        """
-        raise PreventUpdate
 
     def get_row_data(self) -> Any:
         """
@@ -1832,7 +1825,7 @@ def update_xyrange_entity_figure(  # noqa: PLR0913
             figure_entity_dict,
         )
     ):
-        app_state.prevent_update()
+        raise PreventUpdate
 
     if ctx.triggered_id == "graph-overview":
         if all(
@@ -1851,7 +1844,7 @@ def update_xyrange_entity_figure(  # noqa: PLR0913
                 autorange=True,
             )
         else:
-            app_state.prevent_update()
+            raise PreventUpdate
     elif ctx.triggered_id == "graph-category-split":
         if all(
             keys in layout_data_category
@@ -1872,7 +1865,7 @@ def update_xyrange_entity_figure(  # noqa: PLR0913
                 autorange=True,
             )
         else:
-            app_state.prevent_update()
+            raise PreventUpdate
 
 
 if __name__ == "__main__":
