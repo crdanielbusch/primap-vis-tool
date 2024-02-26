@@ -358,7 +358,7 @@ class AppState:  # type: ignore
 
         return new_index
 
-    def update_overview_figure(self, xyrange_data: str | None) -> go.Figure:  # type: ignore
+    def update_overview_figure(self, xyrange_data: str | None) -> Any:
         """
         Update the overview figure based on the input in the dropdown menus.
 
@@ -509,7 +509,7 @@ class AppState:  # type: ignore
 
         return self.category_graph
 
-    def update_entity_figure(self, xyrange_data: str | None) -> go.Figure:  # type: ignore
+    def update_entity_figure(self, xyrange_data: str | None) -> Any:
         """
         Update the overview figure based on the input in the dropdown menus.
 
@@ -581,7 +581,9 @@ class AppState:  # type: ignore
 
         return self.entity_graph
 
-    def update_x_range(self, fig: Any, xyrange: dict[str, list[str | float]]) -> go.Figure:  # type: ignore
+    def update_x_range(
+        self, fig: Any, xyrange: dict[str, list[str | float | bool]]
+    ) -> Any:
         """
         Update the x-axis limits in the plot.
 
@@ -636,7 +638,7 @@ class AppState:  # type: ignore
 
         return fig
 
-    def update_overview_range(self, xyrange_data: str) -> go.Figure:  # type: ignore
+    def update_overview_range(self, xyrange_data: str) -> Any:
         """
         Update xy-range of overview figure according to stored xy-range.
 
