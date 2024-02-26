@@ -1621,7 +1621,6 @@ def update_xyrange_overview_figure(  # noqa: PLR0913 PLR0912
         else:
             raise PreventUpdate
     elif ctx.triggered_id == "graph-category-split":
-        print(layout_data_category)
         if (
             all(
                 keys in layout_data_category
