@@ -112,7 +112,7 @@ class AppState:  # type: ignore
     """index cols that are actually present in the loaded dataset"""
 
     overview_graph: go.Figure | None = None  # type: ignore
-    """Main graph"""
+    """Overview graph"""
 
     category_graph: go.Figure | None = None  # type: ignore
     """Graph showing breakdown within the selected category"""
@@ -358,9 +358,9 @@ class AppState:  # type: ignore
 
         return new_index
 
-    def update_main_figure(self, xyrange_data) -> go.Figure:  # type: ignore
+    def update_overview_figure(self, xyrange_data: str | None) -> go.Figure:  # type: ignore
         """
-        Update the main figure based on the input in the dropdown menus.
+        Update the overview figure based on the input in the dropdown menus.
 
         Returns
         -------
@@ -444,9 +444,9 @@ class AppState:  # type: ignore
 
         return self.overview_graph
 
-    def update_category_figure(self, xyrange_data) -> go.Figure:  # type: ignore
+    def update_category_figure(self, xyrange_data: str | None) -> Any:
         """
-        Update the main figure based on the input in the dropdown menus.
+        Update the overview figure based on the input in the dropdown menus.
 
         Returns
         -------
@@ -509,9 +509,9 @@ class AppState:  # type: ignore
 
         return self.category_graph
 
-    def update_entity_figure(self, xyrange_data) -> go.Figure:  # type: ignore
+    def update_entity_figure(self, xyrange_data: str | None) -> go.Figure:  # type: ignore
         """
-        Update the main figure based on the input in the dropdown menus.
+        Update the overview figure based on the input in the dropdown menus.
 
         Returns
         -------
@@ -592,12 +592,9 @@ class AppState:  # type: ignore
         xrange
             The minimum and maximum value for the x- and y-axis.
 
-
         Returns
         -------
             The same figure with update x-axis
-        -------
-
         """
         fig["layout"].update(
             xaxis=dict(
@@ -611,7 +608,7 @@ class AppState:  # type: ignore
 
         return fig
 
-    def update_y_range(self, fig: Any, xyrange: dict[str, list[str | float]]) -> go.Figure:  # type: ignore
+    def update_y_range(self, fig: Any, xyrange: dict[str, list[str | float]]) -> Any:
         """
         Update the y-axis limits in the plot.
 
@@ -626,8 +623,6 @@ class AppState:  # type: ignore
         Returns
         -------
             The same figure with updated y-axis.
-        -------
-
         """
         fig["layout"].update(
             yaxis=dict(
@@ -643,12 +638,16 @@ class AppState:  # type: ignore
 
     def update_overview_range(self, xyrange_data: str) -> go.Figure:  # type: ignore
         """
-        Update xy-range of overview figure according to main figure x-range.
+        Update xy-range of overview figure according to stored xy-range.
 
         Parameters
         ----------
-        layout_data
-            The information about the xrange of the main figure.
+        xyrange_data
+            X- and y-axis range to which the figure is to be updated.
+
+        Returns
+        -------
+            Updated figure.
 
         """
         fig = self.overview_graph
@@ -671,14 +670,18 @@ class AppState:  # type: ignore
 
         return fig
 
-    def update_category_range(self, xyrange_data: str) -> go.Figure:  # type: ignore
+    def update_category_range(self, xyrange_data: str) -> Any:
         """
-        Update xy-range of overview figure according to main figure x-range.
+        Update xy-range of category figure according to stored xy-range.
 
         Parameters
         ----------
-        layout_data
-            The information about the xrange of the main figure.
+        xyrange_data
+            X- and y-axis range to which the figure is to be updated.
+
+        Returns
+        -------
+            Updated figure.
 
         """
         layout_data = json.loads(xyrange_data)
@@ -701,15 +704,18 @@ class AppState:  # type: ignore
 
         return fig
 
-    def update_entity_range(self, xyrange_data: str) -> go.Figure:  # type: ignore
+    def update_entity_range(self, xyrange_data: str) -> Any:
         """
-        Update x-range of overview figure according to main figure x-range.
+        Update xy-range of entity figure according to stored xy-range.
 
         Parameters
         ----------
-        layout_data
-            The information about the xrange of the main figure.
+        xyrange_data
+            X- and y-axis range to which the figure is to be updated.
 
+        Returns
+        -------
+            Updated figure.
         """
         layout_data = json.loads(xyrange_data)
 
@@ -1246,7 +1252,7 @@ def update_overview_graph(  # noqa: PLR0913
     category: str,
     entity: str,
     memory_data: dict[str, int],
-    xyrange_data,
+    xyrange_data: str | None,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -1285,7 +1291,7 @@ def update_overview_graph(  # noqa: PLR0913
     if ctx.triggered_id == "xyrange-overview" and xyrange_data:
         return app_state.update_overview_range(xyrange_data)
 
-    return app_state.update_main_figure(xyrange_data)
+    return app_state.update_overview_figure(xyrange_data)
 
 
 @callback(  # type: ignore
@@ -1304,8 +1310,8 @@ def update_category_graph(  # noqa: PLR0913
     entity: str,
     source_scenario: str,
     memory_data: dict[str, int],
-    xyrange_data,
-    xyrange_data_entity,
+    xyrange_data: str | None,
+    xyrange_data_entity: str | None,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -1329,8 +1335,11 @@ def update_category_graph(  # noqa: PLR0913
         A variable stored in the browser that changes whenever country, category or entity changes.
         It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
 
-    layout_data
-        The information about the main figure's layout.
+    xyrange_data
+        X- and y-axis range to which the category figure is to be updated.
+
+    xyrange_data_entity
+        X- and y-axis range to which the entity figure is to be updated.
 
     app_state
         The app state to update. If not provided, we use `APP_STATE` i.e.
@@ -1378,8 +1387,8 @@ def update_entity_graph(  # noqa: PLR0913
     entity: str,
     source_scenario: str,
     memory_data: dict[str, int],
-    xyrange_data,
-    xyrange_data_category,
+    xyrange_data: str | None,
+    xyrange_data_category: str | None,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -1403,8 +1412,11 @@ def update_entity_graph(  # noqa: PLR0913
         A variable stored in the browser that changes whenever country, category or entity changes.
         It is needed to execute the callbacks sequentially. The actual values are irrelevant for the app.
 
-    layout_data
-        The information about the main figure's layout.
+    xyrange_data
+        X- and y-axis range to which the category figure is to be updated.
+
+    xyrange_data_category
+        X- and y-axis range to which the category figure is to be updated.
 
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
@@ -1529,7 +1541,6 @@ def save_note(
     Returns
     -------
         A text to let the user know the note was saved.
-    -------
 
     """
     if app_state is None:
@@ -1578,9 +1589,9 @@ def update_xyrange_overview_figure(  # noqa: PLR0913 PLR0912
     figure_overview_dict
         The overview figure as dictionary.
     figure_category_dict
-        The overview figure as dictionary.
+        The category figure as dictionary.
     figure_entity_dict
-        The overview figure as dictionary.
+        The entity figure as dictionary.
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
 
@@ -1701,9 +1712,9 @@ def update_xyrange_category_figure(  # noqa: PLR0913
     figure_overview_dict
         The overview figure as dictionary.
     figure_category_dict
-        The overview figure as dictionary.
+        The category figure as dictionary.
     figure_entity_dict
-        The overview figure as dictionary.
+        The entity figure as dictionary.
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
 
@@ -1801,9 +1812,9 @@ def update_xyrange_entity_figure(  # noqa: PLR0913
     figure_overview_dict
         The overview figure as dictionary.
     figure_category_dict
-        The overview figure as dictionary.
+        The category figure as dictionary.
     figure_entity_dict
-        The overview figure as dictionary.
+        The entity figure as dictionary.
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
 
