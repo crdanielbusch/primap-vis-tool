@@ -12,6 +12,7 @@ import pandas as pd
 import pytest
 from dash._callback_context import context_value
 from dash._utils import AttributeDict
+from dash.exceptions import PreventUpdate  # type: ignore
 from pandas.testing import assert_frame_equal
 
 from primap_visualisation_tool.app import (
@@ -23,6 +24,9 @@ from primap_visualisation_tool.app import (
     update_overview_graph,
     update_source_scenario_dropdown,
     update_table,
+    update_xyrange_category_figure,
+    update_xyrange_entity_figure,
+    update_xyrange_overview_figure,
 )
 
 dropdowns_with_null_values = pytest.mark.parametrize(
@@ -228,6 +232,7 @@ def test_update_category_graph_can_handle_null_selection(
             source_scenario=source_scenario,
             memory_data=0,
             xyrange_data={"not", "used"},
+            xyrange_data_entity={"not", "used"},
             app_state=app_state,
         )
 
@@ -271,6 +276,7 @@ def test_update_entity_graph_can_handle_null_selection(
             source_scenario=source_scenario,
             memory_data=0,
             xyrange_data={"not", "used"},
+            xyrange_data_category={"not", "used"},
             app_state=app_state,
         )
 
@@ -297,7 +303,7 @@ def test_update_entity_graph_is_triggered():
     source_scenario = "PRIMAP-hist_v2.5_final_nr, HISTTP"
     memory_data = None
     xyrange_data = {"not", "used"}
-    prop_id = "xyrange.data"
+    prop_id = "xyrange-entity.data"
 
     def run_callback():
         context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
@@ -308,6 +314,7 @@ def test_update_entity_graph_is_triggered():
             source_scenario=source_scenario,
             memory_data=memory_data,
             xyrange_data={"not", "used"},
+            xyrange_data_category={"not", "used"},
             app_state=app_state,
         )
 
@@ -327,7 +334,8 @@ def test_update_category_graph_update_range_is_triggered():
     source_scenario = "PRIMAP-hist_v2.5_final_nr, HISTTP"
     memory_data = None
     xyrange_data = {"not", "used"}
-    prop_id = "xyrange.data"
+    xyrange_data_entity = {"not", "used"}
+    prop_id = "xyrange-category.data"
 
     def run_callback():
         context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
@@ -338,6 +346,7 @@ def test_update_category_graph_update_range_is_triggered():
             source_scenario=source_scenario,
             memory_data=memory_data,
             xyrange_data=xyrange_data,
+            xyrange_data_entity=xyrange_data_entity,
             app_state=app_state,
         )
 
@@ -505,3 +514,486 @@ def test_get_filename(  # noqa: PLR0913
     )
 
     assert res == expected_res
+
+
+@pytest.mark.parametrize(
+    "prop_id, layout_data_overview, layout_data_category, layout_data_entity",
+    (
+        pytest.param(
+            "not needed",
+            None,
+            "not needed",
+            "not needed",
+            id="layout_data_overview is None",
+        ),
+        pytest.param(
+            "not needed",
+            "not needed",
+            None,
+            "not needed",
+            id="layout_data_category is None",
+        ),
+        pytest.param(
+            "not needed",
+            "not needed",
+            "not needed",
+            None,
+            id="layout_data_entity is None",
+        ),
+        pytest.param(
+            "graph-overview.relayoutData",
+            "{'dragmode': 'zoom'}",
+            "not needed",
+            "not needed",
+            id="User selects zoom in overview figure",
+        ),
+        pytest.param(
+            "graph-category-split.relayoutData",
+            "{'dragmode': 'zoom'}",
+            "not needed",
+            "not needed",
+            id="User selects zoom in category figure",
+        ),
+        pytest.param(
+            "graph-entity-split.relayoutData",
+            "{'dragmode': 'zoom'}",
+            "not needed",
+            "not needed",
+            id="User selects zoom in category figure",
+        ),
+    ),
+)
+def test_update_xyrange_overview_figure_prevent_update(
+    prop_id, layout_data_overview, layout_data_category, layout_data_entity
+):
+    app_state = get_starting_app_state()
+
+    figure_overview_dict = {"not", "used"}
+    figure_category_dict = {"not", "used"}
+    figure_entity_dict = {"not", "used"}
+
+    def run_callback():
+        context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
+        return update_xyrange_overview_figure(
+            layout_data_overview=layout_data_overview,
+            layout_data_category=layout_data_category,
+            layout_data_entity=layout_data_entity,
+            figure_overview_dict=figure_overview_dict,
+            figure_category_dict=figure_category_dict,
+            figure_entity_dict=figure_entity_dict,
+            app_state=app_state,
+        )
+
+    ctx = copy_context()
+
+    with pytest.raises(PreventUpdate) as excinfo:
+        ctx.run(run_callback)
+
+    assert excinfo.type == PreventUpdate
+
+
+@pytest.mark.parametrize(
+    "prop_id, layout_data_overview, layout_data_category,"
+    " layout_data_entity, x_source_figure, y_source_figure, autorange",
+    (
+        pytest.param(
+            "graph-overview.relayoutData",
+            "{'xaxis.range': ['2018-09-11 09:06:26.6349', '2021-08-01 17:45:23.6277']}",
+            "not needed",
+            "not needed",
+            "figure_overview_dict",
+            "figure_overview_dict",
+            False,
+            id="User selects rangeslider in overview plot",
+        ),
+        pytest.param(
+            "graph-overview.relayoutData",
+            "{'xaxis.autorange': True}",
+            "not needed",
+            "not needed",
+            "figure_overview_dict",
+            "figure_overview_dict",
+            True,
+            id="User clicks on autorange in overview plot",
+        ),
+        pytest.param(
+            "graph-category-split.relayoutData",
+            "not needed",
+            {
+                "xaxis.range[0]": "",
+                "xaxis.range[1]": "",
+                "yaxis.range[0]": 0,
+                "yaxis.range[1]": 0,
+            },
+            "not needed",
+            "figure_category_dict",
+            "figure_category_dict",
+            False,
+            id="User changes view in category plot",
+        ),
+        pytest.param(
+            "graph-category-split.relayoutData",
+            "not needed",
+            {"xaxis.autorange": True},
+            "not needed",
+            "figure_category_dict",
+            "figure_category_dict",
+            True,
+            id="User selects autorange or reset axes in category plot",
+        ),
+        pytest.param(
+            "graph-entity-split.relayoutData",
+            "not needed",
+            "not needed",
+            {
+                "xaxis.range[0]": "",
+                "xaxis.range[1]": "",
+                "yaxis.range[0]": 0,
+                "yaxis.range[1]": 0,
+            },
+            "figure_entity_dict",
+            "figure_entity_dict",
+            False,
+            id="User changes view in entity plot",
+        ),
+        pytest.param(
+            "graph-entity-split.relayoutData",
+            "not needed",
+            "not needed",
+            {"xaxis.autorange": True},
+            "figure_entity_dict",
+            "figure_entity_dict",
+            True,
+            id="User selects autorange or reset axes in entity plot",
+        ),
+    ),
+)
+def test_update_xyrange_overview_figure(  # noqa: PLR0913
+    prop_id,
+    layout_data_overview,
+    layout_data_category,
+    layout_data_entity,
+    x_source_figure,
+    y_source_figure,
+    autorange,
+):
+    app_state = Mock()
+    figure_overview_dict = "mock figure_overview_dict"
+    figure_category_dict = "mock figure_category_dict"
+    figure_entity_dict = "mock figure_entity_dict"
+
+    # dict to assign variables to test scenario
+    figure_dicts = {
+        "figure_overview_dict": figure_overview_dict,
+        "figure_category_dict": figure_category_dict,
+        "figure_entity_dict": figure_entity_dict,
+    }
+
+    def run_callback():
+        context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
+        return update_xyrange_overview_figure(
+            layout_data_overview=layout_data_overview,
+            layout_data_category=layout_data_category,
+            layout_data_entity=layout_data_entity,
+            figure_overview_dict=figure_overview_dict,
+            figure_category_dict=figure_category_dict,
+            figure_entity_dict=figure_entity_dict,
+            app_state=app_state,
+        )
+
+    ctx = copy_context()
+    ctx.run(run_callback)
+
+    app_state.get_xyrange_from_figure.assert_called_once_with(
+        x_source_figure=figure_dicts[x_source_figure],
+        y_source_figure=figure_dicts[y_source_figure],
+        autorange=autorange,
+    )
+
+
+@pytest.mark.parametrize(
+    "prop_id, layout_data_overview, layout_data_entity",
+    (
+        pytest.param(
+            "not needed",
+            None,
+            "not needed",
+            id="layout_data_overview is None",
+        ),
+        pytest.param(
+            "not needed",
+            "not needed",
+            None,
+            id="layout_data_entity is None",
+        ),
+        pytest.param(
+            "graph-overview.relayoutData",
+            "{'dragmode': 'zoom'}",
+            "not needed",
+            id="User selects zoom in overview figure.",
+        ),
+        pytest.param(
+            "graph-entity-split.relayoutData",
+            "not needed",
+            "{'dragmode': 'zoom'}",
+            id="User selects zoom in entity figure.",
+        ),
+    ),
+)
+def test_update_xyrange_category_figure_prevent_update(
+    prop_id, layout_data_overview, layout_data_entity
+):
+    app_state = get_starting_app_state()
+
+    figure_overview_dict = {"not", "used"}
+    figure_category_dict = {"not", "used"}
+    figure_entity_dict = {"not", "used"}
+
+    def run_callback():
+        context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
+        return update_xyrange_category_figure(
+            layout_data_overview=layout_data_overview,
+            layout_data_entity=layout_data_entity,
+            figure_overview_dict=figure_overview_dict,
+            figure_category_dict=figure_category_dict,
+            figure_entity_dict=figure_entity_dict,
+            app_state=app_state,
+        )
+
+    ctx = copy_context()
+
+    with pytest.raises(PreventUpdate) as excinfo:
+        ctx.run(run_callback)
+
+    assert excinfo.type == PreventUpdate
+
+
+@pytest.mark.parametrize(
+    "prop_id, layout_data_overview, layout_data_entity, x_source_figure, y_source_figure, autorange",
+    (
+        pytest.param(
+            "graph-overview.relayoutData",
+            "{'xaxis.range': ['2018-09-11 09:06:26.6349', '2021-08-01 17:45:23.6277']}",
+            "not needed",
+            "figure_overview_dict",
+            "figure_category_dict",
+            False,
+            id="User selects rangeslider in overview plot",
+        ),
+        pytest.param(
+            "graph-overview.relayoutData",
+            "{'xaxis.autorange': True}",
+            "not needed",
+            "figure_overview_dict",
+            "figure_category_dict",
+            True,
+            id="User clicks on autorange in overview plot",
+        ),
+        pytest.param(
+            "graph-entity-split.relayoutData",
+            "not needed",
+            {
+                "xaxis.range[0]": "",
+                "xaxis.range[1]": "",
+                "yaxis.range[0]": 0,
+                "yaxis.range[1]": 0,
+            },
+            "figure_entity_dict",
+            "figure_entity_dict",
+            False,
+            id="User changes view in entity plot",
+        ),
+        pytest.param(
+            "graph-entity-split.relayoutData",
+            "not needed",
+            {"xaxis.autorange": True},
+            "figure_entity_dict",
+            "figure_entity_dict",
+            True,
+            id="User selects autorange or reset axes in entity plot",
+        ),
+    ),
+)
+def test_update_xyrange_category_figure(  # noqa: PLR0913
+    prop_id,
+    layout_data_overview,
+    layout_data_entity,
+    x_source_figure,
+    y_source_figure,
+    autorange,
+):
+    app_state = Mock()
+    figure_overview_dict = "mock figure_overview_dict"
+    figure_category_dict = "mock figure_category_dict"
+    figure_entity_dict = "mock figure_entity_dict"
+
+    # dict to assign varibales to test scenario
+    figure_dicts = {
+        "figure_overview_dict": figure_overview_dict,
+        "figure_category_dict": figure_category_dict,
+        "figure_entity_dict": figure_entity_dict,
+    }
+
+    def run_callback():
+        context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
+        return update_xyrange_category_figure(
+            layout_data_overview=layout_data_overview,
+            layout_data_entity=layout_data_entity,
+            figure_overview_dict=figure_overview_dict,
+            figure_category_dict=figure_category_dict,
+            figure_entity_dict=figure_entity_dict,
+            app_state=app_state,
+        )
+
+    ctx = copy_context()
+    ctx.run(run_callback)
+
+    app_state.get_xyrange_from_figure.assert_called_once_with(
+        x_source_figure=figure_dicts[x_source_figure],
+        y_source_figure=figure_dicts[y_source_figure],
+        autorange=autorange,
+    )
+
+
+@pytest.mark.parametrize(
+    "prop_id, layout_data_overview, layout_data_category",
+    (
+        pytest.param(
+            "not needed",
+            None,
+            "not needed",
+            id="layout_data_overview is None",
+        ),
+        pytest.param(
+            "not needed",
+            "not needed",
+            None,
+            id="layout_data_category is None",
+        ),
+        pytest.param(
+            "graph-overview.relayoutData",
+            "{'dragmode': 'zoom'}",
+            "not needed",
+            id="User selects zoom in overview figure",
+        ),
+        pytest.param(
+            "graph-category-split.relayoutData",
+            "not needed",
+            "{'dragmode': 'zoom'}",
+            id="User selects zoom in category figure",
+        ),
+    ),
+)
+def test_update_xyrange_entity_figure_prevent_update(
+    prop_id, layout_data_overview, layout_data_category
+):
+    app_state = get_starting_app_state()
+
+    figure_overview_dict = {"not", "used"}
+    figure_category_dict = {"not", "used"}
+    figure_entity_dict = {"not", "used"}
+
+    def run_callback():
+        context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
+        return update_xyrange_entity_figure(
+            layout_data_overview=layout_data_overview,
+            layout_data_category=layout_data_category,
+            figure_overview_dict=figure_overview_dict,
+            figure_category_dict=figure_category_dict,
+            figure_entity_dict=figure_entity_dict,
+            app_state=app_state,
+        )
+
+    ctx = copy_context()
+
+    with pytest.raises(PreventUpdate) as excinfo:
+        ctx.run(run_callback)
+
+    assert excinfo.type == PreventUpdate
+
+
+@pytest.mark.parametrize(
+    "prop_id, layout_data_overview, layout_data_category, x_source_figure, y_source_figure, autorange",
+    (
+        pytest.param(
+            "graph-overview.relayoutData",
+            "{'xaxis.range': ['2018-09-11 09:06:26.6349', '2021-08-01 17:45:23.6277']}",
+            "not needed",
+            "figure_overview_dict",
+            "figure_entity_dict",
+            False,
+            id="User selects rangeslider in overview plot",
+        ),
+        pytest.param(
+            "graph-overview.relayoutData",
+            "{'xaxis.autorange': True}",
+            "not needed",
+            "figure_overview_dict",
+            "figure_entity_dict",
+            True,
+            id="User clicks on autorange in overview plot",
+        ),
+        pytest.param(
+            "graph-category-split.relayoutData",
+            "not needed",
+            {
+                "xaxis.range[0]": "",
+                "xaxis.range[1]": "",
+                "yaxis.range[0]": 0,
+                "yaxis.range[1]": 0,
+            },
+            "figure_category_dict",
+            "figure_category_dict",
+            False,
+            id="User changes view in category plot",
+        ),
+        pytest.param(
+            "graph-category-split.relayoutData",
+            "not needed",
+            {"xaxis.autorange": True},
+            "figure_category_dict",
+            "figure_category_dict",
+            True,
+            id="User selects autorange or reset axes in category plot",
+        ),
+    ),
+)
+def test_update_xyrange_entity_figure(  # noqa: PLR0913
+    prop_id,
+    layout_data_overview,
+    layout_data_category,
+    x_source_figure,
+    y_source_figure,
+    autorange,
+):
+    app_state = Mock()
+    figure_overview_dict = "mock figure_overview_dict"
+    figure_category_dict = "mock figure_category_dict"
+    figure_entity_dict = "mock figure_entity_dict"
+
+    # dict to assign varibales from test scenario
+    figure_dicts = {
+        "figure_overview_dict": figure_overview_dict,
+        "figure_category_dict": figure_category_dict,
+        "figure_entity_dict": figure_entity_dict,
+    }
+
+    def run_callback():
+        context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": prop_id}]}))
+        return update_xyrange_entity_figure(
+            layout_data_overview=layout_data_overview,
+            layout_data_category=layout_data_category,
+            figure_overview_dict=figure_overview_dict,
+            figure_category_dict=figure_category_dict,
+            figure_entity_dict=figure_entity_dict,
+            app_state=app_state,
+        )
+
+    ctx = copy_context()
+    ctx.run(run_callback)
+
+    app_state.get_xyrange_from_figure.assert_called_once_with(
+        x_source_figure=figure_dicts[x_source_figure],
+        y_source_figure=figure_dicts[y_source_figure],
+        autorange=autorange,
+    )

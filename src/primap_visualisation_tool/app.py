@@ -431,12 +431,15 @@ class AppState:  # type: ignore
         )
 
         # In the initial callback this property will be None
-        # more on initial callbacks here: https://github.com/plotly/dash/issues/468
         if xyrange_data:
             xyrange_data_dict = json.loads(xyrange_data)
             fig.update_layout(
                 xaxis=dict(
                     range=xyrange_data_dict["xaxis"],
+                    autorange=False,
+                ),
+                yaxis=dict(
+                    autorange=True,
                 ),
             )
 
@@ -615,7 +618,7 @@ class AppState:  # type: ignore
             hovertemplate="%{y:.2e} ",
         )
 
-        # In the initial callback this property will be None
+        # In the initial callback xyrange_data will be None
         if xyrange_data:
             xyrange_data_dict = json.loads(xyrange_data)
             fig.update_layout(
@@ -628,7 +631,7 @@ class AppState:  # type: ignore
 
         return self.entity_graph
 
-    def update_x_range(self, fig: Any, xyrange: str) -> go.Figure:  # type: ignore
+    def update_x_range(self, fig: Any, xyrange: dict[str, list[str | float]]) -> go.Figure:  # type: ignore
         """
         Update the x-axis limits in the plot.
 
@@ -646,20 +649,19 @@ class AppState:  # type: ignore
         -------
 
         """
-        layout_data = json.loads(xyrange)
-
         fig["layout"].update(
             xaxis=dict(
                 range=[
-                    layout_data["xaxis"][0],
-                    layout_data["xaxis"][1],
+                    xyrange["xaxis"][0],
+                    xyrange["xaxis"][1],
                 ],
+                autorange=False,
             ),
         )
 
         return fig
 
-    def update_y_range(self, fig: Any, xyrange: str) -> go.Figure:  # type: ignore
+    def update_y_range(self, fig: Any, xyrange: dict[str, list[str | float]]) -> go.Figure:  # type: ignore
         """
         Update the y-axis limits in the plot.
 
@@ -677,13 +679,11 @@ class AppState:  # type: ignore
         -------
 
         """
-        layout_data = json.loads(xyrange)
-
         fig["layout"].update(
             yaxis=dict(
                 range=[
-                    layout_data["yaxis"][0],
-                    layout_data["yaxis"][1],
+                    xyrange["yaxis"][0],
+                    xyrange["yaxis"][1],
                 ],
                 autorange=False,
             ),
@@ -703,9 +703,21 @@ class AppState:  # type: ignore
         """
         fig = self.overview_graph
 
-        fig = self.update_x_range(fig, xyrange_data)
+        layout_data = json.loads(xyrange_data)
 
-        fig = self.update_y_range(fig, xyrange_data)
+        # autorange indicates user clicked on Autoscale or Reset axes
+        if "autorange" in layout_data.keys():
+            fig["layout"].update(  # type: ignore
+                yaxis=dict(
+                    autorange=True,
+                ),
+                xaxis=dict(
+                    autorange=True,
+                ),
+            )
+        else:
+            fig = self.update_x_range(fig, layout_data)
+            fig = self.update_y_range(fig, layout_data)
 
         return fig
 
@@ -719,9 +731,23 @@ class AppState:  # type: ignore
             The information about the xrange of the main figure.
 
         """
+        layout_data = json.loads(xyrange_data)
+
         fig = self.category_graph
 
-        fig = self.update_x_range(fig, xyrange_data)
+        # autorange indicates user clicked on Autoscale or Reset axes
+        if "autorange" in layout_data.keys():
+            fig["layout"].update(  # type: ignore
+                yaxis=dict(
+                    autorange=True,
+                ),
+                xaxis=dict(
+                    autorange=True,
+                ),
+            )
+        else:
+            fig = self.update_x_range(fig, layout_data)
+            fig = self.update_y_range(fig, layout_data)
 
         return fig
 
@@ -735,11 +761,59 @@ class AppState:  # type: ignore
             The information about the xrange of the main figure.
 
         """
+        layout_data = json.loads(xyrange_data)
+
         fig = self.entity_graph
 
-        fig = self.update_x_range(fig, xyrange_data)
+        # autorange indicates user clicked on Autoscale or Reset axes
+        if "autorange" in layout_data.keys():
+            fig["layout"].update(  # type: ignore
+                yaxis=dict(
+                    autorange=True,
+                ),
+                xaxis=dict(
+                    autorange=True,
+                ),
+            )
+        else:
+            fig = self.update_x_range(fig, layout_data)
+            fig = self.update_y_range(fig, layout_data)
 
         return fig
+
+    def get_xyrange_from_figure(
+        self,
+        x_source_figure: dict[str, Any] | None = None,
+        y_source_figure: dict[str, Any] | None = None,
+        autorange: bool = False,
+    ) -> str:
+        """
+        Get x- and y-axis limits from a figure and set autorange.
+
+        Parameters
+        ----------
+        x_source_figure
+            Figure from which to extract x-axis limits.
+        y_source_figure
+            Figure from which to ectract y-axis limits.
+        autorange
+            Ignore x- and y-axis limits in the current plot and set to autorange.
+
+        Returns
+        -------
+            Information about x- and y-axis limits.
+
+        """
+        xy_range = {}
+
+        if x_source_figure:
+            xy_range["xaxis"] = x_source_figure["layout"]["xaxis"]["range"]
+        if y_source_figure:
+            xy_range["yaxis"] = y_source_figure["layout"]["yaxis"]["range"]
+        if autorange:
+            xy_range["autorange"] = True
+
+        return json.dumps(xy_range)
 
     def save_note_to_csv(self, text_input: str) -> None:
         """
@@ -1215,7 +1289,7 @@ def update_source_scenario_dropdown(  # noqa: PLR0913
     State("dropdown-category", "value"),
     State("dropdown-entity", "value"),
     Input("memory", "data"),
-    Input("xyrange", "data"),
+    Input("xyrange-overview", "data"),
 )
 def update_overview_graph(  # noqa: PLR0913
     country: str,
@@ -1258,7 +1332,7 @@ def update_overview_graph(  # noqa: PLR0913
         # User cleared one of the selections in the dropdown, do nothing
         return app_state.overview_graph
 
-    if ctx.triggered_id == "xyrange" and xyrange_data:
+    if ctx.triggered_id == "xyrange-overview" and xyrange_data:
         return app_state.update_overview_range(xyrange_data)
 
     return app_state.update_main_figure(xyrange_data)
@@ -1271,7 +1345,8 @@ def update_overview_graph(  # noqa: PLR0913
     State("dropdown-entity", "value"),
     Input("dropdown-source-scenario", "value"),
     Input("memory", "data"),
-    Input("xyrange", "data"),
+    Input("xyrange-category", "data"),
+    State("xyrange-entity", "data"),
 )
 def update_category_graph(  # noqa: PLR0913
     country: str,
@@ -1280,6 +1355,7 @@ def update_category_graph(  # noqa: PLR0913
     source_scenario: str,
     memory_data: dict[str, int],
     xyrange_data,
+    xyrange_data_entity,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -1317,7 +1393,7 @@ def update_category_graph(  # noqa: PLR0913
     if app_state is None:
         app_state = APP_STATE
 
-    if ctx.triggered_id == "xyrange" and xyrange_data:
+    if ctx.triggered_id == "xyrange-category" and xyrange_data:
         return app_state.update_category_range(xyrange_data)
 
     if any(v is None for v in (country, category, entity, source_scenario)):
@@ -1327,6 +1403,11 @@ def update_category_graph(  # noqa: PLR0913
     app_state.source_scenario_index = app_state.source_scenario_options.index(
         source_scenario
     )
+
+    # in case user adjusts category figure layout
+    # and then changes country, category or entity
+    if not xyrange_data:
+        xyrange_data = xyrange_data_entity
 
     return app_state.update_category_figure(xyrange_data)
 
@@ -1338,7 +1419,8 @@ def update_category_graph(  # noqa: PLR0913
     State("dropdown-entity", "value"),
     Input("dropdown-source-scenario", "value"),
     Input("memory", "data"),
-    Input("xyrange", "data"),
+    Input("xyrange-entity", "data"),
+    State("xyrange-category", "data"),
 )
 def update_entity_graph(  # noqa: PLR0913
     country: str,
@@ -1347,6 +1429,7 @@ def update_entity_graph(  # noqa: PLR0913
     source_scenario: str,
     memory_data: dict[str, int],
     xyrange_data,
+    xyrange_data_category,
     app_state: AppState | None = None,
 ) -> go.Figure:
     """
@@ -1383,7 +1466,7 @@ def update_entity_graph(  # noqa: PLR0913
     if app_state is None:
         app_state = APP_STATE
 
-    if ctx.triggered_id == "xyrange" and xyrange_data:
+    if ctx.triggered_id == "xyrange-entity" and xyrange_data:
         return app_state.update_entity_range(xyrange_data)
 
     if any(v is None for v in (country, category, entity, source_scenario)):
@@ -1393,6 +1476,11 @@ def update_entity_graph(  # noqa: PLR0913
     app_state.source_scenario_index = app_state.source_scenario_options.index(
         source_scenario
     )
+
+    # in case user adjusts category figure layout
+    # and then changes country, category or entity
+    if not xyrange_data:
+        xyrange_data = xyrange_data_category
 
     return app_state.update_entity_figure(xyrange_data)
 
@@ -1509,7 +1597,7 @@ def save_note(
 
 
 @callback(  # type: ignore
-    Output("xyrange", "data"),
+    Output("xyrange-overview", "data"),
     Input("graph-overview", "relayoutData"),
     Input("graph-category-split", "relayoutData"),
     Input("graph-entity-split", "relayoutData"),
@@ -1517,7 +1605,7 @@ def save_note(
     State("graph-category-split", "figure"),
     State("graph-entity-split", "figure"),
 )
-def store_xy_range(  # noqa: PLR0913
+def update_xyrange_overview_figure(  # noqa: PLR0913 PLR0912
     layout_data_overview: dict[str, Any],
     layout_data_category: dict[str, Any],
     layout_data_entity: dict[str, Any],
@@ -1527,32 +1615,28 @@ def store_xy_range(  # noqa: PLR0913
     app_state: AppState | None = None,
 ) -> str:
     """
-    Store the x and y range when user interacts with plot.
+    Set the x- and y-range of overview figure according to category or entity figure.
 
     Parameters
     ----------
     layout_data_overview
-        Information about how the layout changed after user clicks on
-        interactive buttons in the overview plot.
+        Information how the user interacted with the layout options in the overview figure.
     layout_data_category
-        Information about how the layout changed after user clicks on
-        interactive buttons in the category plot.
+        Information how the user interacted with the layout options in the category figure.
     layout_data_entity
-        Information about how the layout changed after user clicks on
-        interactive buttons in the entity plot.
+        Information how the user interacted with the layout options in the entity figure.
     figure_overview_dict
-        Dictionary with all details of the overview plot.
+        The overview figure as dictionary.
     figure_category_dict
-        Dictionary with all details of the category plot.
+        The overview figure as dictionary.
     figure_entity_dict
-        Dictionary with all details of the entity plot.
+        The overview figure as dictionary.
     app_state
         Application state. If not provided, we use `APP_STATE` from the global namespace.
 
     Returns
     -------
-        x and y range.
-
+        The x- and y-limits to which the overview figure is updated.
     """
     if app_state is None:
         app_state = APP_STATE
@@ -1571,50 +1655,266 @@ def store_xy_range(  # noqa: PLR0913
         raise PreventUpdate
 
     if ctx.triggered_id == "graph-overview":
-        # A change in the rangeslider will return dict with keys 'xaxis.range[0]'
-        # A change with the zoom function will return a dict with the key 'xaxis.range'
-        # Click on autoscale will return 'xaxis.autorange'
-        if (
-            ("xaxis.range[0]" in layout_data_overview)
-            or ("xaxis.range" in layout_data_overview)
-            or (
-                "xaxis.autorange" in layout_data_overview
-            )  # only applies to overview figure
-        ):
-            xyrange = {
-                "xaxis": figure_overview_dict["layout"]["xaxis"]["range"],
-                "yaxis": figure_overview_dict["layout"]["yaxis"]["range"],
-            }
+        # User changes rangeslider selection in overview figure
+        if "xaxis.range" in layout_data_overview:
+            return app_state.get_xyrange_from_figure(
+                x_source_figure=figure_overview_dict,
+                y_source_figure=figure_overview_dict,
+                autorange=False,
+            )
+        elif "xaxis.autorange" in layout_data_overview:
+            return app_state.get_xyrange_from_figure(
+                x_source_figure=figure_overview_dict,
+                y_source_figure=figure_overview_dict,
+                autorange=True,
+            )
         else:
-            # In this case, the user selected but did not yet use zoom or pan
             raise PreventUpdate
     elif ctx.triggered_id == "graph-category-split":
         if (
-            ("xaxis.range[0]" in layout_data_category)
-            or ("xaxis.autorange" in layout_data_category)
-            or ("yaxis.range[0]" in layout_data_category)
+            all(
+                keys in layout_data_category
+                for keys in ("xaxis.range[0]", "xaxis.range[1]")
+            )
+        ) or (
+            all(
+                keys in layout_data_category
+                for keys in ("yaxis.range[0]", "yaxis.range[1]")
+            )
         ):
-            xyrange = {
-                "xaxis": figure_category_dict["layout"]["xaxis"]["range"],
-                "yaxis": figure_category_dict["layout"]["yaxis"]["range"],
-            }
+            return app_state.get_xyrange_from_figure(
+                x_source_figure=figure_category_dict,
+                y_source_figure=figure_category_dict,
+                autorange=False,
+            )
+        elif "xaxis.autorange" in layout_data_category:
+            return app_state.get_xyrange_from_figure(
+                x_source_figure=figure_category_dict,
+                y_source_figure=figure_category_dict,
+                autorange=True,
+            )
         else:
             raise PreventUpdate
     elif ctx.triggered_id == "graph-entity-split":
         if (
-            ("xaxis.range[0]" in layout_data_entity)
-            or ("xaxis.autorange" in layout_data_entity)
-            or ("yaxis.range[0]" in layout_data_entity)
+            all(
+                keys in layout_data_entity
+                for keys in ("xaxis.range[0]", "xaxis.range[1]")
+            )
+        ) or (
+            all(
+                keys in layout_data_entity
+                for keys in ("yaxis.range[0]", "yaxis.range[1]")
+            )
         ):
-            xyrange = {
-                "xaxis": figure_entity_dict["layout"]["xaxis"]["range"],
-                "yaxis": figure_entity_dict["layout"]["yaxis"]["range"],
-            }
+            return app_state.get_xyrange_from_figure(
+                x_source_figure=figure_entity_dict,
+                y_source_figure=figure_entity_dict,
+                autorange=False,
+            )
+        elif "xaxis.autorange" in layout_data_entity:
+            return app_state.get_xyrange_from_figure(
+                x_source_figure=figure_entity_dict,
+                y_source_figure=figure_entity_dict,
+                autorange=True,
+            )
         else:
             raise PreventUpdate
-    # According to the Dash docs data sharing via the browser memory should be handled with json
-    # https://dash.plotly.com/sharing-data-between-callbacks
-    return json.dumps(xyrange)
+
+
+@callback(  # type: ignore
+    Output("xyrange-category", "data"),
+    Input("graph-overview", "relayoutData"),
+    # Input("graph-category-split", "relayoutData"),
+    Input("graph-entity-split", "relayoutData"),
+    State("graph-overview", "figure"),
+    State("graph-category-split", "figure"),
+    State("graph-entity-split", "figure"),
+)
+def update_xyrange_category_figure(  # noqa: PLR0913
+    layout_data_overview: dict[str, Any],
+    layout_data_entity: dict[str, Any],
+    figure_overview_dict: dict[str, Any],
+    figure_category_dict: dict[str, Any],
+    figure_entity_dict: dict[str, Any],
+    app_state: AppState | None = None,
+) -> str:
+    """
+    Set the x- and y-range of category figure according to overview or entity figure.
+
+    Parameters
+    ----------
+    layout_data_overview
+        Information how the user interacted with the layout options in the overview figure.
+    layout_data_entity
+        Information how the user interacted with the layout options in the entity figure.
+    figure_overview_dict
+        The overview figure as dictionary.
+    figure_category_dict
+        The overview figure as dictionary.
+    figure_entity_dict
+        The overview figure as dictionary.
+    app_state
+        Application state. If not provided, we use `APP_STATE` from the global namespace.
+
+    Returns
+    -------
+        The x- and y-limits to which the category figure is updated.
+    """
+    if app_state is None:
+        app_state = APP_STATE
+
+    if any(
+        v is None
+        for v in (
+            layout_data_overview,
+            layout_data_entity,
+            figure_overview_dict,
+            figure_category_dict,
+            figure_entity_dict,
+        )
+    ):
+        raise PreventUpdate
+
+    elif ctx.triggered_id == "graph-overview":
+        if (
+            all(
+                keys in layout_data_overview
+                for keys in ("xaxis.range[0]", "xaxis.range[1]")
+            )
+        ) or ("xaxis.range" in layout_data_overview):
+            return app_state.get_xyrange_from_figure(
+                x_source_figure=figure_overview_dict,
+                y_source_figure=figure_category_dict,  # note that Y is from the category plot
+                autorange=False,
+            )
+        elif "xaxis.autorange" in layout_data_overview:
+            return app_state.get_xyrange_from_figure(
+                x_source_figure=figure_overview_dict,
+                y_source_figure=figure_category_dict,
+                autorange=True,
+            )
+        else:
+            raise PreventUpdate
+    elif ctx.triggered_id == "graph-entity-split":
+        if (
+            all(
+                keys in layout_data_entity
+                for keys in ("xaxis.range[0]", "xaxis.range[1]")
+            )
+        ) or (
+            all(
+                keys in layout_data_entity
+                for keys in ("yaxis.range[0]", "yaxis.range[1]")
+            )
+        ):
+            return app_state.get_xyrange_from_figure(
+                x_source_figure=figure_entity_dict,
+                y_source_figure=figure_entity_dict,
+                autorange=False,
+            )
+        elif "xaxis.autorange" in layout_data_entity:
+            return app_state.get_xyrange_from_figure(
+                x_source_figure=figure_entity_dict,
+                y_source_figure=figure_entity_dict,
+                autorange=True,
+            )
+        else:
+            raise PreventUpdate
+
+
+@callback(  # type: ignore
+    Output("xyrange-entity", "data"),
+    Input("graph-overview", "relayoutData"),
+    Input("graph-category-split", "relayoutData"),
+    State("graph-overview", "figure"),
+    State("graph-category-split", "figure"),
+    State("graph-entity-split", "figure"),
+)
+def update_xyrange_entity_figure(  # noqa: PLR0913
+    layout_data_overview: dict[str, Any],
+    layout_data_category: dict[str, Any],
+    figure_overview_dict: dict[str, Any],
+    figure_category_dict: dict[str, Any],
+    figure_entity_dict: dict[str, Any],
+    app_state: AppState | None = None,
+) -> str:
+    """
+    Set the x- and y-range of category figure according to overview or entity figure.
+
+    Parameters
+    ----------
+    layout_data_overview
+        Information how the user interacted with the layout options in the overview figure.
+    layout_data_category
+        Information how the user interacted with the layout options in the category figure.
+    figure_overview_dict
+        The overview figure as dictionary.
+    figure_category_dict
+        The overview figure as dictionary.
+    figure_entity_dict
+        The overview figure as dictionary.
+    app_state
+        Application state. If not provided, we use `APP_STATE` from the global namespace.
+
+    Returns
+    -------
+        The x- and y-limits to which the category figure is updated.
+    """
+    if app_state is None:
+        app_state = APP_STATE
+
+    if any(
+        v is None
+        for v in (
+            layout_data_overview,
+            layout_data_category,
+            figure_overview_dict,
+            figure_category_dict,
+            figure_entity_dict,
+        )
+    ):
+        raise PreventUpdate
+
+    if ctx.triggered_id == "graph-overview":
+        if all(
+            keys in layout_data_overview
+            for keys in ("xaxis.range[0]", "xaxis.range[1]")
+        ) or ("xaxis.range" in layout_data_overview):
+            return app_state.get_xyrange_from_figure(
+                x_source_figure=figure_overview_dict,
+                y_source_figure=figure_entity_dict,  # note that Y is from the category plot
+                autorange=False,
+            )
+        elif "xaxis.autorange" in layout_data_overview:
+            return app_state.get_xyrange_from_figure(
+                x_source_figure=figure_overview_dict,
+                y_source_figure=figure_entity_dict,
+                autorange=True,
+            )
+        else:
+            raise PreventUpdate
+    elif ctx.triggered_id == "graph-category-split":
+        if all(
+            keys in layout_data_category
+            for keys in ("xaxis.range[0]", "xaxis.range[1]")
+        ) or all(
+            keys in layout_data_category
+            for keys in ("yaxis.range[0]", "yaxis.range[1]")
+        ):
+            return app_state.get_xyrange_from_figure(
+                x_source_figure=figure_category_dict,
+                y_source_figure=figure_category_dict,
+                autorange=False,
+            )
+        elif "xaxis.autorange" in layout_data_category:
+            return app_state.get_xyrange_from_figure(
+                x_source_figure=figure_category_dict,
+                y_source_figure=figure_category_dict,
+                autorange=True,
+            )
+        else:
+            raise PreventUpdate
 
 
 if __name__ == "__main__":
@@ -1648,7 +1948,9 @@ if __name__ == "__main__":
                                     id="memory_visible_lines",
                                     data=APP_STATE.source_scenario_visible,
                                 ),
-                                dcc.Store(id="xyrange"),
+                                dcc.Store(id="xyrange-overview"),
+                                dcc.Store(id="xyrange-category"),
+                                dcc.Store(id="xyrange-entity"),
                                 html.B(
                                     children="Country",
                                     style={"textAlign": "left", "fontSize": 14},
