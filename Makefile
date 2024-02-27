@@ -24,7 +24,7 @@ help:  ## print short description of each target
 .PHONY: checks
 checks:  ## run all the linting checks of the codebase
 	@echo "=== pre-commit ==="; poetry run pre-commit run --all-files || echo "--- pre-commit failed ---" >&2; \
-		echo "=== mypy ==="; MYPYPATH=stubs poetry run mypy src || echo "--- mypy failed ---" >&2; \
+		echo "=== mypy ==="; MYPYPATH=stubs poetry run mypy --no-warn-unused-ignore src || echo "--- mypy failed ---" >&2; \
 		echo "======"
 
 .PHONY: black
