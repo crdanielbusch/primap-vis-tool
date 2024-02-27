@@ -405,11 +405,25 @@ class AppState:  # type: ignore
             df_source_scenario = filtered_pandas.loc[
                 filtered_pandas["SourceScen"] == source_scenario
             ]
+
+            # check for NaN's within a time series
+            df_source_scenario = df_source_scenario.reset_index()
+            first_idx = df_source_scenario[self.entity].first_valid_index()
+            last_idx = df_source_scenario[self.entity].last_valid_index()
+            # print(source_scenario)
+            # print(first_idx, last_idx)
+            # print(any(df_source_scenario[self.entity].loc[first_idx :last_idx].isna()))
+
+            if any(df_source_scenario[self.entity].loc[first_idx:last_idx].isna()):
+                mode = "lines+markers"
+            else:
+                mode = "lines"
+
             fig.add_trace(
                 go.Scatter(
                     x=list(df_source_scenario["time"]),
                     y=list(df_source_scenario[self.entity]),
-                    mode="lines",
+                    mode=mode,
                     name=source_scenario,
                     line=line_layout,
                     visible=self.source_scenario_visible[source_scenario],
