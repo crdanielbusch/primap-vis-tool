@@ -384,9 +384,6 @@ class AppState:  # type: ignore
 
         fig = go.Figure()
 
-        if filtered_pandas[self.entity].isna().all():
-            print("All values for all SourceScen are NaN")
-
         source_scenario_sorted = list(self.source_scenario_options)
         # move primap source scenarios to the front of the list
         # in the same order as specified in LINES_ORDER
