@@ -406,14 +406,11 @@ class AppState:  # type: ignore
                 filtered_pandas["SourceScen"] == source_scenario
             ]
 
-            # check for NaN's within a time series
             df_source_scenario = df_source_scenario.reset_index()
+            # find start and end of time series for SourceScenario
             first_idx = df_source_scenario[self.entity].first_valid_index()
             last_idx = df_source_scenario[self.entity].last_valid_index()
-            # print(source_scenario)
-            # print(first_idx, last_idx)
-            # print(any(df_source_scenario[self.entity].loc[first_idx :last_idx].isna()))
-
+            # check if time series has data gaps
             if any(df_source_scenario[self.entity].loc[first_idx:last_idx].isna()):
                 mode = "lines+markers"
             else:
@@ -424,6 +421,8 @@ class AppState:  # type: ignore
                     x=list(df_source_scenario["time"]),
                     y=list(df_source_scenario[self.entity]),
                     mode=mode,
+                    marker_symbol="cross",
+                    marker_size=10,
                     name=source_scenario,
                     line=line_layout,
                     visible=self.source_scenario_visible[source_scenario],
