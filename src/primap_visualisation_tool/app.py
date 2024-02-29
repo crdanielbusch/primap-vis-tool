@@ -521,6 +521,7 @@ class AppState:  # type: ignore
             ],
             axis=1,
         )
+        print(f"{_df=}")
 
         # determine where positive and negative emissions
         _df_pos = _df.map(lambda x: max(x, 0))
@@ -636,7 +637,6 @@ class AppState:  # type: ignore
 
         fig.update_layout(
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-            # margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
             margin=dict(l=0, r=0, t=40, b=40),
             hovermode="x",
             # in some cases the last values will be nan and must be dropped
@@ -659,7 +659,7 @@ class AppState:  # type: ignore
 
         return self.category_graph
 
-    def update_entity_figure(self, xyrange_data: str | None) -> Any:
+    def update_entity_figure(self, xyrange_data: str | None) -> Any:  # noqa: PLR0915
         """
         Update the overview figure based on the input in the dropdown menus.
 
@@ -721,16 +721,143 @@ class AppState:  # type: ignore
         xrange = [min(stacked["time"]), max(stacked["time"])]
         stacked = stacked.dropna(subset=["value"])
 
-        fig = px.area(
-            stacked,
-            x="time",
-            y="value",
-            color="entity",
+        # bring df in right format for plotting
+        _df = stacked
+        _df = _df.set_index("time")
+        # TODO! There's probably a pandas function for this loop
+        # TODO! Remove hard-coded category column name
+        _df = pd.concat(
+            [
+                _df[_df["entity"] == c]["value"].rename(c)
+                for c in _df["entity"].unique()
+            ],
+            axis=1,
         )
+        print("entity")
+        print(_df)
+
+        # determine where positive and negative emissions
+        _df_pos = _df.map(lambda x: max(x, 0))
+        _df_neg = _df.map(lambda x: min(x, 0))
+
+        # TODO! Check different color schemes.
+        # https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express
+        # Set colors for areas per category
+        defaults = iter(px.colors.qualitative.Vivid)
+        colors = {}
+        for key in _df.columns:
+            color = next(defaults)
+            colors[key] = color
+
+        fig = go.Figure()
+
+        # plot all positive emissions
+        lower = [0] * len(_df_pos)
+        for c in reversed(_df_pos.columns):
+            if sum(_df_pos[c].fillna(0)) == 0:
+                continue
+
+            upper = _df_pos[c].fillna(0) + lower
+            fig.add_trace(
+                go.Scatter(
+                    y=upper,
+                    x=_df_pos.index,
+                    mode="lines",
+                    showlegend=False,
+                    line=dict(
+                        color=colors[c],
+                        width=0,
+                    ),
+                    text=list(_df_pos[c]),
+                    customdata=list(_df_pos.index.year),
+                    hovertemplate="%{customdata}, %{text:.2e}",
+                    name=f"{c} pos",
+                )
+            )
+            fig.add_trace(
+                go.Scatter(
+                    y=lower,
+                    x=_df_pos.index,
+                    fill="tonexty",  # fill area between trace0 and trace1
+                    fillcolor=colors[c],
+                    mode="lines",
+                    line=dict(
+                        width=0,
+                    ),
+                    hoverinfo="skip",
+                    name=f"{c} pos",
+                )
+            )
+            lower = upper
+
+        # plot all negative emissions
+        upper = [0] * len(_df_neg)
+        for c in _df_neg.columns:
+            if sum(_df_neg[c]) == 0:
+                continue
+
+            lower = _df_neg[c].fillna(0) + upper
+            fig.add_trace(
+                go.Scatter(
+                    y=upper,
+                    x=_df_neg.index,
+                    mode="lines",
+                    line=dict(
+                        color=colors[c],
+                        width=0,
+                    ),
+                    showlegend=False,
+                    name=f"{c} neg",
+                    text=f"Category {c}",
+                    hoverinfo="skip",
+                )
+            )
+
+            fig.add_trace(
+                go.Scatter(
+                    y=lower,
+                    x=_df_neg.index,
+                    fill="tonexty",  # fill area between trace0 and trace1
+                    mode="lines",
+                    line=dict(
+                        color=colors[c],
+                        width=0,
+                    ),
+                    fillcolor=colors[c],
+                    text=list(_df_neg[c]),
+                    customdata=list(_df_neg.index.year),
+                    hovertemplate="%{customdata}, %{text:.2e}",
+                    name=f"{c} neg",
+                )
+            )
+            upper = lower
+
+        # plot line for sum
+        fig.add_trace(
+            go.Scatter(
+                y=_df.sum(axis=1),
+                x=_df.index,
+                mode="lines",
+                line=dict(
+                    color="black",
+                    width=3,
+                ),
+                name="total",
+                customdata=list(_df.index.year),
+                hovertemplate="%{customdata}, %{y:.2e}",
+            )
+        )
+        #
+        # fig = px.area(
+        #     stacked,
+        #     x="time",
+        #     y="value",
+        #     color="entity",
+        # )
 
         fig.update_layout(
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-            margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
+            margin=dict(l=0, r=0, t=40, b=40),  # distance to next element
             hovermode="x",
             # in some cases the last values will be NaN and must be dropped
             # the xrange, however, should remain
@@ -739,9 +866,9 @@ class AppState:  # type: ignore
             ),
         )
 
-        fig.update_traces(
-            hovertemplate="%{y:.2e} ",
-        )
+        # fig.update_traces(
+        #     hovertemplate="%{y:.2e} ",
+        # )
 
         # In the initial callback xyrange_data will be None
         if xyrange_data:
