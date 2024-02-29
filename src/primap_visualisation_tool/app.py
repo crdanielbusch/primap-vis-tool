@@ -509,10 +509,9 @@ class AppState:  # type: ignore
         xrange = [min(filtered_pandas["time"]), max(filtered_pandas["time"])]
         filtered_pandas = filtered_pandas.dropna(subset=[self.entity])
 
+        # bring df in right format for plotting
         _df = filtered_pandas
-        # _df["time"] = _df["time"].apply(lambda x : int(x.year))
         _df = _df.set_index("time")
-        # _df[_df["category (IPCC2006_PRIMAP)"] == c]["CO2"].rename(c)
         # TODO! There's probably a pandas function for this loop
         # TODO! Remove hard-coded category column name
         _df = pd.concat(
@@ -523,10 +522,13 @@ class AppState:  # type: ignore
             axis=1,
         )
 
+        # determine where positive and negative emissions
         _df_pos = _df.map(lambda x: max(x, 0))
         _df_neg = _df.map(lambda x: min(x, 0))
 
+        # TODO! Check different color schemes.
         # https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express
+        # Set colors for areas per category
         defaults = iter(px.colors.qualitative.Vivid)
         colors = {}
         for key in _df.columns:
@@ -535,9 +537,10 @@ class AppState:  # type: ignore
 
         fig = go.Figure()
 
+        # plot all positive emissions
         lower = [0] * len(_df_pos)
         for c in reversed(_df_pos.columns):
-            if sum(_df_pos[c]) == 0:
+            if sum(_df_pos[c].fillna(0)) == 0:
                 continue
 
             upper = _df_pos[c].fillna(0) + lower
@@ -573,6 +576,7 @@ class AppState:  # type: ignore
             )
             lower = upper
 
+        # plot all negative emissions
         upper = [0] * len(_df_neg)
         for c in _df_neg.columns:
             if sum(_df_neg[c]) == 0:
@@ -614,6 +618,7 @@ class AppState:  # type: ignore
             )
             upper = lower
 
+        # plot line for sum
         fig.add_trace(
             go.Scatter(
                 y=_df.sum(axis=1),
@@ -629,21 +634,10 @@ class AppState:  # type: ignore
             )
         )
 
-        # fig = px.area(
-        #     filtered_pandas,
-        #     x="time",
-        #     y=self.entity,
-        #     color="category (IPCC2006_PRIMAP)",
-        #     pattern_shape="category (IPCC2006_PRIMAP)",
-        # )
-        #
-        # fig.update_traces(
-        #     hovertemplate="%{y:.2e} ",
-        # )
-
         fig.update_layout(
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-            margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
+            # margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
+            margin=dict(l=0, r=0, t=40, b=40),
             hovermode="x",
             # in some cases the last values will be nan and must be dropped
             # the xrange, however, should remain
@@ -2358,6 +2352,7 @@ if __name__ == "__main__":
                         # continually resize columns to fit the width of the grid
                         columnSize="responsiveSizeToFit",
                         defaultColDef={"filter": "agTextColumnFilter"},
+                        style={"marginTop": "5em"},
                     )
                 )
             ),
