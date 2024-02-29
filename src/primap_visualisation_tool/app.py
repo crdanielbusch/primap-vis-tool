@@ -551,7 +551,9 @@ class AppState:  # type: ignore
                         color=colors[c],
                         width=0,
                     ),
-                    text=f"Category {c}",
+                    text=list(_df_pos[c]),
+                    customdata=list(_df_pos.index.year),
+                    hovertemplate="%{customdata}, %{text:.2e}",
                     name=f"{c} pos",
                 )
             )
@@ -604,10 +606,28 @@ class AppState:  # type: ignore
                         width=0,
                     ),
                     fillcolor=colors[c],
+                    text=list(_df_neg[c]),
+                    customdata=list(_df_neg.index.year),
+                    hovertemplate="%{customdata}, %{text:.2e}",
                     name=f"{c} neg",
                 )
             )
             upper = lower
+
+        fig.add_trace(
+            go.Scatter(
+                y=_df.sum(axis=1),
+                x=_df.index,
+                mode="lines",
+                line=dict(
+                    color="black",
+                    width=3,
+                ),
+                name="total",
+                customdata=list(_df.index.year),
+                hovertemplate="%{customdata}, %{y:.2e}",
+            )
+        )
 
         # fig = px.area(
         #     filtered_pandas,
