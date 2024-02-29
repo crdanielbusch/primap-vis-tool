@@ -43,7 +43,7 @@ index_cols: list[str] = [
 
 LINES_LAYOUT: dict[str, dict[str, Union[str, int]]] = {
     "Andrew cement, HISTORY": {"color": "rgb(0,0,255)", "dash": "solid"},
-    "CDIAC 2020, HISTORY": {"color": "rgb(255, 0, 0)", "dash": "solid"},
+    "CDIAC 2020, HISTORY": {"color": "rgb(50,200,255)", "dash": "solid"},
     "CEDS 2020, HISTORY": {"color": "rgb(0, 0, 255)", "dash": "solid"},
     "CRF 2022, 230510": {"color": "rgb(60, 179, 113)", "dash": "solid"},
     "CRF 2023, 230926": {"color": "rgb(238, 130, 238)", "dash": "solid"},
@@ -74,7 +74,7 @@ LINES_LAYOUT: dict[str, dict[str, Union[str, int]]] = {
         "width": 3,
     },
     "RCP hist, HISTORY": {"color": "rgb(50,50,255)", "dash": "solid"},
-    "UNFCCC NAI, 231015": {"color": "rgb(50,200,255)", "dash": "solid"},
+    "UNFCCC NAI, 231015": {"color": "rgb(255,0,0)", "dash": "solid"},
 }
 """Layout for the line plot in the main figure - Add new source scenarios for each release!"""
 

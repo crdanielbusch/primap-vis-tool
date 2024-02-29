@@ -384,9 +384,6 @@ class AppState:  # type: ignore
 
         fig = go.Figure()
 
-        if filtered_pandas[self.entity].isna().all():
-            print("All values for all SourceScen are NaN")
-
         source_scenario_sorted = list(self.source_scenario_options)
         # move primap source scenarios to the front of the list
         # in the same order as specified in LINES_ORDER
@@ -405,11 +402,24 @@ class AppState:  # type: ignore
             df_source_scenario = filtered_pandas.loc[
                 filtered_pandas["SourceScen"] == source_scenario
             ]
+
+            df_source_scenario = df_source_scenario.reset_index()
+            # find start and end of time series for SourceScenario
+            first_idx = df_source_scenario[self.entity].first_valid_index()
+            last_idx = df_source_scenario[self.entity].last_valid_index()
+            # check if time series has data gaps
+            if any(df_source_scenario[self.entity].loc[first_idx:last_idx].isna()):
+                mode = "lines+markers"
+            else:
+                mode = "lines"
+
             fig.add_trace(
                 go.Scatter(
                     x=list(df_source_scenario["time"]),
                     y=list(df_source_scenario[self.entity]),
-                    mode="lines",
+                    mode=mode,
+                    marker_symbol="cross",
+                    marker_size=10,
                     name=source_scenario,
                     line=line_layout,
                     visible=self.source_scenario_visible[source_scenario],
