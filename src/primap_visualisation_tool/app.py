@@ -509,16 +509,117 @@ class AppState:  # type: ignore
         xrange = [min(filtered_pandas["time"]), max(filtered_pandas["time"])]
         filtered_pandas = filtered_pandas.dropna(subset=[self.entity])
 
-        fig = px.area(
-            filtered_pandas,
-            x="time",
-            y=self.entity,
-            color="category (IPCC2006_PRIMAP)",
+        _df = filtered_pandas
+        # _df["time"] = _df["time"].apply(lambda x : int(x.year))
+        _df = _df.set_index("time")
+        # _df[_df["category (IPCC2006_PRIMAP)"] == c]["CO2"].rename(c)
+        # TODO! There's probably a pandas function for this loop
+        # TODO! Remove hard-coded category column name
+        _df = pd.concat(
+            [
+                _df[_df["category (IPCC2006_PRIMAP)"] == c][self.entity].rename(c)
+                for c in categories_plot
+            ],
+            axis=1,
         )
 
-        fig.update_traces(
-            hovertemplate="%{y:.2e} ",
-        )
+        _df_pos = _df.map(lambda x: max(x, 0))
+        _df_neg = _df.map(lambda x: min(x, 0))
+
+        # https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express
+        defaults = iter(px.colors.qualitative.Vivid)
+        colors = {}
+        for key in _df.columns:
+            color = next(defaults)
+            colors[key] = color
+
+        fig = go.Figure()
+
+        lower = [0] * len(_df_pos)
+        for c in reversed(_df_pos.columns):
+            if sum(_df_pos[c]) == 0:
+                continue
+
+            upper = _df_pos[c].fillna(0) + lower
+            fig.add_trace(
+                go.Scatter(
+                    y=upper,
+                    x=_df_pos.index,
+                    mode="lines",
+                    showlegend=False,
+                    line=dict(
+                        color=colors[c],
+                        width=0,
+                    ),
+                    text=f"Category {c}",
+                    name=f"{c} pos",
+                )
+            )
+            fig.add_trace(
+                go.Scatter(
+                    y=lower,
+                    x=_df_pos.index,
+                    fill="tonexty",  # fill area between trace0 and trace1
+                    fillcolor=colors[c],
+                    mode="lines",
+                    line=dict(
+                        width=0,
+                    ),
+                    hoverinfo="skip",
+                    name=f"{c} pos",
+                )
+            )
+            lower = upper
+
+        upper = [0] * len(_df_neg)
+        for c in _df_neg.columns:
+            if sum(_df_neg[c]) == 0:
+                continue
+
+            lower = _df_neg[c].fillna(0) + upper
+            fig.add_trace(
+                go.Scatter(
+                    y=upper,
+                    x=_df_neg.index,
+                    mode="lines",
+                    line=dict(
+                        color=colors[c],
+                        width=0,
+                    ),
+                    showlegend=False,
+                    name=f"{c} neg",
+                    text=f"Category {c}",
+                    hoverinfo="skip",
+                )
+            )
+
+            fig.add_trace(
+                go.Scatter(
+                    y=lower,
+                    x=_df_neg.index,
+                    fill="tonexty",  # fill area between trace0 and trace1
+                    mode="lines",
+                    line=dict(
+                        color=colors[c],
+                        width=0,
+                    ),
+                    fillcolor=colors[c],
+                    name=f"{c} neg",
+                )
+            )
+            upper = lower
+
+        # fig = px.area(
+        #     filtered_pandas,
+        #     x="time",
+        #     y=self.entity,
+        #     color="category (IPCC2006_PRIMAP)",
+        #     pattern_shape="category (IPCC2006_PRIMAP)",
+        # )
+        #
+        # fig.update_traces(
+        #     hovertemplate="%{y:.2e} ",
+        # )
 
         fig.update_layout(
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
