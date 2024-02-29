@@ -384,6 +384,9 @@ class AppState:  # type: ignore
 
         fig = go.Figure()
 
+        if filtered_pandas[self.entity].isna().all():
+            print("All values for all SourceScen are NaN")
+
         source_scenario_sorted = list(self.source_scenario_options)
         # move primap source scenarios to the front of the list
         # in the same order as specified in LINES_ORDER
@@ -471,13 +474,30 @@ class AppState:  # type: ignore
 
         filtered_pandas = filtered.to_dataframe().reset_index()
 
-        # TODO! Either delete this or implement exception for all-nan subcategories
         if filtered_pandas[self.entity].isna().all():
-            print(f"All sub-categories in category {self.category} are nan")
+            # filter again but only for parent category
+            with warnings.catch_warnings(action="ignore"):  # type: ignore
+                filtered = (
+                    self.ds[self.entity]
+                    .pr.loc[
+                        {
+                            "category": self.category,
+                            "area (ISO3)": iso_country,
+                            "SourceScen": self.source_scenario,
+                        }
+                    ]
+                    .squeeze()
+                )
+
+            filtered_pandas = filtered.to_dataframe().reset_index()
 
         # Fix for figure not loading at start
         # https://github.com/plotly/plotly.py/issues/3441
         fig = go.Figure(layout=dict(template="plotly"))
+
+        # save xrange in case last values are NaN and cut off
+        xrange = [min(filtered_pandas["time"]), max(filtered_pandas["time"])]
+        filtered_pandas = filtered_pandas.dropna(subset=[self.entity])
 
         fig = px.area(
             filtered_pandas,
@@ -494,9 +514,14 @@ class AppState:  # type: ignore
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
             hovermode="x",
+            # in some cases the last values will be nan and must be dropped
+            # the xrange, however, should remain
+            xaxis=dict(
+                range=xrange,
+            ),
         )
 
-        # In the initial callback this property will be None
+        # In the initial callback xyrange_data will be None
         if xyrange_data:
             xyrange_data_dict = json.loads(xyrange_data)
             fig.update_layout(
@@ -549,7 +574,27 @@ class AppState:  # type: ignore
                 id_vars=index_cols, var_name="time", value_name="value"
             )
 
+        # if all values are NaN
+        if stacked["value"].isna().all():
+            print(f"All sub-entities for {self.entity} are nan")
+            # filter again but only for parent entity
+            with warnings.catch_warnings(action="ignore"):  # type: ignore
+                filtered = self.ds[self.entity].pr.loc[
+                    {
+                        "category": [self.category],
+                        "area (ISO3)": [iso_country],
+                        "SourceScen": [self.source_scenario],
+                    }
+                ]
+
+            filtered_df = filtered.to_dataframe().reset_index()
+            stacked = filtered_df.rename(columns={self.entity: "value"})
+            stacked["entity"] = self.entity
         stacked["time"] = stacked["time"].apply(pd.to_datetime)
+
+        # save xrange in case last values are NaN and cut off
+        xrange = [min(stacked["time"]), max(stacked["time"])]
+        stacked = stacked.dropna(subset=["value"])
 
         fig = px.area(
             stacked,
@@ -562,6 +607,11 @@ class AppState:  # type: ignore
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
             hovermode="x",
+            # in some cases the last values will be NaN and must be dropped
+            # the xrange, however, should remain
+            xaxis=dict(
+                range=xrange,
+            ),
         )
 
         fig.update_traces(
