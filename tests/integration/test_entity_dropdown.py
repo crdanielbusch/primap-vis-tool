@@ -4,6 +4,7 @@ Test that our entity dropdown does what we expect
 This may end up being re-named/combined with tests of our other drop-downs,
 depending on how much duplication there is.
 """
+
 from __future__ import annotations
 
 import copy
@@ -102,7 +103,10 @@ def test_entity_click_one_forward_switch_from_co2_to_hfcs():
     starting_categories = app_state.category_options
     exp_categories = copy.deepcopy(starting_categories)
 
-    # switch entity here
+    # We would have preferred to just update the entity value,
+    # then see what happens.
+    # However, we couldn't work out if an API for that exists
+    # so we're just doing it this way instead.
     def run_callback():
         raise NotImplementedError(  # noqa: TRY003
             "need to define where call is coming from"
