@@ -512,7 +512,8 @@ class AppState:  # type: ignore
         # bring df in right format for plotting
         _df = filtered_pandas
         _df = _df.set_index("time")
-        # TODO! There's probably a pandas function for this loop
+        # If we need better performance, there's probably a pandas function for this loop
+        # which may help (the loop may also not be that slow)
         # TODO! Remove hard-coded category column name
         _df = pd.concat(
             [
@@ -736,6 +737,7 @@ class AppState:  # type: ignore
         print("entity")
         print(_df)
 
+        # TODO: reduce duplication with category plot in future PR
         # determine where positive and negative emissions
         _df_pos = _df.map(lambda x: max(x, 0))
         _df_neg = _df.map(lambda x: min(x, 0))
@@ -847,13 +849,6 @@ class AppState:  # type: ignore
                 hovertemplate="%{customdata}, %{y:.2e}",
             )
         )
-        #
-        # fig = px.area(
-        #     stacked,
-        #     x="time",
-        #     y="value",
-        #     color="entity",
-        # )
 
         fig.update_layout(
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
