@@ -505,6 +505,12 @@ class AppState:  # type: ignore
         # https://github.com/plotly/plotly.py/issues/3441
         fig = go.Figure(layout=dict(template="plotly"))
 
+        # TODO Display message in app for invalid combinations,
+        #  see Issue https://github.com/crdanielbusch/primap-vis-tool/issues/13
+        # If the parent category is all nan as well, return empty figure
+        if filtered_pandas[self.entity].isna().all():
+            return fig
+
         # save xrange in case last values are NaN and cut off
         xrange = [min(filtered_pandas["time"]), max(filtered_pandas["time"])]
         filtered_pandas = filtered_pandas.dropna(subset=[self.entity])
@@ -522,7 +528,6 @@ class AppState:  # type: ignore
             ],
             axis=1,
         )
-        print(f"{_df=}")
 
         # determine where positive and negative emissions
         _df_pos = _df.map(lambda x: max(x, 0))
@@ -537,7 +542,7 @@ class AppState:  # type: ignore
             color = next(defaults)
             colors[key] = color
 
-        fig = go.Figure()
+        # fig = go.Figure()
 
         # plot all positive emissions
         lower = [0] * len(_df_pos)
@@ -718,6 +723,14 @@ class AppState:  # type: ignore
             stacked["entity"] = self.entity
         stacked["time"] = stacked["time"].apply(pd.to_datetime)
 
+        fig = go.Figure()
+
+        # TODO Display message in app for invalid combinations,
+        #  see Issue https://github.com/crdanielbusch/primap-vis-tool/issues/13
+        # If the parent entity is all nan as well, return empty figure
+        if stacked["value"].isna().all():
+            return fig
+
         # save xrange in case last values are NaN and cut off
         xrange = [min(stacked["time"]), max(stacked["time"])]
         stacked = stacked.dropna(subset=["value"])
@@ -734,8 +747,6 @@ class AppState:  # type: ignore
             ],
             axis=1,
         )
-        print("entity")
-        print(_df)
 
         # TODO: reduce duplication with category plot in future PR
         # determine where positive and negative emissions
@@ -750,8 +761,6 @@ class AppState:  # type: ignore
         for key in _df.columns:
             color = next(defaults)
             colors[key] = color
-
-        fig = go.Figure()
 
         # plot all positive emissions
         lower = [0] * len(_df_pos)
@@ -860,10 +869,6 @@ class AppState:  # type: ignore
                 range=xrange,
             ),
         )
-
-        # fig.update_traces(
-        #     hovertemplate="%{y:.2e} ",
-        # )
 
         # In the initial callback xyrange_data will be None
         if xyrange_data:
