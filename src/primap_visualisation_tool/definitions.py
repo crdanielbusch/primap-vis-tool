@@ -1,7 +1,6 @@
 """
 Definitions.
 """
-from typing import Union
 
 SUBENTITIES: dict[str, list[str]] = {
     "CO2": ["CO2"],
@@ -41,7 +40,7 @@ index_cols: list[str] = [
 """Columns to use as the index when creating stacked plots"""
 
 
-LINES_LAYOUT: dict[str, dict[str, Union[str, int]]] = {
+LINES_LAYOUT: dict[str, dict[str, str | int]] = {
     "Andrew cement, HISTORY": {"color": "rgb(0,0,255)", "dash": "solid"},
     "CDIAC 2020, HISTORY": {"color": "rgb(50,200,255)", "dash": "solid"},
     "CEDS 2020, HISTORY": {"color": "rgb(0, 0, 255)", "dash": "solid"},

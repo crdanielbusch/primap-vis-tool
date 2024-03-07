@@ -171,7 +171,7 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = (
                 self.ds[self.entity]
                 .pr.loc[
@@ -368,7 +368,7 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = (
                 self.ds[self.entity]
                 .pr.loc[
@@ -469,7 +469,7 @@ class AppState:  # type: ignore
 
         categories_plot = select_cat_children(self.category, self.category_options)
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = (
                 self.ds[self.entity]
                 .pr.loc[
@@ -486,7 +486,7 @@ class AppState:  # type: ignore
 
         if filtered_pandas[self.entity].isna().all():
             # filter again but only for parent category
-            with warnings.catch_warnings(action="ignore"):  # type: ignore
+            with warnings.catch_warnings(action="ignore"):
                 filtered = (
                     self.ds[self.entity]
                     .pr.loc[
@@ -505,24 +505,145 @@ class AppState:  # type: ignore
         # https://github.com/plotly/plotly.py/issues/3441
         fig = go.Figure(layout=dict(template="plotly"))
 
+        # TODO Display message in app for invalid combinations,
+        #  see Issue https://github.com/crdanielbusch/primap-vis-tool/issues/13
+        # If the parent category is all nan as well, return empty figure
+        if filtered_pandas[self.entity].isna().all():
+            return fig
+
         # save xrange in case last values are NaN and cut off
         xrange = [min(filtered_pandas["time"]), max(filtered_pandas["time"])]
         filtered_pandas = filtered_pandas.dropna(subset=[self.entity])
 
-        fig = px.area(
-            filtered_pandas,
-            x="time",
-            y=self.entity,
-            color="category (IPCC2006_PRIMAP)",
+        # bring df in right format for plotting
+        _df = filtered_pandas
+        _df = _df.set_index("time")
+        # If we need better performance, there's probably a pandas function for this loop
+        # which may help (the loop may also not be that slow)
+        # TODO! Remove hard-coded category column name
+        _df = pd.concat(
+            [
+                _df[_df["category (IPCC2006_PRIMAP)"] == c][self.entity].rename(c)
+                for c in categories_plot
+            ],
+            axis=1,
         )
 
-        fig.update_traces(
-            hovertemplate="%{y:.2e} ",
+        # determine where positive and negative emissions
+        _df_pos = _df.map(lambda x: max(x, 0))
+        _df_neg = _df.map(lambda x: min(x, 0))
+
+        # TODO! Check different color schemes.
+        # https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express
+        # Set colors for areas per category
+        defaults = iter(px.colors.qualitative.Vivid)
+        colors = {}
+        for key in _df.columns:
+            color = next(defaults)
+            colors[key] = color
+
+        # fig = go.Figure()
+
+        # plot all positive emissions
+        lower = [0] * len(_df_pos)
+        for c in reversed(_df_pos.columns):
+            if sum(_df_pos[c].fillna(0)) == 0:
+                continue
+
+            upper = _df_pos[c].fillna(0) + lower
+            fig.add_trace(
+                go.Scatter(
+                    y=upper,
+                    x=_df_pos.index,
+                    mode="lines",
+                    showlegend=False,
+                    line=dict(
+                        color=colors[c],
+                        width=0,
+                    ),
+                    text=list(_df_pos[c]),
+                    customdata=list(_df_pos.index.year),
+                    hovertemplate="%{customdata}, %{text:.2e}",
+                    name=f"{c} pos",
+                )
+            )
+            fig.add_trace(
+                go.Scatter(
+                    y=lower,
+                    x=_df_pos.index,
+                    fill="tonexty",  # fill area between trace0 and trace1
+                    fillcolor=colors[c],
+                    mode="lines",
+                    line=dict(
+                        width=0,
+                    ),
+                    hoverinfo="skip",
+                    name=f"{c} pos",
+                )
+            )
+            lower = upper
+
+        # plot all negative emissions
+        upper = [0] * len(_df_neg)
+        for c in _df_neg.columns:
+            if sum(_df_neg[c]) == 0:
+                continue
+
+            lower = _df_neg[c].fillna(0) + upper
+            fig.add_trace(
+                go.Scatter(
+                    y=upper,
+                    x=_df_neg.index,
+                    mode="lines",
+                    line=dict(
+                        color=colors[c],
+                        width=0,
+                    ),
+                    showlegend=False,
+                    name=f"{c} neg",
+                    text=f"Category {c}",
+                    hoverinfo="skip",
+                )
+            )
+
+            fig.add_trace(
+                go.Scatter(
+                    y=lower,
+                    x=_df_neg.index,
+                    fill="tonexty",  # fill area between trace0 and trace1
+                    mode="lines",
+                    line=dict(
+                        color=colors[c],
+                        width=0,
+                    ),
+                    fillcolor=colors[c],
+                    text=list(_df_neg[c]),
+                    customdata=list(_df_neg.index.year),
+                    hovertemplate="%{customdata}, %{text:.2e}",
+                    name=f"{c} neg",
+                )
+            )
+            upper = lower
+
+        # plot line for sum
+        fig.add_trace(
+            go.Scatter(
+                y=_df.sum(axis=1),
+                x=_df.index,
+                mode="lines",
+                line=dict(
+                    color="black",
+                    width=3,
+                ),
+                name="total",
+                customdata=list(_df.index.year),
+                hovertemplate="%{customdata}, %{y:.2e}",
+            )
         )
 
         fig.update_layout(
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-            margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
+            margin=dict(l=0, r=0, t=40, b=40),
             hovermode="x",
             # in some cases the last values will be nan and must be dropped
             # the xrange, however, should remain
@@ -544,7 +665,7 @@ class AppState:  # type: ignore
 
         return self.category_graph
 
-    def update_entity_figure(self, xyrange_data: str | None) -> Any:
+    def update_entity_figure(self, xyrange_data: str | None) -> Any:  # noqa: PLR0915
         """
         Update the overview figure based on the input in the dropdown menus.
 
@@ -562,7 +683,7 @@ class AppState:  # type: ignore
             entities_to_plot = [*entities_to_plot, self.entity]
             drop_parent = True
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = self.ds[entities_to_plot].pr.loc[
                 {
                     "category": [self.category],
@@ -579,7 +700,7 @@ class AppState:  # type: ignore
         if drop_parent:
             filtered = filtered.drop_vars(self.entity)
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             stacked = filtered.pr.to_interchange_format().melt(
                 id_vars=index_cols, var_name="time", value_name="value"
             )
@@ -588,7 +709,7 @@ class AppState:  # type: ignore
         if stacked["value"].isna().all():
             print(f"All sub-entities for {self.entity} are nan")
             # filter again but only for parent entity
-            with warnings.catch_warnings(action="ignore"):  # type: ignore
+            with warnings.catch_warnings(action="ignore"):
                 filtered = self.ds[self.entity].pr.loc[
                     {
                         "category": [self.category],
@@ -602,30 +723,151 @@ class AppState:  # type: ignore
             stacked["entity"] = self.entity
         stacked["time"] = stacked["time"].apply(pd.to_datetime)
 
+        fig = go.Figure()
+
+        # TODO Display message in app for invalid combinations,
+        #  see Issue https://github.com/crdanielbusch/primap-vis-tool/issues/13
+        # If the parent entity is all nan as well, return empty figure
+        if stacked["value"].isna().all():
+            return fig
+
         # save xrange in case last values are NaN and cut off
         xrange = [min(stacked["time"]), max(stacked["time"])]
         stacked = stacked.dropna(subset=["value"])
 
-        fig = px.area(
-            stacked,
-            x="time",
-            y="value",
-            color="entity",
+        # bring df in right format for plotting
+        _df = stacked
+        _df = _df.set_index("time")
+        # TODO! There's probably a pandas function for this loop
+        # TODO! Remove hard-coded category column name
+        _df = pd.concat(
+            [
+                _df[_df["entity"] == c]["value"].rename(c)
+                for c in _df["entity"].unique()
+            ],
+            axis=1,
+        )
+
+        # TODO: reduce duplication with category plot in future PR
+        # determine where positive and negative emissions
+        _df_pos = _df.map(lambda x: max(x, 0))
+        _df_neg = _df.map(lambda x: min(x, 0))
+
+        # TODO! Check different color schemes.
+        # https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express
+        # Set colors for areas per category
+        defaults = iter(px.colors.qualitative.Vivid)
+        colors = {}
+        for key in _df.columns:
+            color = next(defaults)
+            colors[key] = color
+
+        # plot all positive emissions
+        lower = [0] * len(_df_pos)
+        for c in reversed(_df_pos.columns):
+            if sum(_df_pos[c].fillna(0)) == 0:
+                continue
+
+            upper = _df_pos[c].fillna(0) + lower
+            fig.add_trace(
+                go.Scatter(
+                    y=upper,
+                    x=_df_pos.index,
+                    mode="lines",
+                    showlegend=False,
+                    line=dict(
+                        color=colors[c],
+                        width=0,
+                    ),
+                    text=list(_df_pos[c]),
+                    customdata=list(_df_pos.index.year),
+                    hovertemplate="%{customdata}, %{text:.2e}",
+                    name=f"{c} pos",
+                )
+            )
+            fig.add_trace(
+                go.Scatter(
+                    y=lower,
+                    x=_df_pos.index,
+                    fill="tonexty",  # fill area between trace0 and trace1
+                    fillcolor=colors[c],
+                    mode="lines",
+                    line=dict(
+                        width=0,
+                    ),
+                    hoverinfo="skip",
+                    name=f"{c} pos",
+                )
+            )
+            lower = upper
+
+        # plot all negative emissions
+        upper = [0] * len(_df_neg)
+        for c in _df_neg.columns:
+            if sum(_df_neg[c]) == 0:
+                continue
+
+            lower = _df_neg[c].fillna(0) + upper
+            fig.add_trace(
+                go.Scatter(
+                    y=upper,
+                    x=_df_neg.index,
+                    mode="lines",
+                    line=dict(
+                        color=colors[c],
+                        width=0,
+                    ),
+                    showlegend=False,
+                    name=f"{c} neg",
+                    text=f"Category {c}",
+                    hoverinfo="skip",
+                )
+            )
+
+            fig.add_trace(
+                go.Scatter(
+                    y=lower,
+                    x=_df_neg.index,
+                    fill="tonexty",  # fill area between trace0 and trace1
+                    mode="lines",
+                    line=dict(
+                        color=colors[c],
+                        width=0,
+                    ),
+                    fillcolor=colors[c],
+                    text=list(_df_neg[c]),
+                    customdata=list(_df_neg.index.year),
+                    hovertemplate="%{customdata}, %{text:.2e}",
+                    name=f"{c} neg",
+                )
+            )
+            upper = lower
+
+        # plot line for sum
+        fig.add_trace(
+            go.Scatter(
+                y=_df.sum(axis=1),
+                x=_df.index,
+                mode="lines",
+                line=dict(
+                    color="black",
+                    width=3,
+                ),
+                name="total",
+                customdata=list(_df.index.year),
+                hovertemplate="%{customdata}, %{y:.2e}",
+            )
         )
 
         fig.update_layout(
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-            margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
+            margin=dict(l=0, r=0, t=40, b=40),  # distance to next element
             hovermode="x",
             # in some cases the last values will be NaN and must be dropped
             # the xrange, however, should remain
             xaxis=dict(
                 range=xrange,
             ),
-        )
-
-        fig.update_traces(
-            hovertemplate="%{y:.2e} ",
         )
 
         # In the initial callback xyrange_data will be None
@@ -888,7 +1130,7 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = (
                 self.ds[self.entity]
                 .pr.loc[
@@ -2237,6 +2479,7 @@ if __name__ == "__main__":
                         # continually resize columns to fit the width of the grid
                         columnSize="responsiveSizeToFit",
                         defaultColDef={"filter": "agTextColumnFilter"},
+                        style={"marginTop": "5em"},
                     )
                 )
             ),
@@ -2244,5 +2487,5 @@ if __name__ == "__main__":
         style={"max-width": "none", "width": "100%"},
     )
 
-    with warnings.catch_warnings(action="ignore"):  # type: ignore
+    with warnings.catch_warnings(action="ignore"):
         app.run(debug=True, port=port)
