@@ -10,6 +10,7 @@ from __future__ import annotations
 import copy
 from contextvars import copy_context
 
+import numpy as np
 import xarray as xr
 from dash._callback_context import context_value
 from dash._utils import AttributeDict
@@ -45,6 +46,30 @@ from primap_visualisation_tool.app import (
 
 
 def create_testing_dataset() -> xr.Dataset:
+    # our dimensions are:
+    # (time: 5, category (IPCC2006_PRIMAP): 24,
+    #  area (ISO3): 216, SourceScen: 17)
+    # data variables: CO2, HFCS (SARGWP100)
+    dimensions = ["time", "category (IPCC2006_PRIMAP)", "area (ISO3)", "SourceScen"]
+    categories = ["1", "2"]
+    area = ["ABW", "AFG"]
+    source_scen = ["PRIMAP_hist_2.5.1", "RCMIP", "EDGAR"]
+    time = np.array(["2000-01-01", "2001-01-01", "2002-01-01"], dtype="datetime64")
+
+    co2 = []
+    hfcs = []
+
+    xr.Dataset(
+        data_vars={"CO2": (dimensions, co2), "HFCS (SARGWP100)": (dimensions, hfcs)},
+        coords={
+            "category (IPCC2006_PRIMAP)": categories,
+            "time": time,
+            "area (ISO3)": area,
+            "SourceScen": source_scen,
+        },
+        attrs={"area": "area (ISO3)", "cat": "category (IPCC2006_PRIMAP)"},
+    )
+
     raise NotImplementedError()
 
 
@@ -102,6 +127,9 @@ def test_entity_click_one_forward_switch_from_co2_to_hfcs():
     app_state = create_app_state(dataset)
     starting_categories = app_state.category_options
     exp_categories = copy.deepcopy(starting_categories)
+
+    exp_source_starting_scenario_options = ["EDGAR", "RCMIP"]
+    assert app_state.source_scenario == exp_source_starting_scenario_options
 
     # We would have preferred to just update the entity value,
     # then see what happens.
