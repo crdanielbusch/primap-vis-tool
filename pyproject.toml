@@ -27,6 +27,8 @@ plots = ["matplotlib"]
 [tool.poetry.group.tests.dependencies]
 pytest = "^7.3.1"
 dash = {extras = ["testing"], version = "^2.14.2"}
+selenium = "3.141.0"
+urllib3= "1.26.16"
 
 [tool.poetry.group.docs.dependencies]
 myst-nb = "^0.17.0"
