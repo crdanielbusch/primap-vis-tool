@@ -56,10 +56,12 @@ def create_testing_dataset() -> xr.Dataset:
     source_scen = ["PRIMAP_hist_2.5.1", "RCMIP", "EDGAR"]
     time = np.array(["2000-01-01", "2001-01-01", "2002-01-01"], dtype="datetime64")
 
-    co2 = []
-    hfcs = []
+    array_shape = [len(v) for v in [time, categories, area, source_scen]]
+    array_n_elements = np.product(array_shape)
+    co2 = np.arange(array_n_elements).reshape(array_shape)
+    hfcs = 1e-3 * np.arange(array_n_elements).reshape(array_shape)
 
-    xr.Dataset(
+    test_ds = xr.Dataset(
         data_vars={"CO2": (dimensions, co2), "HFCS (SARGWP100)": (dimensions, hfcs)},
         coords={
             "category (IPCC2006_PRIMAP)": categories,
@@ -70,7 +72,14 @@ def create_testing_dataset() -> xr.Dataset:
         attrs={"area": "area (ISO3)", "cat": "category (IPCC2006_PRIMAP)"},
     )
 
-    raise NotImplementedError()
+    # Make sure that CO2 is NaN for RCMIP
+    test_ds["CO2"] = test_ds["CO2"].where(test_ds["CO2"]["SourceScen"] != "RCMIP")
+    # Make sure that HFCs are NaN for EDGAR
+    test_ds["HFCS (SARGWP100)"] = test_ds["HFCS (SARGWP100)"].where(
+        test_ds["HFCS (SARGWP100)"]["SourceScen"] != "EDGAR"
+    )
+
+    return test_ds
 
 
 def create_app_state(  # noqa: PLR0913
@@ -122,25 +131,44 @@ def create_app_state(  # noqa: PLR0913
 
 
 def test_entity_click_one_forward_switch_from_co2_to_hfcs():
+    """
+    Turns out that (we think) the callbacks are wired together in JavaScript land
+
+    Hence you can't get the cascading callback effect
+    (output from one callback triggers another callback)
+    just running the tests directly from Python.
+    Hence we're abandoning this integration test idea, moving onto end-to-end testing instead.
+    """
     starting_entity = "CO2"
     dataset = create_testing_dataset()
-    app_state = create_app_state(dataset)
+    app_state = create_app_state(
+        dataset,
+        start_country="Afghanistan",
+        start_category="1",
+        start_entity="CO2",
+        start_source_scenario="EDGAR",
+    )
+    # Not sure whether this should be in create_app_state,
+    # having to call this at all kind of feels wrong,
+    # but reproducing the logic for filtering out nans in the test
+    # also feels wrong.
+    # Probably points to a bug in get_default_app_starting_state,
+    # but doesn't really matter as the initial callbacks clean up the state.
+    app_state.update_source_scenario_options()
+
     starting_categories = app_state.category_options
     exp_categories = copy.deepcopy(starting_categories)
 
-    exp_source_starting_scenario_options = ["EDGAR", "RCMIP"]
-    assert app_state.source_scenario == exp_source_starting_scenario_options
+    exp_source_starting_scenario_options = ("PRIMAP_hist_2.5.1", "EDGAR")
+    assert app_state.source_scenario_options == exp_source_starting_scenario_options
 
     # We would have preferred to just update the entity value,
     # then see what happens.
     # However, we couldn't work out if an API for that exists
     # so we're just doing it this way instead.
     def run_callback():
-        raise NotImplementedError(  # noqa: TRY003
-            "need to define where call is coming from"
-        )
         context_value.set(
-            AttributeDict(**{"triggered_inputs": [{"Something": "must go here"}]})
+            AttributeDict(**{"triggered_inputs": [{"prop_id": "next_entity.n_clicks"}]})
         )
 
         return handle_entity_click(
@@ -156,8 +184,11 @@ def test_entity_click_one_forward_switch_from_co2_to_hfcs():
     exp_new_entity = "HFCS (SARGWP100)"
     assert app_state.entity == exp_new_entity
 
-    exp_source_scenario_options = ["PRIMAP_hist_2.5.1", "RCMIP"]
-    assert app_state.source_scenario == exp_source_scenario_options
+    exp_source_scenario_options = ("PRIMAP_hist_2.5.1", "RCMIP")
+    assert app_state.source_scenario_options == exp_source_scenario_options
+
+    exp_source_scenario = "PRIMAP_hist_2.5.1"
+    assert app_state.source_scenario == exp_source_scenario
 
     # TODO in future MR: update this so that the categories change to only available categories
     # (x-ref timeseries selection section in #27)

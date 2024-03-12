@@ -1451,7 +1451,7 @@ def handle_entity_click(
 
     if ctx.triggered_id == "next_entity":
         # n_clicks_next_entity is the number of clicks since the app started
-        # We don't wnat that, just whether we need to go forwards or backwards.
+        # We don't want that, just whether we need to go forwards or backwards.
         # We might want to do this differently in future for performance maybe.
         return app_state.update_entity(n_steps=1)
 
