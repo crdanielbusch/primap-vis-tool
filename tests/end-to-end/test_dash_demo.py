@@ -3,10 +3,9 @@ from pathlib import Path
 
 import dash
 from dash import html
-from dash.testing.application_runners import import_app
 
 import primap_visualisation_tool.app
-from primap_visualisation_tool.app import get_default_app_starting_state
+from primap_visualisation_tool.app_state import get_default_app_starting_state
 
 
 # 2. give each testcase a test case ID, and pass the fixture
@@ -32,15 +31,12 @@ def test_001_child_with_0(dash_duo):
 def test_002_app_starts(dash_duo):
     # find package primap_visualisation_tool, find varibale app
     test_file = Path(__file__).parent.parent.parent / "data" / "20240212_test_ds.nc"
-    primap_visualisation_tool.app.APP_STATE = get_default_app_starting_state(
-        filename=test_file
-    )
-    app = import_app("primap_visualisation_tool.app", application_name="app")
+    app_state = get_default_app_starting_state(filename=test_file)
+    # app = import_app("primap_visualisation_tool.app", application_name="app")
+    app = primap_visualisation_tool.app.create_app(app_state=app_state)
     dash_duo.start_server(app)
+
     prev_country_button = dash_duo.driver.find_element("prev_country")
     dash_duo.multiple_click(prev_country_button, 1)
-    import time
 
-    time.sleep(15)
-
-    # assert dash_duo.find_element("#nully-wrapper").text == "0"
+    assert False, "Write more tests of state"

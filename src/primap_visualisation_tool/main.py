@@ -6,7 +6,7 @@ import warnings
 
 import primap_visualisation_tool.app_state
 from primap_visualisation_tool.app import (
-    app,
+    create_app,
     get_filename,
 )
 
@@ -19,11 +19,10 @@ if __name__ == "__main__":
     port = args.p
     filename = get_filename(user_input=args.f, test_ds=True)
 
-    primap_visualisation_tool.app_state.APP_STATE = (
-        primap_visualisation_tool.app_state.get_default_app_starting_state(
-            filename=filename
-        )
+    app_state = primap_visualisation_tool.app_state.get_default_app_starting_state(
+        filename=filename
     )
+    app = create_app(app_state=app_state)
 
     with warnings.catch_warnings(action="ignore"):  # type: ignore
         app.run(debug=True, port=port)
