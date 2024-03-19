@@ -66,3 +66,12 @@ def test_002_app_starts(dash_duo):
         dropdown_source_scenario.find_element(By.ID, "react-select-5--value-item").text
         == "PRIMAP-hist_v2.5_final_nr, HISTCR"
     )
+
+    # Option 1: Find the right ID that holds the data
+    # Option 2: create container with app, app_state
+    # graph_overview = dash_duo.driver.find_element(
+    #     By.ID, "graph-overview"
+    # )
+    #
+    # import pdb
+    # pdb.set_trace()
