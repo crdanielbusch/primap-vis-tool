@@ -3,6 +3,7 @@ from pathlib import Path
 
 import dash
 from dash import html
+from selenium.webdriver.common.by import By
 
 import primap_visualisation_tool.app
 from primap_visualisation_tool.app_state import get_default_app_starting_state
@@ -36,7 +37,13 @@ def test_002_app_starts(dash_duo):
     app = primap_visualisation_tool.app.create_app(app_state=app_state)
     dash_duo.start_server(app)
 
-    prev_country_button = dash_duo.driver.find_element("prev_country")
+    prev_country_button = dash_duo.driver.find_element(By.ID, "prev_country")
+    import time
+
+    time.sleep(5)
     dash_duo.multiple_click(prev_country_button, 1)
+    import time
+
+    time.sleep(5)
 
     assert False, "Write more tests of state"
