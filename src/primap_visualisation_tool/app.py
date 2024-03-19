@@ -5,7 +5,7 @@ Author: Daniel Busch, Date: 2023-12-21
 """
 from __future__ import annotations
 
-import argparse
+
 import csv
 import json
 import warnings
@@ -2176,311 +2176,296 @@ def update_xyrange_entity_figure(  # noqa: PLR0913
         else:
             raise PreventUpdate
 
+external_stylesheets = [dbc.themes.SIMPLEX]
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-p", help="Port number", required=False, default=8050)
-    parser.add_argument("-f", help="Filename of data set", required=False)
-    args = parser.parse_args()
+# Tell dash that we're using bootstrap for our external stylesheets so
+# that the Col and Row classes function properly
+app = Dash(__name__, external_stylesheets=external_stylesheets)
 
-    port = args.p
-    filename = get_filename(user_input=args.f, test_ds=True)
-
-    APP_STATE = get_default_app_starting_state(filename=filename)
-
-    external_stylesheets = [dbc.themes.SIMPLEX]
-
-    # Tell dash that we're using bootstrap for our external stylesheets so
-    # that the Col and Row classes function properly
-    app = Dash(__name__, external_stylesheets=external_stylesheets)
-
-    # define layout
-    # to be adjusted once everything is running
-    app.layout = dbc.Container(
-        [
-            dbc.Row(  # first row
-                [
-                    dbc.Col(  # first column with dropdown menus
-                        dbc.Stack(
-                            [
-                                dcc.Store(id="memory"),  # invisible
-                                dcc.Store(
-                                    id="memory_visible_lines",
-                                    data=APP_STATE.source_scenario_visible,
-                                ),
-                                dcc.Store(id="xyrange-overview"),
-                                dcc.Store(id="xyrange-category"),
-                                dcc.Store(id="xyrange-entity"),
-                                html.B(
-                                    children="Country",
-                                    style={"textAlign": "left", "fontSize": 14},
-                                ),
-                                dcc.Dropdown(
-                                    options=APP_STATE.country_options,
-                                    value=APP_STATE.country,
-                                    id="dropdown-country",
-                                ),
-                                dbc.ButtonGroup(
-                                    [
-                                        dbc.Button(
-                                            id="prev_country",
-                                            children="prev country",
-                                            color="light",
-                                            n_clicks=0,
-                                            style={
-                                                "fontSize": 12,
-                                                "height": "37px",
-                                            },
-                                        ),
-                                        dbc.Button(
-                                            id="next_country",
-                                            children="next country",
-                                            color="light",
-                                            n_clicks=0,
-                                            style={
-                                                "fontSize": 12,
-                                                "height": "37px",
-                                            },
-                                        ),
-                                    ]
-                                ),
-                                html.B(
-                                    children="Category",
-                                    style={
-                                        "textAlign": "left",
-                                        "fontSize": 14,
-                                        "margin-top": 20,  # distance to element above
-                                    },
-                                ),
-                                dcc.Dropdown(
-                                    APP_STATE.category_options,
-                                    value=APP_STATE.category,
-                                    id="dropdown-category",
-                                ),
-                                dbc.ButtonGroup(
-                                    [
-                                        dbc.Button(
-                                            id="prev_category",
-                                            children="prev category",
-                                            color="light",
-                                            n_clicks=0,
-                                            style={
-                                                "fontSize": 12,
-                                                "height": "37px",
-                                            },
-                                        ),
-                                        dbc.Button(
-                                            id="next_category",
-                                            children="next category",
-                                            color="light",
-                                            n_clicks=0,
-                                            style={
-                                                "fontSize": 12,
-                                                "height": "37px",
-                                            },
-                                        ),
-                                    ]
-                                ),
-                                html.B(
-                                    children="Entity",
-                                    style={
-                                        "textAlign": "left",
-                                        "fontSize": 14,
-                                        "margin-top": 20,
-                                    },
-                                ),
-                                dcc.Dropdown(
-                                    APP_STATE.entity_options,
-                                    value=APP_STATE.entity,
-                                    id="dropdown-entity",
-                                ),
-                                dbc.ButtonGroup(
-                                    [
-                                        dbc.Button(
-                                            id="prev_entity",
-                                            children="prev entity",
-                                            color="light",
-                                            n_clicks=0,
-                                            style={
-                                                "fontSize": 12,
-                                                "height": "37px",
-                                            },
-                                        ),
-                                        dbc.Button(
-                                            id="next_entity",
-                                            children="next entity",
-                                            color="light",
-                                            n_clicks=0,
-                                            style={
-                                                "fontSize": 12,
-                                                "height": "37px",
-                                            },
-                                        ),
-                                    ]
-                                ),
-                                html.B(
-                                    children="Source-Scenario",
-                                    style={
-                                        "textAlign": "left",
-                                        "fontSize": 14,
-                                        "marginTop": 20,
-                                    },
-                                ),
-                                dcc.Dropdown(
-                                    APP_STATE.source_scenario_options,
-                                    value=APP_STATE.source_scenario,
-                                    id="dropdown-source-scenario",
-                                ),
-                            ],
-                            gap=1,  # spacing between each item (0 - 5)
-                        ),
-                        width=2,  # Column will span this many of the 12 grid columns
-                        style={"fontSize": 14},
-                    ),
-                    dbc.Col(
-                        dbc.Stack(
-                            [
-                                html.B(
-                                    children="Notes",
-                                    style={"textAlign": "left", "fontSize": 14},
-                                ),
-                                dcc.Textarea(
-                                    id="input-for-notes",
-                                    placeholder="Add notes and press save..",
-                                    style={"width": "100%"},
-                                    rows=8,  # used to define height of text area
-                                ),
-                                dbc.Button(
-                                    children="Save",
-                                    id="save_button",
-                                    n_clicks=0,
-                                    color="light",
-                                    style={"fontsize": 12, "height": "37px"},
-                                ),
-                                html.H4(
-                                    id="note-saved-div",
-                                    children="",
-                                    style={
-                                        "textAlign": "center",
-                                        "color": "grey",
-                                        "fontSize": 12,
-                                    },
-                                ),
-                                dbc.Row(
-                                    [
-                                        dbc.Col(
-                                            dbc.Button(
-                                                id="select-AR4GWP100",
-                                                children="AR4GWP100",
-                                                color="light",
-                                                n_clicks=0,
-                                                style={
-                                                    "fontSize": 12,
-                                                    "height": "37px",
-                                                },
-                                            ),
-                                            width=6,
-                                        ),
-                                        dbc.Col(
-                                            dbc.Button(
-                                                id="select-AR5GWP100",
-                                                children="AR5GWP100",
-                                                color="light",
-                                                n_clicks=0,
-                                                style={
-                                                    "fontSize": 12,
-                                                    "height": "37px",
-                                                },
-                                            ),
-                                            width=6,
-                                        ),
-                                    ]
-                                ),
-                                dbc.Row(
-                                    [
-                                        dbc.Col(
-                                            dbc.Button(
-                                                id="select-AR6GWP100",
-                                                children="AR46WP100",
-                                                color="light",
-                                                n_clicks=0,
-                                                style={
-                                                    "fontSize": 12,
-                                                    "height": "37px",
-                                                },
-                                            ),
-                                            width=6,
-                                        ),
-                                        dbc.Col(
-                                            dbc.Button(
-                                                id="select-SARGWP100",
-                                                children="SARGWP100",
-                                                active=True,
-                                                class_name="me-md-2",
-                                                color="light",
-                                                n_clicks=0,
-                                                style={
-                                                    "fontSize": 12,
-                                                    "height": "37px",
-                                                },
-                                            ),
-                                            width=4,
-                                        ),
-                                    ]
-                                ),
-                            ],
-                            gap=1,
-                        ),
-                        width=2,
-                    ),
-                    dbc.Col(
+# define layout
+# to be adjusted once everything is running
+app.layout = dbc.Container(
+    [
+        dbc.Row(  # first row
+            [
+                dbc.Col(  # first column with dropdown menus
+                    dbc.Stack(
                         [
-                            html.B(children="Overview", style={"textAlign": "center"}),
-                            dcc.Graph(id="graph-overview"),
-                        ],
-                        width=8,
-                    ),
-                ]
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        [
-                            html.Br(),
-                            html.B(
-                                children="Category split", style={"textAlign": "center"}
+                            dcc.Store(id="memory"),  # invisible
+                            dcc.Store(
+                                id="memory_visible_lines",
+                                data={},
                             ),
-                            dcc.Graph(id="graph-category-split"),
-                        ],
-                        width=6,
-                    ),
-                    dbc.Col(
-                        [
-                            html.Br(),
+                            dcc.Store(id="xyrange-overview"),
+                            dcc.Store(id="xyrange-category"),
+                            dcc.Store(id="xyrange-entity"),
                             html.B(
-                                children="Entity split", style={"textAlign": "center"}
+                                children="Country",
+                                style={"textAlign": "left", "fontSize": 14},
                             ),
-                            dcc.Graph(id="graph-entity-split"),
+                            dcc.Dropdown(
+                                options=('',),
+                                value='',
+                                id="dropdown-country",
+                            ),
+                            dbc.ButtonGroup(
+                                [
+                                    dbc.Button(
+                                        id="prev_country",
+                                        children="prev country",
+                                        color="light",
+                                        n_clicks=0,
+                                        style={
+                                            "fontSize": 12,
+                                            "height": "37px",
+                                        },
+                                    ),
+                                    dbc.Button(
+                                        id="next_country",
+                                        children="next country",
+                                        color="light",
+                                        n_clicks=0,
+                                        style={
+                                            "fontSize": 12,
+                                            "height": "37px",
+                                        },
+                                    ),
+                                ]
+                            ),
+                            html.B(
+                                children="Category",
+                                style={
+                                    "textAlign": "left",
+                                    "fontSize": 14,
+                                    "margin-top": 20,  # distance to element above
+                                },
+                            ),
+                            dcc.Dropdown(
+                                ('',),
+                                value='',
+                                id="dropdown-category",
+                            ),
+                            dbc.ButtonGroup(
+                                [
+                                    dbc.Button(
+                                        id="prev_category",
+                                        children="prev category",
+                                        color="light",
+                                        n_clicks=0,
+                                        style={
+                                            "fontSize": 12,
+                                            "height": "37px",
+                                        },
+                                    ),
+                                    dbc.Button(
+                                        id="next_category",
+                                        children="next category",
+                                        color="light",
+                                        n_clicks=0,
+                                        style={
+                                            "fontSize": 12,
+                                            "height": "37px",
+                                        },
+                                    ),
+                                ]
+                            ),
+                            html.B(
+                                children="Entity",
+                                style={
+                                    "textAlign": "left",
+                                    "fontSize": 14,
+                                    "margin-top": 20,
+                                },
+                            ),
+                            dcc.Dropdown(
+                                ('',),
+                                value='',
+                                id="dropdown-entity",
+                            ),
+                            dbc.ButtonGroup(
+                                [
+                                    dbc.Button(
+                                        id="prev_entity",
+                                        children="prev entity",
+                                        color="light",
+                                        n_clicks=0,
+                                        style={
+                                            "fontSize": 12,
+                                            "height": "37px",
+                                        },
+                                    ),
+                                    dbc.Button(
+                                        id="next_entity",
+                                        children="next entity",
+                                        color="light",
+                                        n_clicks=0,
+                                        style={
+                                            "fontSize": 12,
+                                            "height": "37px",
+                                        },
+                                    ),
+                                ]
+                            ),
+                            html.B(
+                                children="Source-Scenario",
+                                style={
+                                    "textAlign": "left",
+                                    "fontSize": 14,
+                                    "marginTop": 20,
+                                },
+                            ),
+                            dcc.Dropdown(
+                                ('',),
+                                value='',
+                                id="dropdown-source-scenario",
+                            ),
                         ],
-                        width=6,
+                        gap=1,  # spacing between each item (0 - 5)
                     ),
-                ]
-            ),
-            dbc.Row(
+                    width=2,  # Column will span this many of the 12 grid columns
+                    style={"fontSize": 14},
+                ),
                 dbc.Col(
-                    dag.AgGrid(
-                        id="grid",
-                        columnDefs=[],
-                        # continually resize columns to fit the width of the grid
-                        columnSize="responsiveSizeToFit",
-                        defaultColDef={"filter": "agTextColumnFilter"},
-                        style={"marginTop": "5em"},
-                    )
+                    dbc.Stack(
+                        [
+                            html.B(
+                                children="Notes",
+                                style={"textAlign": "left", "fontSize": 14},
+                            ),
+                            dcc.Textarea(
+                                id="input-for-notes",
+                                placeholder="Add notes and press save..",
+                                style={"width": "100%"},
+                                rows=8,  # used to define height of text area
+                            ),
+                            dbc.Button(
+                                children="Save",
+                                id="save_button",
+                                n_clicks=0,
+                                color="light",
+                                style={"fontsize": 12, "height": "37px"},
+                            ),
+                            html.H4(
+                                id="note-saved-div",
+                                children="",
+                                style={
+                                    "textAlign": "center",
+                                    "color": "grey",
+                                    "fontSize": 12,
+                                },
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        dbc.Button(
+                                            id="select-AR4GWP100",
+                                            children="AR4GWP100",
+                                            color="light",
+                                            n_clicks=0,
+                                            style={
+                                                "fontSize": 12,
+                                                "height": "37px",
+                                            },
+                                        ),
+                                        width=6,
+                                    ),
+                                    dbc.Col(
+                                        dbc.Button(
+                                            id="select-AR5GWP100",
+                                            children="AR5GWP100",
+                                            color="light",
+                                            n_clicks=0,
+                                            style={
+                                                "fontSize": 12,
+                                                "height": "37px",
+                                            },
+                                        ),
+                                        width=6,
+                                    ),
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        dbc.Button(
+                                            id="select-AR6GWP100",
+                                            children="AR46WP100",
+                                            color="light",
+                                            n_clicks=0,
+                                            style={
+                                                "fontSize": 12,
+                                                "height": "37px",
+                                            },
+                                        ),
+                                        width=6,
+                                    ),
+                                    dbc.Col(
+                                        dbc.Button(
+                                            id="select-SARGWP100",
+                                            children="SARGWP100",
+                                            active=True,
+                                            class_name="me-md-2",
+                                            color="light",
+                                            n_clicks=0,
+                                            style={
+                                                "fontSize": 12,
+                                                "height": "37px",
+                                            },
+                                        ),
+                                        width=4,
+                                    ),
+                                ]
+                            ),
+                        ],
+                        gap=1,
+                    ),
+                    width=2,
+                ),
+                dbc.Col(
+                    [
+                        html.B(children="Overview", style={"textAlign": "center"}),
+                        dcc.Graph(id="graph-overview"),
+                    ],
+                    width=8,
+                ),
+            ]
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        html.Br(),
+                        html.B(
+                            children="Category split", style={"textAlign": "center"}
+                        ),
+                        dcc.Graph(id="graph-category-split"),
+                    ],
+                    width=6,
+                ),
+                dbc.Col(
+                    [
+                        html.Br(),
+                        html.B(
+                            children="Entity split", style={"textAlign": "center"}
+                        ),
+                        dcc.Graph(id="graph-entity-split"),
+                    ],
+                    width=6,
+                ),
+            ]
+        ),
+        dbc.Row(
+            dbc.Col(
+                dag.AgGrid(
+                    id="grid",
+                    columnDefs=[],
+                    # continually resize columns to fit the width of the grid
+                    columnSize="responsiveSizeToFit",
+                    defaultColDef={"filter": "agTextColumnFilter"},
+                    style={"marginTop": "5em"},
                 )
-            ),
-        ],
-        style={"max-width": "none", "width": "100%"},
-    )
-
-    with warnings.catch_warnings(action="ignore"):  # type: ignore
-        app.run(debug=True, port=port)
+            )
+        ),
+    ],
+    style={"max-width": "none", "width": "100%"},
+)
