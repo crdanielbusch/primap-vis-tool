@@ -1,7 +1,14 @@
-import primap_visualisation_tool.app
+"""
+Main entry point for running the app
+"""
 import argparse
-from primap_visualisation_tool.app import get_filename, get_default_app_starting_state, app
 import warnings
+
+import primap_visualisation_tool.app_state
+from primap_visualisation_tool.app import (
+    app,
+    get_filename,
+)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -12,7 +19,11 @@ if __name__ == "__main__":
     port = args.p
     filename = get_filename(user_input=args.f, test_ds=True)
 
-    primap_visualisation_tool.app.APP_STATE = get_default_app_starting_state(filename=filename)
+    primap_visualisation_tool.app_state.APP_STATE = (
+        primap_visualisation_tool.app_state.get_default_app_starting_state(
+            filename=filename
+        )
+    )
 
     with warnings.catch_warnings(action="ignore"):  # type: ignore
         app.run(debug=True, port=port)

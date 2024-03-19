@@ -77,4 +77,4 @@ virtual-environment:  ## update virtual environment, create a new one if it does
 
 .PHONY: run-app
 run-app:  ## run the app
-	poetry run python src/primap_visualisation_tool/app.py -f "combined_data_v2.5_final_v2.4.2_final.nc" -p 8050
+	poetry run python src/primap_visualisation_tool/main.py -f "combined_data_v2.5_final_v2.4.2_final.nc" -p 8050

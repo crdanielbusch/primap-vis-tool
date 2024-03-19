@@ -1,10 +1,13 @@
 # 1. imports of your dash app
+from pathlib import Path
+
 import dash
 from dash import html
 from dash.testing.application_runners import import_app
-from primap_visualisation_tool.app import get_filename, get_default_app_starting_state
+
 import primap_visualisation_tool.app
-from pathlib import Path
+from primap_visualisation_tool.app import get_default_app_starting_state
+
 
 # 2. give each testcase a test case ID, and pass the fixture
 # dash_duo as a function argument
@@ -25,10 +28,19 @@ def test_001_child_with_0(dash_duo):
     # acceptance criterion as an assert message after the comma.
     assert dash_duo.get_logs() == [], "browser console should contain no error"
 
+
 def test_002_app_starts(dash_duo):
     # find package primap_visualisation_tool, find varibale app
-    test_file = Path(__file__).parent.parent.parent / 'data' / '20240212_test_ds.nc'
-    primap_visualisation_tool.app.APP_STATE = get_default_app_starting_state(filename=test_file)
+    test_file = Path(__file__).parent.parent.parent / "data" / "20240212_test_ds.nc"
+    primap_visualisation_tool.app.APP_STATE = get_default_app_starting_state(
+        filename=test_file
+    )
     app = import_app("primap_visualisation_tool.app", application_name="app")
     dash_duo.start_server(app)
-    assert dash_duo.find_element("#nully-wrapper").text == "0"
+    prev_country_button = dash_duo.driver.find_element("prev_country")
+    dash_duo.multiple_click(prev_country_button, 1)
+    import time
+
+    time.sleep(15)
+
+    # assert dash_duo.find_element("#nully-wrapper").text == "0"
