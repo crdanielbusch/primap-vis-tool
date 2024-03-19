@@ -31,19 +31,38 @@ def test_001_child_with_0(dash_duo):
 
 def test_002_app_starts(dash_duo):
     # find package primap_visualisation_tool, find varibale app
-    test_file = Path(__file__).parent.parent.parent / "data" / "20240212_test_ds.nc"
+    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     app_state = get_default_app_starting_state(filename=test_file)
     # app = import_app("primap_visualisation_tool.app", application_name="app")
     app = primap_visualisation_tool.app.create_app(app_state=app_state)
     dash_duo.start_server(app)
 
-    prev_country_button = dash_duo.driver.find_element(By.ID, "prev_country")
-    import time
+    # use for different test
+    # prev_country_button = dash_duo.driver.find_element(By.ID, "prev_country")
 
-    time.sleep(5)
-    dash_duo.multiple_click(prev_country_button, 1)
-    import time
+    dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
+    # TODO better to use wait_for_*(), see dash docs
+    assert (
+        dropdown_country.find_element(By.ID, "react-select-2--value-item").text
+        == "EARTH"
+    )
 
-    time.sleep(5)
+    dropdown_category = dash_duo.driver.find_element(By.ID, "dropdown-category")
+    assert (
+        dropdown_category.find_element(By.ID, "react-select-3--value-item").text
+        == "M.0.EL"
+    )
 
-    assert False, "Write more tests of state"
+    dropdown_entity = dash_duo.driver.find_element(By.ID, "dropdown-entity")
+    assert (
+        dropdown_entity.find_element(By.ID, "react-select-4--value-item").text
+        == "KYOTOGHG (AR6GWP100)"
+    )
+
+    dropdown_source_scenario = dash_duo.driver.find_element(
+        By.ID, "dropdown-source-scenario"
+    )
+    assert (
+        dropdown_source_scenario.find_element(By.ID, "react-select-5--value-item").text
+        == "PRIMAP-hist_v2.5_final_nr, HISTCR"
+    )
