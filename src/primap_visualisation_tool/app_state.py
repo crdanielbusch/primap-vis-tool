@@ -2,10 +2,10 @@
 Definition of our app's state
 """
 import csv
-import datetime
 import json
 import warnings
 from collections.abc import Sized
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
