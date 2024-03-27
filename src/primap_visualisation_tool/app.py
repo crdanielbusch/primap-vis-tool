@@ -367,6 +367,7 @@ def update_overview_graph(  # noqa: PLR0913
     -------
         Overview figure.
     """
+    print("Called the overview graph update callback")
     if app_state is None:
         app_state = APP_STATE
 
