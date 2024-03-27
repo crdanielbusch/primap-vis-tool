@@ -26,11 +26,7 @@ def test_002_app_starts(dash_duo):
     app = primap_visualisation_tool.app.create_app(app_state=app_state)
     dash_duo.start_server(app)
 
-    # use for different test
-    # prev_country_button = dash_duo.driver.find_element(By.ID, "prev_country")
-
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
-    # TODO better to use wait_for_*(), see dash docs
     assert (
         dropdown_country.find_element(By.ID, "react-select-2--value-item").text
         == "EARTH"
@@ -55,6 +51,25 @@ def test_002_app_starts(dash_duo):
         dropdown_source_scenario.find_element(By.ID, "react-select-5--value-item").text
         == "PRIMAP-hist_v2.5_final_nr, HISTCR"
     )
+
+    dash_duo.driver.find_element(By.ID, "prev_country")
+
+    for button_id, expected_text in [
+        ("prev_country", "prev country"),
+        ("next_country", "next country"),
+        ("prev_category", "prev category"),
+        ("next_category", "next category"),
+        ("prev_entity", "prev entity"),
+        ("next_entity", "next entity"),
+        ("save_button", "Save"),
+        ("select-AR4GWP100", "AR4GWP100"),
+        ("select-AR5GWP100", "AR5GWP100"),
+        ("select-AR6GWP100", "AR6GWP100"),
+        ("select-SARGWP100", "SARGWP100"),
+    ]:
+        button = dash_duo.driver.find_element(By.ID, button_id)
+        assert button.text == expected_text
+        assert button.tag_name == "button"
 
     # Option 1: Find the right ID that holds the data
     # Option 2: create container with app, app_state

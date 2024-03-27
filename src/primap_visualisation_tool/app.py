@@ -1191,7 +1191,7 @@ def create_app(app_state: AppState) -> Dash:
                                         dbc.Col(
                                             dbc.Button(
                                                 id="select-AR6GWP100",
-                                                children="AR46WP100",
+                                                children="AR6GWP100",
                                                 color="light",
                                                 n_clicks=0,
                                                 style={
