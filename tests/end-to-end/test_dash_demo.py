@@ -69,6 +69,11 @@ def test_002_app_starts(dash_duo):
         assert button.text == expected_text
         assert button.tag_name == "button"
 
+    # Check that there is a notes field.
+    # An error is raised by the `find_element` method
+    # if no element with the expected ID can be found.
+    dash_duo.driver.find_element(By.ID, "input-for-notes")
+
     figures_expected_items = (
         (
             "graph-overview",
@@ -112,3 +117,7 @@ def test_002_app_starts(dash_duo):
         # Check that elements are the same,
         # worrying about ordering is a problem for another day.
         assert sorted(legend_items) == sorted(expected_legend_items)
+
+    data_table = dash_duo.driver.find_element(By.ID, "grid")
+    header_cell_labels = data_table.find_elements(By.CLASS_NAME, "ag-header-cell-label")
+    assert len(header_cell_labels) == 5, "Wrong number of columns in data table"
