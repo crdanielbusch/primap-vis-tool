@@ -69,13 +69,46 @@ def test_002_app_starts(dash_duo):
         assert button.text == expected_text
         assert button.tag_name == "button"
 
-    dash_duo.driver.find_elements(By.CLASS_NAME, "legend")[0].text
-    dash_duo.driver.find_element(By.CLASS_NAME, "legend")
-    # Option 1: Find the right ID that holds the data
-    # Option 2: create container with app, app_state
-    # graph_overview = dash_duo.driver.find_element(
-    #     By.ID, "graph-overview"
-    # )
-    #
-    # import pdb
-    # pdb.set_trace()
+    figures_expected_items = (
+        (
+            "graph-overview",
+            [
+                "PRIMAP-hist_v2.5_final_nr, HISTTP",
+                "PRIMAP-hist_v2.5_final_nr, HISTCR",
+                "CRF 2022, 230510",
+                "CRF 2023, 230926",
+                "EDGAR 7.0, HISTORY",
+                "UNFCCC NAI, 231015",
+            ],
+        ),
+        (
+            "graph-category-split",
+            [
+                "total",
+                "1 pos",
+                "2 pos",
+                "4 pos",
+                "5 pos",
+                "M.AG pos",
+            ],
+        ),
+        (
+            "graph-entity-split",
+            [
+                "total",
+                "CH4 (AR6GWP100) pos",
+                "CO2 (AR6GWP100) pos",
+                "N2O (AR6GWP100) pos",
+                "FGASES (AR6GWP100) pos",
+            ],
+        ),
+    )
+    for figure_id, expected_legend_items in figures_expected_items:
+        figure = dash_duo.driver.find_element(By.ID, figure_id)
+        legend = figure.find_element(By.CLASS_NAME, "legend")
+        traces = legend.find_elements(By.CLASS_NAME, "traces")
+        legend_items = [trace.text for trace in traces]
+
+        # Check that elements are the same,
+        # worrying about ordering is a problem for another day.
+        assert sorted(legend_items) == sorted(expected_legend_items)
