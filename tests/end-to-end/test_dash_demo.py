@@ -52,8 +52,6 @@ def test_002_app_starts(dash_duo):
         == "PRIMAP-hist_v2.5_final_nr, HISTCR"
     )
 
-    dash_duo.driver.find_element(By.ID, "prev_country")
-
     for button_id, expected_text in [
         ("prev_country", "prev country"),
         ("next_country", "next country"),
@@ -71,6 +69,8 @@ def test_002_app_starts(dash_duo):
         assert button.text == expected_text
         assert button.tag_name == "button"
 
+    dash_duo.driver.find_elements(By.CLASS_NAME, "legend")[0].text
+    dash_duo.driver.find_element(By.CLASS_NAME, "legend")
     # Option 1: Find the right ID that holds the data
     # Option 2: create container with app, app_state
     # graph_overview = dash_duo.driver.find_element(
