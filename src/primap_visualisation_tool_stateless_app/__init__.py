@@ -61,7 +61,7 @@ def create_app() -> Dash:
 
     layout = create_layout(
         country=get_country_start(dataset),
-        country_options=sorted(get_country_options(dataset)),
+        country_options=get_country_options(dataset),
     )
     app.layout = dbc.Container(layout)
 

@@ -30,9 +30,6 @@ def test_002_app_starts(dash_duo):
 
     app = primap_visualisation_tool_stateless_app.create_app()
     dash_duo.start_server(app)
-    import time
-
-    time.sleep(5)
 
 
 def test_003_dropdown_country(dash_duo):
@@ -52,7 +49,25 @@ def test_003_dropdown_country(dash_duo):
     )
 
 
-def test_004_dropdown_category(dash_duo):
+def test_004_dropdown_country_earth_not_present(dash_duo):
+    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+
+    test_ds = pm.open_dataset(test_file)
+    test_ds = test_ds.pr.loc[{"area (ISO3)": ["AUT", "AUS"]}]
+
+    primap_visualisation_tool_stateless_app.set_application_dataset(test_ds)
+
+    app = primap_visualisation_tool_stateless_app.create_app()
+    dash_duo.start_server(app)
+
+    dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
+    assert (
+        dropdown_country.find_element(By.ID, "react-select-2--value-item").text
+        == "Australia"
+    )
+
+
+def test_005_dropdown_category(dash_duo):
     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
 
     test_ds = pm.open_dataset(test_file)
