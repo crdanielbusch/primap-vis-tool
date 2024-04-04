@@ -84,6 +84,22 @@ def test_005_dropdown_category(dash_duo):
     )
 
 
+def test_006_dropdown_entity(dash_duo):
+    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+
+    test_ds = pm.open_dataset(test_file)
+
+    primap_visualisation_tool_stateless_app.set_application_dataset(test_ds)
+
+    app = primap_visualisation_tool_stateless_app.create_app()
+    dash_duo.start_server(app)
+
+    dropdown_entity = dash_duo.driver.find_element(By.ID, "dropdown-entity")
+    assert (
+        dropdown_entity.find_element(By.ID, "react-select-4--value-item").text == "CO2"
+    )
+
+
 # Things to try:
 # 1. Try the 'pint-style', set application data, get application data
 # 2. Try dash_br

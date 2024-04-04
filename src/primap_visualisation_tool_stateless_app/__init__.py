@@ -12,6 +12,8 @@ from primap_visualisation_tool_stateless_app.dataset_handling import (
     get_category_start,
     get_country_options,
     get_country_start,
+    get_entity_options,
+    get_entity_start,
 )
 from primap_visualisation_tool_stateless_app.dataset_holder import (
     ApplicationDatasetHolder,
@@ -66,6 +68,8 @@ def create_app() -> Dash:
         country_options=get_country_options(dataset),
         category=get_category_start(dataset),
         category_options=get_category_options(dataset),
+        entity=get_entity_start(dataset),
+        entity_options=get_entity_options(dataset),
     )
     app.layout = dbc.Container(layout)
 

@@ -95,6 +95,49 @@ def get_category_options(dataset: xr.Dataset) -> tuple[str, ...]:
     return sorted(tuple(dataset["category (IPCC2006_PRIMAP)"].to_numpy()))
 
 
+def get_entity_start(
+    dataset: xr.Dataset, preferred_starting_entity: str = "CO2"
+) -> str:
+    """
+    Get starting entity for a dataset
+
+    Parameters
+    ----------
+    dataset
+        Dataset for which to get the starting category
+
+    preferred_starting_entity
+        Preferred starting entity. If this is available, we use it,
+        otherwise we use the first entity returned from
+        :func:`get_entity_options`.
+
+    Returns
+    -------
+        Starting entity to use for ``dataset``.
+    """
+    entity_options = get_entity_options(dataset)
+    if preferred_starting_entity in entity_options:
+        return preferred_starting_entity
+
+    return entity_options[0]
+
+
+def get_entity_options(dataset: xr.Dataset) -> tuple[str, ...]:
+    """
+    Get entity options
+
+    Parameters
+    ----------
+    dataset
+        Dataset from which to get the entity options
+
+    Returns
+    -------
+        Sorted entity options within the dataset
+    """
+    return sorted(tuple(i for i in dataset.data_vars))
+
+
 def get_country_code_mapping(dataset: xr.Dataset) -> dict[str, str]:
     """
     Get mapping from country names to country codes
