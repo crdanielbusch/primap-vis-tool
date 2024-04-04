@@ -163,3 +163,17 @@ def get_country_code_mapping(dataset: xr.Dataset) -> dict[str, str]:
             country_code_mapping[code] = code
 
     return country_code_mapping
+
+
+def get_source_scenario_options(dataset: xr.Dataset) -> tuple[str, ...]:
+    """
+
+    Parameters
+    ----------
+    dataset
+
+    Returns
+    -------
+
+    """
+    return sorted(tuple(dataset.coords["SourceScen"].to_numpy()))

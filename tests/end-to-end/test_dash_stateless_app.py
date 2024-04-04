@@ -9,7 +9,9 @@ from dash import html
 from selenium.webdriver.common.by import By
 
 import primap_visualisation_tool_stateless_app
+import primap_visualisation_tool_stateless_app.callbacks
 import primap_visualisation_tool_stateless_app.dataset_holder
+
 
 def test_001_dash_example(dash_duo):
     # A test that the dash example runs.
@@ -26,7 +28,9 @@ def test_002_app_starts(dash_duo):
 
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(test_ds)
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
+        test_ds
+    )
 
     app = primap_visualisation_tool_stateless_app.create_app()
     dash_duo.start_server(app)
@@ -37,16 +41,19 @@ def test_003_dropdown_country(dash_duo):
 
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(test_ds)
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
+        test_ds
+    )
 
     app = primap_visualisation_tool_stateless_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
-    assert (
-        dropdown_country.find_element(By.ID, "react-select-2--value-item").text
-        == "EARTH"
+    dropdown_country_select_element = dropdown_country.find_element(
+        By.ID, "react-select-2--value-item"
     )
+    assert dropdown_country_select_element.text == "EARTH"
 
 
 def test_004_dropdown_country_earth_not_present(dash_duo):
@@ -55,7 +62,9 @@ def test_004_dropdown_country_earth_not_present(dash_duo):
     test_ds = pm.open_dataset(test_file)
     test_ds = test_ds.pr.loc[{"area (ISO3)": ["AUT", "AUS"]}]
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(test_ds)
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
+        test_ds
+    )
 
     app = primap_visualisation_tool_stateless_app.create_app()
     dash_duo.start_server(app)
@@ -72,7 +81,9 @@ def test_005_dropdown_category(dash_duo):
 
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(test_ds)
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
+        test_ds
+    )
 
     app = primap_visualisation_tool_stateless_app.create_app()
     dash_duo.start_server(app)
@@ -89,7 +100,9 @@ def test_006_dropdown_entity(dash_duo):
 
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(test_ds)
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
+        test_ds
+    )
 
     app = primap_visualisation_tool_stateless_app.create_app()
     dash_duo.start_server(app)

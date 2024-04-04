@@ -19,6 +19,7 @@ class ApplicationDatasetHolder:
     dataset: xr.Dataset | None
     """Application's dataset"""
 
+
 APPLICATION_DATASET_HOLDER = ApplicationDatasetHolder(None)
 """Holder of the application's dataset"""
 

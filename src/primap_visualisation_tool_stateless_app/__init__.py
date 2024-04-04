@@ -4,8 +4,11 @@ PRIMAP visualisation tool, stateless version
 from __future__ import annotations
 
 import dash_bootstrap_components as dbc  # type: ignore
-import xarray as xr
-from dash import Dash  # type: ignore
+
+# from primap_visualisation_tool_stateless_app.callbacks import update_overview_figure
+from dash import (
+    Dash,  # type: ignore
+)
 
 from primap_visualisation_tool_stateless_app.dataset_handling import (
     get_category_options,
@@ -16,13 +19,9 @@ from primap_visualisation_tool_stateless_app.dataset_handling import (
     get_entity_start,
 )
 from primap_visualisation_tool_stateless_app.dataset_holder import (
-    get_application_dataset
+    get_application_dataset,
 )
 from primap_visualisation_tool_stateless_app.layout import create_layout
-
-
-#from primap_visualisation_tool_stateless_app.callbacks import update_overview_figure
-
 
 
 def create_app() -> Dash:
