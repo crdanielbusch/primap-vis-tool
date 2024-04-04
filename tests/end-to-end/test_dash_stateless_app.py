@@ -5,9 +5,10 @@ from pathlib import Path
 
 import dash
 import primap2 as pm
-import primap_visualisation_tool_stateless_app
 from dash import html
 from selenium.webdriver.common.by import By
+
+import primap_visualisation_tool_stateless_app
 
 
 def test_001_dash_example(dash_duo):
@@ -29,6 +30,9 @@ def test_002_app_starts(dash_duo):
 
     app = primap_visualisation_tool_stateless_app.create_app()
     dash_duo.start_server(app)
+    import time
+
+    time.sleep(5)
 
 
 def test_003_dropdown_country(dash_duo):
