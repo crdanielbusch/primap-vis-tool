@@ -16,35 +16,13 @@ from primap_visualisation_tool_stateless_app.dataset_handling import (
     get_entity_start,
 )
 from primap_visualisation_tool_stateless_app.dataset_holder import (
-    ApplicationDatasetHolder,
+    get_application_dataset
 )
 from primap_visualisation_tool_stateless_app.layout import create_layout
 
-APPLICATION_DATASET_HOLDER = ApplicationDatasetHolder(None)
-"""Holder of the application's dataset"""
 
+#from primap_visualisation_tool_stateless_app.callbacks import update_overview_figure
 
-def get_application_dataset() -> xr.Dataset:
-    """
-    Get the dataset to use with the application
-
-    Returns
-    -------
-        Dataset to use with the application
-    """
-    return APPLICATION_DATASET_HOLDER.dataset
-
-
-def set_application_dataset(dataset: xr.Dataset) -> None:
-    """
-    Set the dataset to use with the application
-
-    Parameters
-    ----------
-    dataset
-        Dataset to use with the application
-    """
-    APPLICATION_DATASET_HOLDER.dataset = dataset
 
 
 def create_app() -> Dash:
