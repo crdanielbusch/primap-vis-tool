@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "This app visualises GHG-emissions over time based on sectors, countries and entities. It is based on the Primap dataset."
 authors = ["Daniel Busch <daniel.busch@climate-resource.com>"]
 readme = "README.md"
-packages = [{include = "primap_visualisation_tool", from = "src"}]
+packages = [
+    {include = "primap_visualisation_tool", from = "src"},
+    {include = "primap_visualisation_tool_stateless_app", from = "src"},
+]
 
 [tool.poetry.dependencies]
 python = "^3.9"
