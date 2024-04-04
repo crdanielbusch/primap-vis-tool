@@ -10,6 +10,8 @@ from dash import dcc, html  # type: ignore
 def create_layout(
     country: str,
     country_options: tuple[str, ...],
+    category: str,
+    category_options: tuple[str, ...],
 ) -> dbc.Container:
     """
     Create the layout for our app
@@ -28,6 +30,17 @@ def create_layout(
                         options=country_options,
                         value=country,
                         id="dropdown-country",
+                    ),
+                    html.B(
+                        children="Category",
+                        style={"textAlign": "left", "fontSize": 14},
+                    ),
+                    dcc.Dropdown(
+                        # TODO: try passing in a dict here and see if keys
+                        # are used for display while values are passed around the app.
+                        options=category_options,
+                        value=category,
+                        id="dropdown-category",
                     ),
                 ]
             )

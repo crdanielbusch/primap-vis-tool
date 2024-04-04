@@ -8,6 +8,8 @@ import xarray as xr
 from dash import Dash  # type: ignore
 
 from primap_visualisation_tool_stateless_app.dataset_handling import (
+    get_category_options,
+    get_category_start,
     get_country_options,
     get_country_start,
 )
@@ -62,6 +64,8 @@ def create_app() -> Dash:
     layout = create_layout(
         country=get_country_start(dataset),
         country_options=get_country_options(dataset),
+        category=get_category_start(dataset),
+        category_options=get_category_options(dataset),
     )
     app.layout = dbc.Container(layout)
 
