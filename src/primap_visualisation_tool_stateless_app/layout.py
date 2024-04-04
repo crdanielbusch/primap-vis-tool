@@ -18,40 +18,51 @@ def create_layout(  # noqa: PLR0913
     """
     Create the layout for our app
     """
+    dropdowns = [
+        html.B(
+            children="Country",
+            style={"textAlign": "left", "fontSize": 14},
+        ),
+        dcc.Dropdown(
+            # TODO: try passing in a dict here and see if keys
+            # are used for display while values are passed around the app.
+            options=country_options,
+            value=country,
+            id="dropdown-country",
+        ),
+        html.B(
+            children="Category",
+            style={"textAlign": "left", "fontSize": 14},
+        ),
+        dcc.Dropdown(
+            options=category_options,
+            value=category,
+            id="dropdown-category",
+        ),
+        html.B(
+            children="Entity",
+            style={"textAlign": "left", "fontSize": 14},
+        ),
+        dcc.Dropdown(
+            options=entity_options,
+            value=entity,
+            id="dropdown-entity",
+        ),
+    ]
+
+    overview_figure = [
+        html.B(children="Overview", style={"textAlign": "center"}),
+        dcc.Graph(id="graph-overview"),
+    ]
+
     return [
-        dbc.Col(  # first column with dropdown menus
-            dbc.Stack(
-                [
-                    html.B(
-                        children="Country",
-                        style={"textAlign": "left", "fontSize": 14},
-                    ),
-                    dcc.Dropdown(
-                        # TODO: try passing in a dict here and see if keys
-                        # are used for display while values are passed around the app.
-                        options=country_options,
-                        value=country,
-                        id="dropdown-country",
-                    ),
-                    html.B(
-                        children="Category",
-                        style={"textAlign": "left", "fontSize": 14},
-                    ),
-                    dcc.Dropdown(
-                        options=category_options,
-                        value=category,
-                        id="dropdown-category",
-                    ),
-                    html.B(
-                        children="Entity",
-                        style={"textAlign": "left", "fontSize": 14},
-                    ),
-                    dcc.Dropdown(
-                        options=entity_options,
-                        value=entity,
-                        id="dropdown-entity",
-                    ),
-                ]
-            )
+        dbc.Row(
+            [
+                dbc.Col(dbc.Stack(dropdowns)),  # first column with dropdown menus
+                dbc.Col(
+                    overview_figure,
+                    width=8,
+                ),
+            ]
         )
     ]
