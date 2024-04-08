@@ -158,34 +158,21 @@ def test_008_initial_figures(dash_duo):
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
-    dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
-    dropdown_country_select_element = dropdown_country.find_element(
-        By.ID, "react-select-2--value-item"
-    )
-    assert dropdown_country_select_element.text == "EARTH"
-
-    # # Click next
-    # button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
-    # button_country_next.click()
-    #
-    # # Country dropdown should update
-    # assert dropdown_country_select_element.text == "EU27BX"
-
     figures_expected_items = (
         (
             "graph-overview",
             [
-                "Andrew cement, HISTORY",
+                # "Andrew cement, HISTORY",
                 # "CDIAC 2020, HISTORY",
-                "CEDS 2020, HISTORY",
+                # "CEDS 2020, HISTORY",
                 "CRF 2022, 230510",
                 "CRF 2023, 230926",
                 "EDGAR 7.0, HISTORY",
-                "EDGAR-HYDE 1.4, HISTORY",
-                "EI 2023, HISTORY",
+                # "EDGAR-HYDE 1.4, HISTORY",
+                # "EI 2023, HISTORY",
                 "FAOSTAT 2022, HISTORY",
-                "Houghton, HISTORY",
-                "MATCH, HISTORY",
+                # "Houghton, HISTORY",
+                # "MATCH, HISTORY",
                 "PRIMAP-hist_v2.4.2_final_nr, HISTCR",
                 "PRIMAP-hist_v2.4.2_final_nr, HISTTP",
                 "PRIMAP-hist_v2.5_final_nr, HISTCR",

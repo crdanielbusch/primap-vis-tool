@@ -8,7 +8,6 @@ import xarray as xr
 
 from primap_visualisation_tool_stateless_app.dataset_handling import (
     get_country_code_mapping,
-    get_source_scenario_options,
 )
 
 
@@ -52,9 +51,25 @@ def create_overview_figure(
 
     filtered_pandas = filtered.to_dataframe().reset_index()
 
+    null_source_scenario_options = filtered_pandas.groupby(by="SourceScen")[
+        entity
+    ].apply(lambda x: x.isna().all())
+
+    null_source_scenario_options = null_source_scenario_options[
+        list(null_source_scenario_options)
+    ].index
+
+    original_source_scenario_options = tuple(dataset["SourceScen"].to_numpy())
+
+    new_source_scenario_options = [
+        i
+        for i in original_source_scenario_options
+        if i not in null_source_scenario_options
+    ]
+
     fig = go.Figure()
 
-    source_scenario_sorted = list(get_source_scenario_options(dataset))
+    source_scenario_sorted = list(new_source_scenario_options)
     # move primap source scenarios to the front of the list
     # in the same order as specified in LINES_ORDER
     # for i in [j for j in LINES_ORDER if j in self.source_scenario_options] :
