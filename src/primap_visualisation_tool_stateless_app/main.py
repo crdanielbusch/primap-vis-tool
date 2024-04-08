@@ -4,7 +4,6 @@ Run the app
 from __future__ import annotations
 
 import warnings
-from pathlib import Path
 
 import click
 import primap2 as pm
@@ -18,8 +17,18 @@ from primap_visualisation_tool_stateless_app.dataset_holder import (
 
 @click.command()
 @click.option("--port", default=8050, help="Port to run the app on", type=int)
-@click.option("--dataset", help="Dataset to visualise", required=True, type=Path)
-def run_app(port: int, dataset: Path) -> None:
+@click.option(
+    "--dataset",
+    required=True,
+    help="Dataset to visualise",
+    type=click.Path(file_okay=True, dir_okay=False, readable=True, exists=True),
+)
+@click.option(
+    "--debug/--no-debug",
+    help="Should we run in debug mode",
+    default=True,
+)
+def run_app(port: int, dataset: str, debug: bool) -> None:
     """
     Run the PRIMAP visualisation tool
     """
@@ -29,7 +38,7 @@ def run_app(port: int, dataset: Path) -> None:
     app = create_app()
     register_callbacks(app)
     with warnings.catch_warnings(action="ignore"):  # type: ignore
-        app.run(debug=True, port=port)
+        app.run(debug=debug, port=port)
 
 
 if __name__ == "__main__":
