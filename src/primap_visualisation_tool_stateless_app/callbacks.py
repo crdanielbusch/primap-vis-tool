@@ -172,28 +172,11 @@ def register_callbacks(app: Dash) -> None:
         if app_dataset is None:
             app_dataset = get_application_dataset()
 
-        if ctx.triggered_id is None:
-            # Start up, just return the initial state
-            return dropdown_category_current
-
-        category_options = get_category_options(app_dataset)
-        # Probably want to split this logic out so we can re-use over
-        # different dropdowns.
-        current_index = category_options.index(dropdown_category_current)
-        if ctx.triggered_id == "next_category":
-            increment = 1
-
-        elif ctx.triggered_id == "prev_category":
-            increment = -1
-
-        else:  # pragma: no cover
-            # Should be impossible to get here
-            msg = f"How did you get here? {ctx=}"
-            raise AssertionError(msg)
-
-        new_index = (current_index + increment) % len(category_options)
-
-        return category_options[new_index]
+        return update_dropdown_within_context(
+            value_current=dropdown_category_current,
+            options=get_category_options(app_dataset),
+            context=ctx,
+        )
 
     @app.callback(  # type: ignore
         Output("graph-overview", "figure"),
