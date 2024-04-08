@@ -2,6 +2,7 @@
 Figure handling and creation
 """
 import warnings
+from collections.abc import Iterable
 
 import plotly.graph_objects as go  # type: ignore
 import xarray as xr
@@ -9,6 +10,54 @@ import xarray as xr
 from primap_visualisation_tool_stateless_app.dataset_handling import (
     get_country_code_mapping,
 )
+
+LINES_ORDER: tuple[str, ...] = (
+    "PRIMAP-hist_v2.5_final_nr, HISTCR",
+    "PRIMAP-hist_v2.5_final_nr, HISTTP",
+    "PRIMAP-hist_v2.4.2_final_nr, HISTCR",
+    "PRIMAP-hist_v2.4.2_final_nr, HISTTP",
+)
+"""The order to plot the lines in the main figure, from background to foreground"""
+
+
+def sort_source_scenario_options(
+    inp_options: Iterable[str],
+    lines_order: tuple[str, ...] = None,
+) -> list[str]:
+    """
+    Sort source scenario options according to definition.
+
+    Parameters
+    ----------
+    inp_options
+        Source scenario options to sort.
+
+    lines_order
+        Definition of source scenario order.
+
+    Returns
+    -------
+        Sorted source scenario options.
+    """
+    if lines_order is None:
+        lines_order = LINES_ORDER
+
+    out = []
+
+    for line in lines_order:
+        if line in inp_options:
+            out.append(line)
+
+    remaining_lines = [line for line in inp_options if line not in out]
+    out.extend(sorted(remaining_lines))
+
+    return out
+    # move primap source scenarios to the front of the list
+    # in the same order as specified in LINES_ORDER
+    # for i in [j for j in LINES_ORDER if j in source_scenario_options] :
+    #     source_scenario_sorted.insert(
+    #         0, source_scenario_sorted.pop(source_scenario_sorted.index(i))
+    #     )
 
 
 def create_overview_figure(
@@ -69,13 +118,9 @@ def create_overview_figure(
 
     fig = go.Figure()
 
-    source_scenario_sorted = list(new_source_scenario_options)
-    # move primap source scenarios to the front of the list
-    # in the same order as specified in LINES_ORDER
-    # for i in [j for j in LINES_ORDER if j in self.source_scenario_options] :
-    #     source_scenario_sorted.insert(
-    #         0, source_scenario_sorted.pop(source_scenario_sorted.index(i))
-    #     )
+    source_scenario_sorted = sort_source_scenario_options(
+        list(new_source_scenario_options)
+    )
 
     for source_scenario in source_scenario_sorted:
         # check if layout is defined

@@ -204,7 +204,9 @@ def test_008_initial_figures(dash_duo):
         legend_items = [trace.text for trace in traces]
 
         assert len(legend_items) == len(expected_legend_items)
+        import time
 
+        time.sleep(10)
         for i, (name, color, exp_dash, width) in enumerate(expected_legend_items):
             assert legend_items[i] == name
 
