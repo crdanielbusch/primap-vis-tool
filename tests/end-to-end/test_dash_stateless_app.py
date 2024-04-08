@@ -214,7 +214,13 @@ def test_008_initial_figures(dash_duo):
 
             if width is not None:
                 assert f"stroke-width: {width}px" in style
-            # assert
+
+            if exp_dash == "solid":
+                assert "stroke-dasharray" not in style
+            elif exp_dash == "dot":
+                assert "stroke-dasharray: 3px, 3px" in style
+            else:
+                raise NotImplementedError(exp_dash)
 
 
 # Things to try:
