@@ -70,6 +70,16 @@ def create_layout(  # noqa: PLR0913
             value=entity,
             id="dropdown-entity",
         ),
+        dbc.ButtonGroup(
+            [
+                dbc.Button(
+                    id="prev_entity", children="prev entity", **BUTTON_STYLING_INITIAL
+                ),
+                dbc.Button(
+                    id="next_entity", children="next entity", **BUTTON_STYLING_INITIAL
+                ),
+            ]
+        ),
     ]
 
     overview_figure = [

@@ -13,7 +13,10 @@ from dash import (
     ctx,
 )
 
-from primap_visualisation_tool_stateless_app.dataset_handling import get_country_options
+from primap_visualisation_tool_stateless_app.dataset_handling import (
+    get_country_options,
+    get_entity_options,
+)
 from primap_visualisation_tool_stateless_app.dataset_holder import (
     get_application_dataset,
 )
@@ -72,6 +75,49 @@ def register_callbacks(app: Dash) -> None:
         new_index = (current_index + increment) % len(country_options)
 
         return country_options[new_index]
+
+    @app.callback(
+        Output("dropdown-entity", "value"),
+        State("dropdown-entity", "value"),
+        Input("next_entity", "n_clicks"),
+        Input("prev_entity", "n_clicks"),
+    )
+    def update_dropdown_entity(
+        dropdown_entity_current: str,
+        n_clicks_next_entity: int,
+        n_clicks_previous_entity: int,
+        app_dataset: xr.Dataset | None = None,
+    ) -> str:
+        if app_dataset is None:
+            app_dataset = get_application_dataset()
+
+        if ctx.triggered_id is None:
+            # Start up, just return the initial state
+            return dropdown_entity_current
+
+        entity_options = get_entity_options(app_dataset)
+        # Probably want to split this logic out so we can re-use over
+        # different dropdowns.
+        current_index = entity_options.index(dropdown_entity_current)
+        if ctx.triggered_id == "next_entity":
+            # n_clicks_next_entity is the number of clicks since the app started
+            # We don't wnat that, just whether we need to go forwards or backwards.
+            # We might want to do this differently in future for performance maybe.
+            # For further discussion on possible future directions,
+            # see https://github.com/crdanielbusch/primap-vis-tool/pull/4#discussion_r1444363726
+            increment = 1
+
+        elif ctx.triggered_id == "prev_entity":
+            increment = -1
+
+        else:  # pragma: no cover
+            # Should be impossible to get here
+            msg = f"How did you get here? {ctx=}"
+            raise AssertionError(msg)
+
+        new_index = (current_index + increment) % len(entity_options)
+
+        return entity_options[new_index]
 
     @app.callback(  # type: ignore
         Output("graph-overview", "figure"),

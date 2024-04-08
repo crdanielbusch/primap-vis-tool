@@ -223,7 +223,7 @@ def test_008_initial_figures(dash_duo):
                 raise NotImplementedError(exp_dash)
 
 
-def test_010_entity_button_next(dash_duo):
+def test_010_entity_buttons(dash_duo):
     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
 
     test_ds = pm.open_dataset(test_file)
@@ -242,12 +242,19 @@ def test_010_entity_button_next(dash_duo):
     )
     assert dropdown_entity_select_element.text == "CO2"
 
+    # Click previous
+    button_entity_prev = dash_duo.driver.find_element(By.ID, "prev_entity")
+    button_entity_prev.click()
+
+    # Entity dropdown should update
+    assert dropdown_entity_select_element.text == "CH4"
+
     # Click next
     button_entity_next = dash_duo.driver.find_element(By.ID, "next_entity")
     button_entity_next.click()
 
-    # Entity dropdown should update
-    assert dropdown_entity_select_element.text == "CH4"
+    # Entity dropdown should update back to where it started
+    assert dropdown_entity_select_element.text == "CO2"
 
 
 # Things to try:
