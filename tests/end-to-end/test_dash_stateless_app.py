@@ -209,9 +209,11 @@ def test_008_initial_figures(dash_duo):
             assert legend_items[i] == name
             trace = traces[i]
             js_line = trace.find_element(By.CLASS_NAME, "js-line")
+            style = js_line.get_attribute("style")
+            assert f"stroke: {color}" in style
 
-            assert f"stroke: {color}" in js_line.get_attribute("style")
-
+            if width is not None:
+                assert f"stroke-width: {width}px" in style
             # assert
 
 
