@@ -7,6 +7,7 @@ import dash
 import primap2 as pm
 from dash import html
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
 
 import primap_visualisation_tool_stateless_app
 import primap_visualisation_tool_stateless_app.callbacks
@@ -33,6 +34,7 @@ def test_002_app_starts(dash_duo):
     )
 
     app = primap_visualisation_tool_stateless_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
 
@@ -67,6 +69,7 @@ def test_004_dropdown_country_earth_not_present(dash_duo):
     )
 
     app = primap_visualisation_tool_stateless_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
@@ -86,6 +89,7 @@ def test_005_dropdown_category(dash_duo):
     )
 
     app = primap_visualisation_tool_stateless_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
     dropdown_category = dash_duo.driver.find_element(By.ID, "dropdown-category")
@@ -105,6 +109,7 @@ def test_006_dropdown_entity(dash_duo):
     )
 
     app = primap_visualisation_tool_stateless_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
     dropdown_entity = dash_duo.driver.find_element(By.ID, "dropdown-entity")
@@ -138,6 +143,90 @@ def test_007_country_button_next(dash_duo):
 
     # Country dropdown should update
     assert dropdown_country_select_element.text == "EU27BX"
+
+
+def test_008_initial_figures(dash_duo):
+    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+
+    test_ds = pm.open_dataset(test_file)
+
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
+        test_ds
+    )
+
+    app = primap_visualisation_tool_stateless_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
+    dash_duo.start_server(app)
+
+    dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
+    dropdown_country_select_element = dropdown_country.find_element(
+        By.ID, "react-select-2--value-item"
+    )
+    assert dropdown_country_select_element.text == "EARTH"
+
+    # # Click next
+    # button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    # button_country_next.click()
+    #
+    # # Country dropdown should update
+    # assert dropdown_country_select_element.text == "EU27BX"
+
+    figures_expected_items = (
+        (
+            "graph-overview",
+            [
+                "Andrew cement, HISTORY",
+                # "CDIAC 2020, HISTORY",
+                "CEDS 2020, HISTORY",
+                "CRF 2022, 230510",
+                "CRF 2023, 230926",
+                "EDGAR 7.0, HISTORY",
+                "EDGAR-HYDE 1.4, HISTORY",
+                "EI 2023, HISTORY",
+                "FAOSTAT 2022, HISTORY",
+                "Houghton, HISTORY",
+                "MATCH, HISTORY",
+                "PRIMAP-hist_v2.4.2_final_nr, HISTCR",
+                "PRIMAP-hist_v2.4.2_final_nr, HISTTP",
+                "PRIMAP-hist_v2.5_final_nr, HISTCR",
+                "PRIMAP-hist_v2.5_final_nr, HISTTP",
+                # "RCP hist, HISTORY",
+                "UNFCCC NAI, 231015",
+            ],
+        ),
+        # (
+        #     "graph-category-split",
+        #     [
+        #         "total",
+        #         "1 pos",
+        #         "2 pos",
+        #         "4 pos",
+        #         "5 pos",
+        #         "M.AG pos",
+        #     ],
+        # ),
+        # (
+        #     "graph-entity-split",
+        #     [
+        #         "total",
+        #         "CH4 (AR6GWP100) pos",
+        #         "CO2 (AR6GWP100) pos",
+        #         "N2O (AR6GWP100) pos",
+        #         "FGASES (AR6GWP100) pos",
+        #     ],
+        # ),
+    )
+    for figure_id, expected_legend_items in figures_expected_items:
+        figure = dash_duo.driver.find_element(By.ID, figure_id)
+        wait = WebDriverWait(dash_duo.driver, timeout=5)
+        wait.until(lambda d: figure.find_elements(By.CLASS_NAME, "legend"))
+        legend = figure.find_element(By.CLASS_NAME, "legend")
+        traces = legend.find_elements(By.CLASS_NAME, "traces")
+        legend_items = [trace.text for trace in traces]
+
+        # Check that elements are the same,
+        # worrying about ordering is a problem for another day.
+        assert sorted(legend_items) == sorted(expected_legend_items)
 
 
 # Things to try:

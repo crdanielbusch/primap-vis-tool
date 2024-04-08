@@ -1,3 +1,6 @@
+"""
+Figure handling and creation
+"""
 import warnings
 
 import plotly.graph_objects as go  # type: ignore
@@ -5,6 +8,7 @@ import xarray as xr
 
 from primap_visualisation_tool_stateless_app.dataset_handling import (
     get_country_code_mapping,
+    get_source_scenario_options,
 )
 
 
@@ -12,17 +16,25 @@ def create_overview_figure(
     country: str, category: str, entity: str, dataset: xr.Dataset
 ) -> go.Figure:
     """
+    Create the overview (i.e. main) figure
 
     Parameters
     ----------
     country
+        Country to show
+
     category
+        Category to show
+
     entity
+        Entity to show
+
     dataset
+        Dataset from which to generate the figure
 
     Returns
     -------
-
+        Created figure
     """
     iso_country = get_country_code_mapping(dataset)[country]
 
