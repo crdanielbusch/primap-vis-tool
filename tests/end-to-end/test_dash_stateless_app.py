@@ -132,14 +132,10 @@ def test_007_country_button_next(dash_duo):
     )
     assert dropdown_country_select_element.text == "EARTH"
 
-    import time
-
-    time.sleep(3)
     # Click next
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
 
-    time.sleep(3)
     # Country dropdown should update
     assert dropdown_country_select_element.text == "EU27BX"
 
