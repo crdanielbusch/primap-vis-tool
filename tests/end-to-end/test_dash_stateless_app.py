@@ -113,6 +113,37 @@ def test_006_dropdown_entity(dash_duo):
     )
 
 
+def test_007_country_button_next(dash_duo):
+    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+
+    test_ds = pm.open_dataset(test_file)
+
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
+        test_ds
+    )
+
+    app = primap_visualisation_tool_stateless_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
+    dash_duo.start_server(app)
+
+    dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
+    dropdown_country_select_element = dropdown_country.find_element(
+        By.ID, "react-select-2--value-item"
+    )
+    assert dropdown_country_select_element.text == "EARTH"
+
+    import time
+
+    time.sleep(3)
+    # Click next
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+
+    time.sleep(3)
+    # Country dropdown should update
+    assert dropdown_country_select_element.text == "EU27BX"
+
+
 # Things to try:
 # 1. Try the 'pint-style', set application data, get application data
 # 2. Try dash_br

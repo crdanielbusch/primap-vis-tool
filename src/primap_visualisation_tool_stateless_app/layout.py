@@ -3,8 +3,20 @@ Layout for the app
 """
 from __future__ import annotations
 
+from typing import Any
+
 import dash_bootstrap_components as dbc  # type: ignore
 from dash import dcc, html  # type: ignore
+
+BUTTON_STYLING_INITIAL: dict[str, Any] = dict(
+    color="light",
+    n_clicks=0,
+    style={
+        "fontSize": 12,
+        "height": "37px",
+    },
+)
+"""Initial styling to use for buttons"""
 
 
 def create_layout(  # noqa: PLR0913
@@ -18,7 +30,7 @@ def create_layout(  # noqa: PLR0913
     """
     Create the layout for our app
     """
-    dropdowns = [
+    dropdowns_and_buttons = [
         html.B(
             children="Country",
             style={"textAlign": "left", "fontSize": 14},
@@ -29,6 +41,16 @@ def create_layout(  # noqa: PLR0913
             options=country_options,
             value=country,
             id="dropdown-country",
+        ),
+        dbc.ButtonGroup(
+            [
+                dbc.Button(
+                    id="prev_country", children="prev country", **BUTTON_STYLING_INITIAL
+                ),
+                dbc.Button(
+                    id="next_country", children="next country", **BUTTON_STYLING_INITIAL
+                ),
+            ]
         ),
         html.B(
             children="Category",
@@ -58,7 +80,9 @@ def create_layout(  # noqa: PLR0913
     return [
         dbc.Row(
             [
-                dbc.Col(dbc.Stack(dropdowns)),  # first column with dropdown menus
+                dbc.Col(
+                    dbc.Stack(dropdowns_and_buttons)
+                ),  # first column with dropdown menus
                 dbc.Col(
                     overview_figure,
                     width=8,
