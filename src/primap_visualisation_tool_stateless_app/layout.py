@@ -61,6 +61,20 @@ def create_layout(  # noqa: PLR0913
             value=category,
             id="dropdown-category",
         ),
+        dbc.ButtonGroup(
+            [
+                dbc.Button(
+                    id="prev_category",
+                    children="prev category",
+                    **BUTTON_STYLING_INITIAL,
+                ),
+                dbc.Button(
+                    id="next_category",
+                    children="next category",
+                    **BUTTON_STYLING_INITIAL,
+                ),
+            ]
+        ),
         html.B(
             children="Entity",
             style={"textAlign": "left", "fontSize": 14},
