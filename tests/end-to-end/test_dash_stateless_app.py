@@ -209,6 +209,12 @@ def test_008_initial_figures(dash_duo):
         time.sleep(10)
         for i, (name, color, exp_dash, width) in enumerate(expected_legend_items):
             assert legend_items[i] == name
+            trace = traces[i]
+            js_line = trace.find_element(By.CLASS_NAME, "js-line")
+
+            assert f"stroke: {color}" in js_line.get_attribute("style")
+
+            # assert
 
 
 # Things to try:
