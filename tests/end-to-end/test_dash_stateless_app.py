@@ -223,6 +223,33 @@ def test_008_initial_figures(dash_duo):
                 raise NotImplementedError(exp_dash)
 
 
+def test_010_entity_button_next(dash_duo):
+    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+
+    test_ds = pm.open_dataset(test_file)
+
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
+        test_ds
+    )
+
+    app = primap_visualisation_tool_stateless_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
+    dash_duo.start_server(app)
+
+    dropdown_entity = dash_duo.driver.find_element(By.ID, "dropdown-entity")
+    dropdown_entity_select_element = dropdown_entity.find_element(
+        By.ID, "react-select-4--value-item"
+    )
+    assert dropdown_entity_select_element.text == "CO2"
+
+    # Click next
+    button_entity_next = dash_duo.driver.find_element(By.ID, "next_entity")
+    button_entity_next.click()
+
+    # Entity dropdown should update
+    assert dropdown_entity_select_element.text == "CH4"
+
+
 # Things to try:
 # 1. Try the 'pint-style', set application data, get application data
 # 2. Try dash_br
