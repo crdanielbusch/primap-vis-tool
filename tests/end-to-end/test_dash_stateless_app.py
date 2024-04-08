@@ -169,8 +169,8 @@ def test_008_initial_figures(dash_duo):
                 ("CRF 2022, 230510", "rgb(60, 179, 113)", "solid", None),
                 ("CRF 2023, 230926", "rgb(238, 130, 238)", "solid", None),
                 ("EDGAR 7.0, HISTORY", "rgb(255, 165, 0)", "solid", None),
-                ("FAOSTAT 2022, HISTORY", "rgb(100,0,255)", "solid", None),
-                ("UNFCCC NAI, 231015", "rgb(255,0,0)", "solid", None),
+                ("FAOSTAT 2022, HISTORY", "rgb(100, 0, 255)", "solid", None),
+                ("UNFCCC NAI, 231015", "rgb(255, 0, 0)", "solid", None),
             ],
         ),
         # (
@@ -204,9 +204,7 @@ def test_008_initial_figures(dash_duo):
         legend_items = [trace.text for trace in traces]
 
         assert len(legend_items) == len(expected_legend_items)
-        import time
 
-        time.sleep(10)
         for i, (name, color, exp_dash, width) in enumerate(expected_legend_items):
             assert legend_items[i] == name
             trace = traces[i]
