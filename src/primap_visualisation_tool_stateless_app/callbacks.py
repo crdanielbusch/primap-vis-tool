@@ -3,6 +3,8 @@ Callback definitions
 """
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import plotly.graph_objects as go  # type: ignore
 import xarray as xr
 from dash import (
@@ -21,6 +23,85 @@ from primap_visualisation_tool_stateless_app.dataset_holder import (
     get_application_dataset,
 )
 from primap_visualisation_tool_stateless_app.figures import create_overview_figure
+
+
+def update_dropdown(value_current: str, options: Sequence[str], increment: int) -> str:
+    """
+    Update a dropdown a given number of increments
+
+    Parameters
+    ----------
+    value_current
+        The current value of the dropdown
+
+    options
+        The dropdown's options
+
+    increment
+        The number of increments to move the dropdown.
+
+    Returns
+    -------
+        The updated value of the dropdown.
+    """
+    current_index = options.index(value_current)
+
+    new_index = (current_index + increment) % len(options)
+
+    return options[new_index]
+
+
+def update_dropdown_within_context(
+    value_current: str,
+    options: Sequence[str],
+    context: ctx,
+) -> str:
+    """
+    Update a dropdown within a given context.
+
+    Assumes that a ``context.triggered_id`` which starts with "next" means increment one forward,
+    a ``context.triggered_id`` which starts with "prev" means increment one backwards.
+
+    Parameters
+    ----------
+    value_current
+        The current value of the dropdown
+
+    options
+        The dropdown's options
+
+    context
+        The context from Dash
+
+    Returns
+    -------
+        The updated value to show in the dropdown
+    """
+    if context.triggered_id is None:
+        # Start up, just return the initial state
+        return value_current
+
+    if context.triggered_id.startswith("next"):
+        # n_clicks_next_country is the number of clicks since the app started
+        # We don't wnat that, just whether we need to go forwards or backwards.
+        # We might want to do this differently in future for performance maybe.
+        # For further discussion on possible future directions,
+        # see https://github.com/crdanielbusch/primap-vis-tool/pull/4#discussion_r1444363726
+        increment = 1
+
+    elif context.triggered_id.startswith("prev"):
+        increment = -1
+
+    else:  # pragma: no cover
+        # Should be impossible to get here
+        msg = f"How did you get here? {context=}"
+        raise AssertionError(msg)
+
+    return update_dropdown(
+        value_current=value_current,
+        options=options,
+        increment=increment,
+    )
 
 
 def register_callbacks(app: Dash) -> None:
@@ -48,33 +129,11 @@ def register_callbacks(app: Dash) -> None:
         if app_dataset is None:
             app_dataset = get_application_dataset()
 
-        if ctx.triggered_id is None:
-            # Start up, just return the initial state
-            return dropdown_country_current
-
-        country_options = get_country_options(app_dataset)
-        # Probably want to split this logic out so we can re-use over
-        # different dropdowns.
-        current_index = country_options.index(dropdown_country_current)
-        if ctx.triggered_id == "next_country":
-            # n_clicks_next_country is the number of clicks since the app started
-            # We don't wnat that, just whether we need to go forwards or backwards.
-            # We might want to do this differently in future for performance maybe.
-            # For further discussion on possible future directions,
-            # see https://github.com/crdanielbusch/primap-vis-tool/pull/4#discussion_r1444363726
-            increment = 1
-
-        elif ctx.triggered_id == "prev_country":
-            increment = -1
-
-        else:  # pragma: no cover
-            # Should be impossible to get here
-            msg = f"How did you get here? {ctx=}"
-            raise AssertionError(msg)
-
-        new_index = (current_index + increment) % len(country_options)
-
-        return country_options[new_index]
+        return update_dropdown_within_context(
+            value_current=dropdown_country_current,
+            options=get_country_options(app_dataset),
+            context=ctx,
+        )
 
     @app.callback(
         Output("dropdown-entity", "value"),
@@ -91,33 +150,11 @@ def register_callbacks(app: Dash) -> None:
         if app_dataset is None:
             app_dataset = get_application_dataset()
 
-        if ctx.triggered_id is None:
-            # Start up, just return the initial state
-            return dropdown_entity_current
-
-        entity_options = get_entity_options(app_dataset)
-        # Probably want to split this logic out so we can re-use over
-        # different dropdowns.
-        current_index = entity_options.index(dropdown_entity_current)
-        if ctx.triggered_id == "next_entity":
-            # n_clicks_next_entity is the number of clicks since the app started
-            # We don't wnat that, just whether we need to go forwards or backwards.
-            # We might want to do this differently in future for performance maybe.
-            # For further discussion on possible future directions,
-            # see https://github.com/crdanielbusch/primap-vis-tool/pull/4#discussion_r1444363726
-            increment = 1
-
-        elif ctx.triggered_id == "prev_entity":
-            increment = -1
-
-        else:  # pragma: no cover
-            # Should be impossible to get here
-            msg = f"How did you get here? {ctx=}"
-            raise AssertionError(msg)
-
-        new_index = (current_index + increment) % len(entity_options)
-
-        return entity_options[new_index]
+        return update_dropdown_within_context(
+            value_current=dropdown_entity_current,
+            options=get_entity_options(app_dataset),
+            context=ctx,
+        )
 
     @app.callback(  # type: ignore
         Output("graph-overview", "figure"),
