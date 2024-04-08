@@ -230,6 +230,40 @@ def test_008_initial_figures(dash_duo):
                 raise NotImplementedError(exp_dash)
 
 
+def test_009_category_buttons(dash_duo):
+    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+
+    test_ds = pm.open_dataset(test_file)
+
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
+        test_ds
+    )
+
+    app = primap_visualisation_tool_stateless_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
+    dash_duo.start_server(app)
+
+    dropdown_category = dash_duo.driver.find_element(By.ID, "dropdown-category")
+    dropdown_category_select_element = dropdown_category.find_element(
+        By.ID, "react-select-3--value-item"
+    )
+    assert dropdown_category_select_element.text == "M.0.EL"
+
+    # Click next
+    button_category_next = dash_duo.driver.find_element(By.ID, "next_category")
+    button_category_next.click()
+
+    # Country dropdown should update
+    assert dropdown_category_select_element.text == "M.AG"
+
+    # Click previous
+    button_category_prev = dash_duo.driver.find_element(By.ID, "prev_category")
+    button_category_prev.click()
+
+    # Country dropdown should update back to where it started
+    assert dropdown_category_select_element.text == "M.0.EL"
+
+
 def test_010_entity_buttons(dash_duo):
     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
 
@@ -268,30 +302,3 @@ def test_010_entity_buttons(dash_duo):
 # 1. Try the 'pint-style', set application data, get application data
 # 2. Try dash_br
 # 3. Try putting the data as JSON in a dcc Store (nervous about performance here)
-
-
-def test_009_category_button_next(dash_duo):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
-
-    test_ds = pm.open_dataset(test_file)
-
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
-
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
-
-    dropdown_category = dash_duo.driver.find_element(By.ID, "dropdown-category")
-    dropdown_category_select_element = dropdown_category.find_element(
-        By.ID, "react-select-3--value-item"
-    )
-    assert dropdown_category_select_element.text == "M.0.EL"
-
-    # Click next
-    button_category_next = dash_duo.driver.find_element(By.ID, "next_category")
-    button_category_next.click()
-
-    # Country dropdown should update
-    assert dropdown_category_select_element.text == "M.AG"
