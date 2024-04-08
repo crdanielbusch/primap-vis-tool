@@ -162,23 +162,15 @@ def test_008_initial_figures(dash_duo):
         (
             "graph-overview",
             [
-                # "Andrew cement, HISTORY",
-                # "CDIAC 2020, HISTORY",
-                # "CEDS 2020, HISTORY",
-                "CRF 2022, 230510",
-                "CRF 2023, 230926",
-                "EDGAR 7.0, HISTORY",
-                # "EDGAR-HYDE 1.4, HISTORY",
-                # "EI 2023, HISTORY",
-                "FAOSTAT 2022, HISTORY",
-                # "Houghton, HISTORY",
-                # "MATCH, HISTORY",
-                "PRIMAP-hist_v2.4.2_final_nr, HISTCR",
-                "PRIMAP-hist_v2.4.2_final_nr, HISTTP",
-                "PRIMAP-hist_v2.5_final_nr, HISTCR",
-                "PRIMAP-hist_v2.5_final_nr, HISTTP",
-                # "RCP hist, HISTORY",
-                "UNFCCC NAI, 231015",
+                ("PRIMAP-hist_v2.5_final_nr, HISTCR", "rgb(0, 0, 0)", "solid", 3),
+                ("PRIMAP-hist_v2.5_final_nr, HISTTP", "rgb(166, 166, 166)", "solid", 3),
+                ("PRIMAP-hist_v2.4.2_final_nr, HISTCR", "rgb(0, 0, 0)", "dot", 3),
+                ("PRIMAP-hist_v2.4.2_final_nr, HISTTP", "rgb(166, 166, 166)", "dot", 3),
+                ("CRF 2022, 230510", "rgb(60, 179, 113)", "solid", None),
+                ("CRF 2023, 230926", "rgb(238, 130, 238)", "solid", None),
+                ("EDGAR 7.0, HISTORY", "rgb(255, 165, 0)", "solid", None),
+                ("FAOSTAT 2022, HISTORY", "rgb(100,0,255)", "solid", None),
+                ("UNFCCC NAI, 231015", "rgb(255,0,0)", "solid", None),
             ],
         ),
         # (
@@ -211,9 +203,10 @@ def test_008_initial_figures(dash_duo):
         traces = legend.find_elements(By.CLASS_NAME, "traces")
         legend_items = [trace.text for trace in traces]
 
-        # Check that elements are the same,
-        # worrying about ordering is a problem for another day.
-        assert sorted(legend_items) == sorted(expected_legend_items)
+        assert len(legend_items) == len(expected_legend_items)
+
+        for i, (name, color, exp_dash, width) in enumerate(expected_legend_items):
+            assert legend_items[i] == name
 
 
 # Things to try:
