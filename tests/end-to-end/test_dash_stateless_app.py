@@ -118,7 +118,7 @@ def test_006_dropdown_entity(dash_duo):
     )
 
 
-def test_007_country_button_next(dash_duo):
+def test_007_country_buttons(dash_duo):
     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
 
     test_ds = pm.open_dataset(test_file)
@@ -143,6 +143,13 @@ def test_007_country_button_next(dash_duo):
 
     # Country dropdown should update
     assert dropdown_country_select_element.text == "EU27BX"
+
+    # Click previous
+    button_country_prev = dash_duo.driver.find_element(By.ID, "prev_country")
+    button_country_prev.click()
+
+    # Country dropdown should be back to where it started
+    assert dropdown_country_select_element.text == "EARTH"
 
 
 def test_008_initial_figures(dash_duo):
