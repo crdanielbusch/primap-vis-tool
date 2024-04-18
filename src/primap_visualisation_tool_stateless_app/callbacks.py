@@ -27,8 +27,8 @@ from primap_visualisation_tool_stateless_app.dataset_holder import (
 )
 from primap_visualisation_tool_stateless_app.figures import (
     create_category_figure,
-    create_overview_figure,
     create_entity_figure,
+    create_overview_figure,
 )
 
 
@@ -294,8 +294,6 @@ def register_callbacks(app: Dash) -> None:
             country=country, category=category, entity=entity, dataset=app_dataset
         )
 
-
-
     @app.callback(  # type: ignore
         Output("dropdown-source-scenario", "options"),
         Output("dropdown-source-scenario", "value"),
@@ -366,20 +364,20 @@ def register_callbacks(app: Dash) -> None:
         # State("xyrange-entity", "data"),
     )
     def update_category_figure(  # noqa: PLR0913
-            graph_figure_current : go.Figure,
-            country: str,
-            category: str,
-            entity: str,
-            source_scenario: str,
-            memory_data: dict[str, int],
-            # xyrange_data: str | None,
-            # xyrange_data_entity: str | None,
-            app_dataset: xr.Dataset | None = None,
-    ) -> go.Figure :
-        if app_dataset is None :
+        graph_figure_current: go.Figure,
+        country: str,
+        category: str,
+        entity: str,
+        source_scenario: str,
+        memory_data: dict[str, int],
+        # xyrange_data: str | None,
+        # xyrange_data_entity: str | None,
+        app_dataset: xr.Dataset | None = None,
+    ) -> go.Figure:
+        if app_dataset is None:
             app_dataset = get_application_dataset()
 
-        if any(v is None for v in (country, category, entity)) :
+        if any(v is None for v in (country, category, entity)):
             # User cleared one of the selections in the dropdown, do nothing
             return graph_figure_current
 
@@ -403,25 +401,23 @@ def register_callbacks(app: Dash) -> None:
         # State("xyrange-category", "data"),
     )
     def update_entity_graph(  # noqa: PLR0913
-            graph_figure_current: go.Figure,
-            country: str,
-            category: str,
-            entity: str,
-            source_scenario: str,
-            memory_data: dict[str, int],
-            app_dataset: xr.Dataset | None = None,
-            # xyrange_data: str | None,
-            # xyrange_data_category: str | None,
-
-    ) -> go.Figure :
-
-        if app_dataset is None :
+        graph_figure_current: go.Figure,
+        country: str,
+        category: str,
+        entity: str,
+        source_scenario: str,
+        memory_data: dict[str, int],
+        app_dataset: xr.Dataset | None = None,
+        # xyrange_data: str | None,
+        # xyrange_data_category: str | None,
+    ) -> go.Figure:
+        if app_dataset is None:
             app_dataset = get_application_dataset()
 
         # if ctx.triggered_id == "xyrange-entity" and xyrange_data :
         #     return app_state.update_entity_range(xyrange_data)
 
-        if any(v is None for v in (country, category, entity, source_scenario)) :
+        if any(v is None for v in (country, category, entity, source_scenario)):
             # User cleared one of the selections in the dropdown, do nothing
             return graph_figure_current
 

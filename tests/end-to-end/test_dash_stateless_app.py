@@ -183,27 +183,24 @@ def test_008_initial_figures(dash_duo):
                 ("UNFCCC NAI, 231015", "rgb(255, 0, 0)", "solid", None),
             ],
         ),
-        # (
-        #     "graph-category-split",
-        #     [
-        #         "total",
-        #         "1 pos",
-        #         "2 pos",
-        #         "4 pos",
-        #         "5 pos",
-        #         "M.AG pos",
-        #     ],
-        # ),
-        # (
-        #     "graph-entity-split",
-        #     [
-        #         "total",
-        #         "CH4 (AR6GWP100) pos",
-        #         "CO2 (AR6GWP100) pos",
-        #         "N2O (AR6GWP100) pos",
-        #         "FGASES (AR6GWP100) pos",
-        #     ],
-        # ),
+        (
+            "graph-category-split",
+            [
+                ("total", None, None, None),
+                ("1 pos", None, None, None),
+                ("2 pos", None, None, None),
+                ("4 pos", None, None, None),
+                ("5 pos", None, None, None),
+                ("M.AG pos", None, None, None),
+            ],
+        ),
+        (
+            "graph-entity-split",
+            [
+                ("total", None, None, None),
+                ("CO2 pos", None, None, None),
+            ],
+        ),
     )
     for figure_id, expected_legend_items in figures_expected_items:
         figure = dash_duo.driver.find_element(By.ID, figure_id)
@@ -217,20 +214,22 @@ def test_008_initial_figures(dash_duo):
 
         for i, (name, color, exp_dash, width) in enumerate(expected_legend_items):
             assert legend_items[i] == name
-            trace = traces[i]
-            js_line = trace.find_element(By.CLASS_NAME, "js-line")
-            style = js_line.get_attribute("style")
-            assert f"stroke: {color}" in style
+            # TODO right we just test name of traces in category in entity
+            if all([color, exp_dash]):
+                trace = traces[i]
+                js_line = trace.find_element(By.CLASS_NAME, "js-line")
+                style = js_line.get_attribute("style")
+                assert f"stroke: {color}" in style
 
-            if width is not None:
-                assert f"stroke-width: {width}px" in style
+                if width is not None:
+                    assert f"stroke-width: {width}px" in style
 
-            if exp_dash == "solid":
-                assert "stroke-dasharray" not in style
-            elif exp_dash == "dot":
-                assert "stroke-dasharray: 3px, 3px" in style
-            else:
-                raise NotImplementedError(exp_dash)
+                if exp_dash == "solid":
+                    assert "stroke-dasharray" not in style
+                elif exp_dash == "dot":
+                    assert "stroke-dasharray: 3px, 3px" in style
+                else:
+                    raise NotImplementedError(exp_dash)
 
 
 def test_009_category_buttons(dash_duo):
@@ -299,6 +298,26 @@ def test_010_entity_buttons(dash_duo):
 
     # Entity dropdown should update back to where it started
     assert dropdown_entity_select_element.text == "CO2"
+
+
+def test_011_dropdown_source_scenario(dash_duo):
+    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+
+    test_ds = pm.open_dataset(test_file)
+
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
+        test_ds
+    )
+
+    app = primap_visualisation_tool_stateless_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
+    dash_duo.start_server(app)
+
+    dropdown_category = dash_duo.driver.find_element(By.ID, "dropdown-source-scenario")
+    assert (
+        dropdown_category.find_element(By.ID, "react-select-5--value-item").text
+        == "PRIMAP-hist_v2.5_final_nr, HISTCR"
+    )
 
 
 # Things to try:

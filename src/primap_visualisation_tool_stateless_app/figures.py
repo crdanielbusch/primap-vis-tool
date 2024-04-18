@@ -97,6 +97,7 @@ index_cols: list[str] = [
 ]
 """Columns to use as the index when creating stacked plots"""
 
+
 def sort_source_scenario_options(
     inp_options: Iterable[str],
     lines_order: tuple[str, ...] = None,
@@ -167,6 +168,7 @@ def select_cat_children(
 
     return output_categories
 
+
 def apply_gwp(
     inp: xr.Dataset, entity_to_match: str, unit: str = "Gg CO2 / year"
 ) -> xr.Dataset:
@@ -208,6 +210,7 @@ def apply_gwp(
         return outp
 
     return inp
+
 
 def create_overview_figure(
     country: str,
@@ -380,7 +383,7 @@ def create_category_figure(
 
     category_options = tuple(dataset["category (IPCC2006_PRIMAP)"].to_numpy())
 
-    categories_plot = select_cat_children(category, category_options)
+    categories_plot = sorted(select_cat_children(category, category_options))
 
     with warnings.catch_warnings(action="ignore"):  # type: ignore
         filtered = (
@@ -570,11 +573,10 @@ def create_category_figure(
 
     return fig
 
-def create_entity_figure(country : str,
-                        category : str,
-                        entity : str,
-                        source_scenario : str,
-                        dataset : xr.Dataset) -> go.Figure:  # noqa: PLR0915
+
+def create_entity_figure(
+    country: str, category: str, entity: str, source_scenario: str, dataset: xr.Dataset
+) -> go.Figure:
     """
     Update the overview figure based on the input in the dropdown menus.
 
@@ -641,10 +643,7 @@ def create_entity_figure(country : str,
     # TODO! There's probably a pandas function for this loop
     # TODO! Remove hard-coded category column name
     _df = pd.concat(
-        [
-            _df[_df["entity"] == c]["value"].rename(c)
-            for c in _df["entity"].unique()
-        ],
+        [_df[_df["entity"] == c]["value"].rename(c) for c in _df["entity"].unique()],
         axis=1,
     )
 

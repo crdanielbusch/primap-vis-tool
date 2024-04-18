@@ -96,7 +96,10 @@ def create_layout(  # noqa: PLR0913
                 ),
             ]
         ),
-        html.Br(),
+        html.B(
+            children="Source Scenario",
+            style={"textAlign": "left", "fontSize": 14},
+        ),
         dcc.Dropdown(
             source_scenario_options,
             value=source_scenario,
