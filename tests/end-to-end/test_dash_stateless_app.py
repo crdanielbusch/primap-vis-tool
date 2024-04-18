@@ -14,8 +14,9 @@ import primap_visualisation_tool_stateless_app
 import primap_visualisation_tool_stateless_app.callbacks
 import primap_visualisation_tool_stateless_app.dataset_holder
 
+
 @pytest.fixture
-def app() :
+def app():
     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_file)
     primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
@@ -24,6 +25,7 @@ def app() :
     app = primap_visualisation_tool_stateless_app.create_app()
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     return app
+
 
 def test_001_dash_example(dash_duo):
     # A test that the dash example runs.
@@ -37,6 +39,7 @@ def test_001_dash_example(dash_duo):
 
 def test_002_app_starts(dash_duo, app):
     dash_duo.start_server(app)
+
 
 def test_003_dropdown_country(dash_duo):
     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"

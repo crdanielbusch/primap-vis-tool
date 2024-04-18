@@ -96,6 +96,7 @@ def create_layout(  # noqa: PLR0913
                 ),
             ]
         ),
+        html.Br(),
         dcc.Dropdown(
             source_scenario_options,
             value=source_scenario,
@@ -110,17 +111,13 @@ def create_layout(  # noqa: PLR0913
 
     category_figure = [
         html.Br(),
-        html.B(
-            children="Category split", style={"textAlign" : "center"}
-        ),
+        html.B(children="Category split", style={"textAlign": "center"}),
         dcc.Graph(id="graph-category-split"),
     ]
 
     entity_figure = [
         html.Br(),
-        html.B(
-            children="Entity split", style={"textAlign": "center"}
-        ),
+        html.B(children="Entity split", style={"textAlign": "center"}),
         dcc.Graph(id="graph-entity-split"),
     ]
 
@@ -139,14 +136,14 @@ def create_layout(  # noqa: PLR0913
         ),
         dbc.Row(
             [
-            dbc.Col(
-                category_figure,
-                width=6,
-            ),
-            dbc.Col(
-                entity_figure,
-                width=6,
-            ),
+                dbc.Col(
+                    category_figure,
+                    width=6,
+                ),
+                dbc.Col(
+                    entity_figure,
+                    width=6,
+                ),
             ]
-        )
+        ),
     ]

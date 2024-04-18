@@ -167,23 +167,44 @@ def get_country_code_mapping(dataset: xr.Dataset) -> dict[str, str]:
 
 def get_source_scenario_options(dataset: xr.Dataset) -> tuple[str, ...]:
     """
+    Get available source scenario options from dataset.
 
     Parameters
     ----------
     dataset
+        Dataset for which to get the source scenario options.
 
     Returns
     -------
+        All available source scenario options.
 
     """
     return sorted(tuple(dataset.coords["SourceScen"].to_numpy()))
 
-def get_source_scenario_start(dataset: xr.Dataset,
-                              preferred_source_scenario_entity: str = "PRIMAP-hist_v2.5_final_nr, HISTCR"):
 
+def get_source_scenario_start(
+    dataset: xr.Dataset,
+    preferred_starting_source_scenario: str = "PRIMAP-hist_v2.5_final_nr, HISTCR",
+):
+    """
+    Get starting source scenario.
+
+    Parameters
+    ----------
+    dataset
+        Dataset for which to get the source scenario options.
+
+    preferred_starting_source_scenario
+        Preferred starting source scenario. If this is available, we use it,
+        otherwise we use the first source scenario returned from
+        :func:`get_source_scenario_options`.
+
+    Returns
+    -------
+        Starting source scenario to use for ``dataset``
+    """
     source_scenario_options = get_source_scenario_options(dataset)
-    if preferred_source_scenario_entity in source_scenario_options:
-        return preferred_source_scenario_entity
+    if preferred_starting_source_scenario in source_scenario_options:
+        return preferred_starting_source_scenario
 
     return source_scenario_options[0]
-

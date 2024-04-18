@@ -3,6 +3,7 @@ Callback definitions
 """
 from __future__ import annotations
 
+import warnings
 from collections.abc import Sequence
 
 import plotly.graph_objects as go  # type: ignore
@@ -24,10 +25,14 @@ from primap_visualisation_tool_stateless_app.dataset_handling import (
 from primap_visualisation_tool_stateless_app.dataset_holder import (
     get_application_dataset,
 )
-from primap_visualisation_tool_stateless_app.figures import create_category_figure, create_overview_figure
-import warnings
+from primap_visualisation_tool_stateless_app.figures import (
+    create_category_figure,
+    create_overview_figure,
+    create_entity_figure,
+)
 
-def update_dropdown(value_current: str, options: Sequence[str], increment: int) -> str :
+
+def update_dropdown(value_current: str, options: Sequence[str], increment: int) -> str:
     """
     Update a dropdown a given number of increments
 
@@ -54,10 +59,10 @@ def update_dropdown(value_current: str, options: Sequence[str], increment: int) 
 
 
 def update_dropdown_within_context(
-        value_current: str,
-        options: Sequence[str],
-        context: ctx,
-) -> str :
+    value_current: str,
+    options: Sequence[str],
+    context: ctx,
+) -> str:
     """
     Update a dropdown within a given context.
 
@@ -79,11 +84,11 @@ def update_dropdown_within_context(
     -------
         The updated value to show in the dropdown
     """
-    if context.triggered_id is None :
+    if context.triggered_id is None:
         # Start up, just return the initial state
         return value_current
 
-    if context.triggered_id.startswith("next") :
+    if context.triggered_id.startswith("next"):
         # n_clicks_next_country is the number of clicks since the app started
         # We don't wnat that, just whether we need to go forwards or backwards.
         # We might want to do this differently in future for performance maybe.
@@ -91,10 +96,10 @@ def update_dropdown_within_context(
         # see https://github.com/crdanielbusch/primap-vis-tool/pull/4#discussion_r1444363726
         increment = 1
 
-    elif context.triggered_id.startswith("prev") :
+    elif context.triggered_id.startswith("prev"):
         increment = -1
 
-    else :  # pragma: no cover
+    else:  # pragma: no cover
         # Should be impossible to get here
         msg = f"How did you get here? {context=}"
         raise AssertionError(msg)
@@ -106,10 +111,12 @@ def update_dropdown_within_context(
     )
 
 
-def update_source_scenario_options(country,
-                                   category,
-                                   entity,
-                                   dataset, ) -> None :
+def update_source_scenario_options(
+    country: str,
+    category: str,
+    entity: str,
+    dataset: xr.Dataset,
+) -> tuple[str]:
     """
     Update the source scenario dropdown options according to country, category and entity
 
@@ -118,13 +125,13 @@ def update_source_scenario_options(country,
 
     iso_country = country_code_mapping[country]
 
-    with warnings.catch_warnings(action="ignore") :  # type: ignore
+    with warnings.catch_warnings(action="ignore"):  # type: ignore
         filtered = (
             dataset[entity]
             .pr.loc[
                 {
-                    "category" : category,
-                    "area (ISO3)" : iso_country,
+                    "category": category,
+                    "area (ISO3)": iso_country,
                 }
             ]
             .squeeze()
@@ -134,7 +141,7 @@ def update_source_scenario_options(country,
 
     null_source_scenario_options = filtered_pandas.groupby(by="SourceScen")[
         entity
-    ].apply(lambda x : x.isna().all())
+    ].apply(lambda x: x.isna().all())
 
     null_source_scenario_options = null_source_scenario_options[
         list(null_source_scenario_options)
@@ -148,14 +155,15 @@ def update_source_scenario_options(country,
         if i not in null_source_scenario_options
     ]
 
-    if not new_source_scenario_options :
+    # TODO I'm not sure if that's the bevior we want
+    # how do we end up with no available option?
+    if not new_source_scenario_options:
         return None
 
-    print(tuple(new_source_scenario_options))
     return tuple(new_source_scenario_options)
 
 
-def register_callbacks(app: Dash) -> None :
+def register_callbacks(app: Dash) -> None:
     """
     Register callbacks onto an app
 
@@ -172,12 +180,12 @@ def register_callbacks(app: Dash) -> None :
         Input("prev_country", "n_clicks"),
     )
     def update_dropdown_country(
-            dropdown_country_current: str,
-            n_clicks_next_country: int,
-            n_clicks_previous_country: int,
-            app_dataset: xr.Dataset | None = None,
-    ) -> str :
-        if app_dataset is None :
+        dropdown_country_current: str,
+        n_clicks_next_country: int,
+        n_clicks_previous_country: int,
+        app_dataset: xr.Dataset | None = None,
+    ) -> str:
+        if app_dataset is None:
             app_dataset = get_application_dataset()
 
         return update_dropdown_within_context(
@@ -193,12 +201,12 @@ def register_callbacks(app: Dash) -> None :
         Input("prev_entity", "n_clicks"),
     )
     def update_dropdown_entity(
-            dropdown_entity_current: str,
-            n_clicks_next_entity: int,
-            n_clicks_previous_entity: int,
-            app_dataset: xr.Dataset | None = None,
-    ) -> str :
-        if app_dataset is None :
+        dropdown_entity_current: str,
+        n_clicks_next_entity: int,
+        n_clicks_previous_entity: int,
+        app_dataset: xr.Dataset | None = None,
+    ) -> str:
+        if app_dataset is None:
             app_dataset = get_application_dataset()
 
         return update_dropdown_within_context(
@@ -214,12 +222,12 @@ def register_callbacks(app: Dash) -> None :
         Input("prev_category", "n_clicks"),
     )
     def update_dropdown_category(
-            dropdown_category_current: str,
-            n_clicks_next_category: int,
-            n_clicks_previous_category: int,
-            app_dataset: xr.Dataset | None = None,
-    ) -> str :
-        if app_dataset is None :
+        dropdown_category_current: str,
+        n_clicks_next_category: int,
+        n_clicks_previous_category: int,
+        app_dataset: xr.Dataset | None = None,
+    ) -> str:
+        if app_dataset is None:
             app_dataset = get_application_dataset()
 
         return update_dropdown_within_context(
@@ -238,14 +246,14 @@ def register_callbacks(app: Dash) -> None :
         # Input("xyrange-overview", "data"),
     )
     def update_overview_figure(
-            country: str,
-            category: str,
-            entity: str,
-            graph_figure_current: go.Figure,
-            # memory_data: dict[str, int],
-            # xyrange_data: str | None,
-            app_dataset: xr.Dataset | None = None,
-    ) -> go.Figure :
+        country: str,
+        category: str,
+        entity: str,
+        graph_figure_current: go.Figure,
+        # memory_data: dict[str, int],
+        # xyrange_data: str | None,
+        app_dataset: xr.Dataset | None = None,
+    ) -> go.Figure:
         """
         Update the overview graph.
 
@@ -272,10 +280,10 @@ def register_callbacks(app: Dash) -> None :
         -------
             Overview figure.
         """
-        if app_dataset is None :
+        if app_dataset is None:
             app_dataset = get_application_dataset()
 
-        if any(v is None for v in (country, category, entity)) :
+        if any(v is None for v in (country, category, entity)):
             # User cleared one of the selections in the dropdown, do nothing
             return graph_figure_current
 
@@ -286,43 +294,7 @@ def register_callbacks(app: Dash) -> None :
             country=country, category=category, entity=entity, dataset=app_dataset
         )
 
-    @app.callback(  # type: ignore
-        Output("graph-category-split", "figure"),
-        State("graph-category-split", "figure"),
-        State("dropdown-country", "value"),
-        State("dropdown-category", "value"),
-        State("dropdown-entity", "value"),
-        Input("dropdown-source-scenario", "value"),
-        Input("memory", "data"),
-        # Input("xyrange-category", "data"),
-        # State("xyrange-entity", "data"),
-    )
-    def update_category_graph(  # noqa: PLR0913
-            graph_figure_current,
-            country: str,
-            category: str,
-            entity: str,
-            source_scenario: str,
-            memory_data: dict[str, int],
-            # xyrange_data: str | None,
-            # xyrange_data_entity: str | None,
-            app_dataset: xr.Dataset | None = None,
-    ) -> go.Figure :
 
-        if app_dataset is None :
-            app_dataset = get_application_dataset()
-
-        if any(v is None for v in (country, category, entity)) :
-            # User cleared one of the selections in the dropdown, do nothing
-            return graph_figure_current
-
-        return create_category_figure(
-            country=country,
-            category=category,
-            entity=entity,
-            source_scenario=source_scenario,
-            dataset=app_dataset
-        )
 
     @app.callback(  # type: ignore
         Output("dropdown-source-scenario", "options"),
@@ -336,19 +308,18 @@ def register_callbacks(app: Dash) -> None :
         State("memory", "data"),
     )
     def update_source_scenario_dropdown(  # noqa: PLR0913
-            country: str,
-            category: str,
-            entity: str,
-            source_scenario: str,
-            source_scenario_options: list[str],
-            memory_data: dict[str, int],
-            app_dataset: xr.Dataset | None = None,
-    ) -> tuple[tuple[str, ...], str, dict[str, int]] :
-
-        if app_dataset is None :
+        country: str,
+        category: str,
+        entity: str,
+        source_scenario: str,
+        source_scenario_options: list[str],
+        memory_data: dict[str, int],
+        app_dataset: xr.Dataset | None = None,
+    ) -> tuple[tuple[str, ...], str, dict[str, int]]:
+        if app_dataset is None:
             app_dataset = get_application_dataset()
 
-        if any(v is None for v in (country, category, entity)) :
+        if any(v is None for v in (country, category, entity)):
             # User cleared one of the selections in the dropdown, do nothing
             return (
                 source_scenario_options,
@@ -356,18 +327,15 @@ def register_callbacks(app: Dash) -> None :
                 memory_data,
             )
 
-        source_scenario_options_out = update_source_scenario_options(country=country,
-                                                                     category=category,
-                                                                     entity=entity,
-                                                                     dataset=app_dataset)
+        source_scenario_options_out = update_source_scenario_options(
+            country=country, category=category, entity=entity, dataset=app_dataset
+        )
 
-        if not memory_data :
-            memory_data = {"_" : 0}
-        else :
+        if not memory_data:
+            memory_data = {"_": 0}
+        else:
             memory_data["_"] += 1
 
-        # TODO I'm not sure if that's the bevior we want
-        # How can it happen? There should always be an option
         if not source_scenario_options_out:
             return (
                 source_scenario_options,
@@ -375,17 +343,101 @@ def register_callbacks(app: Dash) -> None :
                 memory_data,
             )
 
-        if source_scenario in source_scenario_options_out :
+        if source_scenario in source_scenario_options_out:
             source_scenario_out = source_scenario
-        else :
+        else:
             source_scenario_out = source_scenario_options_out[0]
-
-
-
-        print(f"{memory_data=}")
 
         return (
             source_scenario_options_out,
             source_scenario_out,
             memory_data,
+        )
+
+    @app.callback(  # type: ignore
+        Output("graph-category-split", "figure"),
+        State("graph-category-split", "figure"),
+        State("dropdown-country", "value"),
+        State("dropdown-category", "value"),
+        State("dropdown-entity", "value"),
+        Input("dropdown-source-scenario", "value"),
+        Input("memory", "data"),
+        # Input("xyrange-category", "data"),
+        # State("xyrange-entity", "data"),
+    )
+    def update_category_figure(  # noqa: PLR0913
+            graph_figure_current : go.Figure,
+            country: str,
+            category: str,
+            entity: str,
+            source_scenario: str,
+            memory_data: dict[str, int],
+            # xyrange_data: str | None,
+            # xyrange_data_entity: str | None,
+            app_dataset: xr.Dataset | None = None,
+    ) -> go.Figure :
+        if app_dataset is None :
+            app_dataset = get_application_dataset()
+
+        if any(v is None for v in (country, category, entity)) :
+            # User cleared one of the selections in the dropdown, do nothing
+            return graph_figure_current
+
+        return create_category_figure(
+            country=country,
+            category=category,
+            entity=entity,
+            source_scenario=source_scenario,
+            dataset=app_dataset,
+        )
+
+    @app.callback(  # type: ignore
+        Output("graph-entity-split", "figure"),
+        State("graph-entity-split", "figure"),
+        State("dropdown-country", "value"),
+        State("dropdown-category", "value"),
+        State("dropdown-entity", "value"),
+        Input("dropdown-source-scenario", "value"),
+        Input("memory", "data"),
+        # Input("xyrange-entity", "data"),
+        # State("xyrange-category", "data"),
+    )
+    def update_entity_graph(  # noqa: PLR0913
+            graph_figure_current: go.Figure,
+            country: str,
+            category: str,
+            entity: str,
+            source_scenario: str,
+            memory_data: dict[str, int],
+            app_dataset: xr.Dataset | None = None,
+            # xyrange_data: str | None,
+            # xyrange_data_category: str | None,
+
+    ) -> go.Figure :
+
+        if app_dataset is None :
+            app_dataset = get_application_dataset()
+
+        # if ctx.triggered_id == "xyrange-entity" and xyrange_data :
+        #     return app_state.update_entity_range(xyrange_data)
+
+        if any(v is None for v in (country, category, entity, source_scenario)) :
+            # User cleared one of the selections in the dropdown, do nothing
+            return graph_figure_current
+
+        # app_state.source_scenario_index = app_state.source_scenario_options.index(
+        #     source_scenario
+        # )
+
+        # in case user adjusts category figure layout
+        # and then changes country, category or entity
+        # if not xyrange_data :
+        #     xyrange_data = xyrange_data_category
+
+        return create_entity_figure(
+            country=country,
+            category=category,
+            entity=entity,
+            source_scenario=source_scenario,
+            dataset=app_dataset,
         )
