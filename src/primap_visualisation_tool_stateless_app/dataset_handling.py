@@ -177,3 +177,13 @@ def get_source_scenario_options(dataset: xr.Dataset) -> tuple[str, ...]:
 
     """
     return sorted(tuple(dataset.coords["SourceScen"].to_numpy()))
+
+def get_source_scenario_start(dataset: xr.Dataset,
+                              preferred_source_scenario_entity: str = "PRIMAP-hist_v2.5_final_nr, HISTCR"):
+
+    source_scenario_options = get_source_scenario_options(dataset)
+    if preferred_source_scenario_entity in source_scenario_options:
+        return preferred_source_scenario_entity
+
+    return source_scenario_options[0]
+
