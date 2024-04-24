@@ -1,6 +1,7 @@
 """
 End to end testing of an app that doesn't use global state
 """
+import re
 from pathlib import Path
 
 import dash
@@ -12,6 +13,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 import primap_visualisation_tool_stateless_app
 import primap_visualisation_tool_stateless_app.callbacks
 import primap_visualisation_tool_stateless_app.dataset_holder
+import primap_visualisation_tool_stateless_app.notes
 
 
 def test_001_dash_example(dash_duo):
@@ -296,6 +298,93 @@ def test_010_entity_buttons(dash_duo):
 
     # Entity dropdown should update back to where it started
     assert dropdown_entity_select_element.text == "CO2"
+
+
+def test_012_notes_basic_save(dash_duo, tmp_path):
+    tmp_db = tmp_path / "notes_database.db"
+    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+
+    test_ds = pm.open_dataset(test_file)
+
+    # TODO: split out these 5 calls into a single function (probably)
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
+        test_ds
+    )
+    primap_visualisation_tool_stateless_app.notes.set_application_notes_db_filepath(
+        tmp_db
+    )
+
+    app = primap_visualisation_tool_stateless_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
+    dash_duo.start_server(app)
+
+    # Click without anything in the field
+    save_button = dash_duo.driver.find_element(By.ID, "save-button")
+    save_button.click()
+
+    # Should get no output
+    note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
+    assert not note_saved_div.text
+
+    # Add some input
+    input_for_first_country = "All looks great!"
+    input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
+    input_for_notes.send_keys(input_for_first_country)
+
+    # Save
+    save_button.click()
+
+    # Output should now be in the database
+    assert False, "Check output is in the database"
+
+    # User should be notified
+    assert re.match(rf"Note for .* saved at .* in {tmp_db}", note_saved_div.text)
+
+    # Click forward one country
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+
+    # Input field and notes div should be empty again
+    assert not input_for_notes.text
+    assert not note_saved_div.text
+
+    # Add input
+    input_for_second_country = "Not so good"
+    input_for_notes.send_keys(input_for_second_country)
+
+    # Save
+    save_button.click()
+
+    # Both outputs should now be in the database
+    # import pdb
+    #
+    # pdb.set_trace()
+    assert False, "Check output is in the database"
+
+    # Click back to starting country
+    button_country_previous = dash_duo.driver.find_element(By.ID, "previous_country")
+    button_country_previous.click()
+
+    # Previous input should reappear
+    assert input_for_notes.text == input_for_first_country
+    assert not note_saved_div.text
+
+    # Click back one more country
+    button_country_previous.click()
+
+    # Input field should be empty again
+    assert input_for_notes.text == input_for_first_country
+    assert not note_saved_div.text
+
+    # Click forward two countries
+    button_country_next.click()
+    button_country_next.click()
+
+    # Previous input should reappear
+    assert input_for_notes.text == input_for_second_country
+    assert not note_saved_div.text
+
+    assert False, "Make sure all steps above are implemented"
 
 
 # Things to try:

@@ -109,7 +109,7 @@ def create_layout(  # noqa: PLR0913
         ),
         dbc.Button(
             children="Save",
-            id="save_button",
+            id="save-button",
             n_clicks=0,
             color="light",
             style={"fontsize": 12, "height": "37px"},

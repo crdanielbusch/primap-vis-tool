@@ -27,6 +27,7 @@ from primap_visualisation_tool_stateless_app.figures import create_overview_figu
 from primap_visualisation_tool_stateless_app.notes import (
     get_application_notes_db_filepath,
     get_note_save_confirmation_string,
+    get_notes_db_cursor,
 )
 
 
@@ -243,9 +244,9 @@ def register_callbacks(app: Dash) -> None:
     @app.callback(
         Output("note-saved-div", "children"),
         Output("input-for-notes", "value"),
-        Input("save_button", "n_clicks"),
+        Input("save-button", "n_clicks"),
         # Input("memory", "data"),
-        State("dropdown-country", "value"),
+        Input("dropdown-country", "value"),
         State("input-for-notes", "value"),
     )  # type:ignore
     def save_note(
@@ -257,10 +258,54 @@ def register_callbacks(app: Dash) -> None:
         if db_filepath is None:
             db_filepath = get_application_notes_db_filepath()
 
+        # TODO: split this if block out into its own function
+        if ctx.triggered_id == "dropdown-country":
+            if notes_value:
+                # TODO: think about best behaviour here,
+                # need to avoid losing notes without being annoying.
+                msg = "Notes should be empty before changing country!"
+                raise AssertionError(msg)
+
+            with get_notes_db_cursor(db_filepath=db_filepath) as db_cursor:
+                # I would abstract out the raw SQL, but doing it like this for learning purposes
+                found_new_country = db_cursor.execute(
+                    f"SELECT notes FROM country_notes WHERE country='{country}'"
+                ).fetchall()
+
+            if len(found_new_country) > 1:
+                msg = "Should only be one entry per country"
+                raise AssertionError(msg)
+
+            if not found_new_country:
+                # Nothing already in the database, do nothing
+                return "", ""
+
+            existing_notes = found_new_country[0]
+            if len(existing_notes) != 1:
+                msg = f"Number of notes isn't 1, received {len(existing_notes)=}"
+                raise AssertionError(msg)
+
+            return f"Loaded existing note for {country}", existing_notes[0]
+
         if not notes_value:
             # No input (e.g. at initial callback), hence do nothing
             return "", ""
 
-        # TODO: support clearing when the country changes
+        # Save the note
+        with get_notes_db_cursor(db_filepath=db_filepath) as db_cursor:
+            existing_country = db_cursor.execute(
+                f"SELECT notes FROM country_notes WHERE country='{country}'"
+            ).fetchall()
 
+            if existing_country:
+                db_cursor.execute(
+                    f"UPDATE country_notes SET notes='{notes_value}' WHERE country='{country}'"
+                )
+            else:
+                # I would abstract out the raw SQL, but doing it like this for learning purposes
+                db_cursor.execute(
+                    "INSERT INTO country_notes VALUES(?, ?)", (country, notes_value)
+                )
+
+        # Confirm save to the user
         return get_note_save_confirmation_string(db_filepath, country), notes_value
