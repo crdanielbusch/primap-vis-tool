@@ -5,7 +5,10 @@ import re
 from pathlib import Path
 
 import dash
+import dash.testing
 import primap2 as pm
+import selenium.webdriver.remote.webelement
+import xarray as xr
 from dash import html
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -301,7 +304,144 @@ def test_010_entity_buttons(dash_duo):
     assert dropdown_entity_select_element.text == "CO2"
 
 
-def test_012_notes_basic_save(dash_duo, tmp_path):
+# TODO: re-use this in other tests too
+def setup_app(
+    dash_duo, ds: xr.Dataset, db_path: Path
+) -> dash.testing.composite.DashComposite:
+    """
+    Setup the app
+    """
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(ds)
+    primap_visualisation_tool_stateless_app.notes.set_application_notes_db_filepath(
+        db_path
+    )
+
+    app = primap_visualisation_tool_stateless_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
+    dash_duo.start_server(app)
+
+    return dash_duo
+
+
+def get_dropdown_value(
+    dropdown_element: selenium.webdriver.remote.webelement.WebElement,
+) -> str:
+    """
+    Dropdowns contain a clear element too, hence this isn't trivial
+    """
+    return dropdown_element.text.splitlines()[0]
+
+
+def test_012_notes_save_no_input(dash_duo, tmp_path):
+    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds = pm.open_dataset(test_ds_file)
+
+    tmp_db = tmp_path / "notes_database.db"
+
+    dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
+    dash_duo.wait_for_element_by_id("save-button", timeout=2)
+
+    # Click without anything in the field
+    save_button = dash_duo.driver.find_element(By.ID, "save-button")
+    save_button.click()
+
+    # Should get no output
+    note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
+    assert not note_saved_div.text
+
+
+def test_013_notes_save_basic(dash_duo, tmp_path):
+    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds = pm.open_dataset(test_ds_file)
+
+    tmp_db = tmp_path / "notes_database.db"
+
+    dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
+    dash_duo.wait_for_element_by_id("save-button", timeout=2)
+
+    # Add some input
+    input_for_first_country = "All looks great!"
+    input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
+    input_for_notes.send_keys(input_for_first_country)
+
+    # Save
+    save_button = dash_duo.driver.find_element(By.ID, "save-button")
+    save_button.click()
+
+    # Make sure database save operation has finished and been confirmed to the user
+    dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
+    current_country = get_dropdown_value(dropdown_country)
+    dash_duo.wait_for_contains_text(
+        "#note-saved-div", f"Note for {current_country} saved", timeout=2
+    )
+    # Output should now be in the database
+    db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
+        tmp_db
+    )
+    assert db.shape[0] == 1
+    assert (
+        db.set_index("country")["notes"].loc[current_country] == input_for_first_country
+    )
+    # and user should be notified with path in which data is saved too
+    note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
+    assert re.match(
+        rf"Note for {current_country} saved at .* in {tmp_db}", note_saved_div.text
+    )
+
+
+def test_014_notes_save_and_step(dash_duo, tmp_path):
+    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds = pm.open_dataset(test_ds_file)
+
+    tmp_db = tmp_path / "notes_database.db"
+
+    dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
+    dash_duo.wait_for_element_by_id("save-button", timeout=2)
+
+    # Add some input
+    note_to_save = "All looks great!"
+    input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
+    input_for_notes.send_keys(note_to_save)
+
+    # Save
+    save_button = dash_duo.driver.find_element(By.ID, "save-button")
+    save_button.click()
+
+    # Make sure database save operation has finished and been confirmed to the user
+    dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
+    current_country = get_dropdown_value(dropdown_country)
+    dash_duo.wait_for_contains_text(
+        "#note-saved-div", f"Note for {current_country} saved", timeout=2
+    )
+
+    # Click forward one country
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+
+    # We saved before clicking, hence inputs should be cleared and a confirmation shown
+    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
+    assert not input_for_notes.text
+    note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
+    assert note_saved_div.text == "Note already saved, input cleared"
+
+    # Output should be in the database too
+    db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
+        tmp_db
+    )
+    assert db.shape[0] == 1
+    assert db.set_index("country")["notes"].loc[current_country] == note_to_save
+
+    # Click back one country
+    button_country_previous = dash_duo.driver.find_element(By.ID, "prev_country")
+    button_country_previous.click()
+
+    # The previous note should be reloaded
+    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
+    current_country = get_dropdown_value(dropdown_country)
+    assert note_saved_div.text == f"Loaded existing note for {current_country}"
+
+
+def test_01y_notes_multi_step_flow(dash_duo, tmp_path):
     tmp_db = tmp_path / "notes_database.db"
     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
 
@@ -429,8 +569,15 @@ def test_012_notes_basic_save(dash_duo, tmp_path):
     assert input_for_notes.text == input_for_second_country
     assert note_saved_div.text == "Loaded existing note for EU27BX"
 
-    # # TODO: separate tests of what happens when you move forward without
-    # # clearing the field first.
-    # # Input field and notes div should be empty again
-    # assert not input_for_notes.text
-    # assert not note_saved_div.text
+
+# Tests to write:
+# - start up, write note, save, go forward, note is cleared, go back, note reappears
+# - start up, write note, go forward, note is saved and warning is shown and input is cleared, go back, note reappears
+# - start up, go forward, nothing is said/raised/whatever, write note, save, go back, everythign clears, go forward, note reappears
+# - keep the test above
+
+# # TODO: separate tests of what happens when you move forward without
+# # clearing the field first.
+# # Input field and notes div should be empty again
+# assert not input_for_notes.text
+# assert not note_saved_div.text
