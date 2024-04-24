@@ -335,7 +335,12 @@ def test_012_notes_basic_save(dash_duo, tmp_path):
     save_button.click()
 
     # Output should now be in the database
-    assert False, "Check output is in the database"
+    # TODO: add a wait here so we only read once the save operation is finished
+    db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
+        tmp_db
+    )
+    assert db.shape[0] == 1
+    assert db.set_index("country")["notes"].loc["EARTH"] == input_for_first_country
 
     # User should be notified
     assert re.match(rf"Note for .* saved at .* in {tmp_db}", note_saved_div.text)
