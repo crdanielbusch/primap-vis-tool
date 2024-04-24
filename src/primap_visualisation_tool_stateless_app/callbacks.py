@@ -24,6 +24,10 @@ from primap_visualisation_tool_stateless_app.dataset_holder import (
     get_application_dataset,
 )
 from primap_visualisation_tool_stateless_app.figures import create_overview_figure
+from primap_visualisation_tool_stateless_app.notes import (
+    get_application_notes_db_filepath,
+    get_note_save_confirmation_string,
+)
 
 
 def update_dropdown(value_current: str, options: Sequence[str], increment: int) -> str:
@@ -235,3 +239,28 @@ def register_callbacks(app: Dash) -> None:
         return create_overview_figure(
             country=country, category=category, entity=entity, dataset=app_dataset
         )
+
+    @app.callback(
+        Output("note-saved-div", "children"),
+        Output("input-for-notes", "value"),
+        Input("save_button", "n_clicks"),
+        # Input("memory", "data"),
+        State("dropdown-country", "value"),
+        State("input-for-notes", "value"),
+    )  # type:ignore
+    def save_note(
+        save_button_clicks: int,
+        country: str,
+        notes_value: str,
+        db_filepath: str | None = None,
+    ) -> tuple[str, str]:
+        if db_filepath is None:
+            db_filepath = get_application_notes_db_filepath()
+
+        if not notes_value:
+            # No input (e.g. at initial callback), hence do nothing
+            return "", ""
+
+        # TODO: support clearing when the country changes
+
+        return get_note_save_confirmation_string(db_filepath, country), notes_value
