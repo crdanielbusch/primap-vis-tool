@@ -11,7 +11,6 @@ import selenium.webdriver.remote.webelement
 import xarray as xr
 from dash import html
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 
 import primap_visualisation_tool_stateless_app
@@ -457,33 +456,33 @@ def test_015_notes_step_without_user_save(dash_duo, tmp_path):
     input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
     input_for_notes.send_keys(note_to_save)
 
-    # Save
-    save_button = dash_duo.driver.find_element(By.ID, "save-button")
-    save_button.click()
-
-    # Make sure database save operation has finished and been confirmed to the user
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
-    current_country = get_dropdown_value(dropdown_country)
-    dash_duo.wait_for_contains_text(
-        "#note-saved-div", f"Notes for {current_country} saved", timeout=2
-    )
+    country_before_click = get_dropdown_value(dropdown_country)
 
-    # Click forward one country
+    # Click forward one country without saving
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
 
-    # We saved before clicking, hence inputs should be cleared and a confirmation shown
+    # We saved without clicking,
+    # hence a warming should appear,
+    # the note should be saved automatically
+    # and the inputs should be cleared.
     dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
     assert not input_for_notes.text
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
-    assert note_saved_div.text == "Note already saved, input field cleared"
+    assert re.match(
+        "WARNING: notes weren't saved before changing country, "
+        "we have saved the notes for you. "
+        rf"Notes for {country_before_click} saved at .* in {tmp_db}",
+        note_saved_div.text,
+    )
 
     # Output should be in the database too
     db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
         tmp_db
     )
     assert db.shape[0] == 1
-    assert db.set_index("country")["notes"].loc[current_country] == note_to_save
+    assert db.set_index("country")["notes"].loc[country_before_click] == note_to_save
 
     # Click back one country
     button_country_previous = dash_duo.driver.find_element(By.ID, "prev_country")
