@@ -137,6 +137,8 @@ def test_007_country_buttons(dash_duo):
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
+    dash_duo.wait_for_element_by_id("next_country", timeout=2)
+
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
     dropdown_country_select_element = dropdown_country.find_element(
         By.ID, "react-select-2--value-item"
@@ -573,6 +575,7 @@ def test_01y_notes_multi_step_flow(dash_duo, tmp_path):
 # Tests to write:
 # - start up, write note, save, go forward, note is cleared, go back, note reappears
 # - start up, write note, go forward, note is saved and warning is shown and input is cleared, go back, note reappears
+# - selecting from dropdown works from selenium.webdriver.support.ui import Select
 # - start up, go forward, nothing is said/raised/whatever, write note, save, go back, everythign clears, go forward, note reappears
 # - keep the test above
 

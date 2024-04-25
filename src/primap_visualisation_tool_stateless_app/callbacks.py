@@ -26,7 +26,6 @@ from primap_visualisation_tool_stateless_app.dataset_holder import (
 from primap_visualisation_tool_stateless_app.figures import create_overview_figure
 from primap_visualisation_tool_stateless_app.notes import (
     get_application_notes_db_filepath,
-    get_country_note_from_notes_db,
     get_note_save_confirmation_string,
     save_country_note_in_notes_db,
 )
@@ -123,18 +122,14 @@ def register_callbacks(app: Dash) -> None:
 
     @app.callback(
         Output("dropdown-country", "value"),
-        Output("note-saved-div", "children"),
-        Output("input-for-notes", "value"),
         State("dropdown-country", "value"),
         Input("next_country", "n_clicks"),
         Input("prev_country", "n_clicks"),
-        State("input-for-notes", "value"),
     )
     def update_dropdown_country(
         dropdown_country_current: str,
         n_clicks_next_country: int,
         n_clicks_previous_country: int,
-        notes_value: str,
         app_dataset: xr.Dataset | None = None,
         db_filepath: str | None = None,
     ) -> str:
@@ -150,53 +145,55 @@ def register_callbacks(app: Dash) -> None:
             context=ctx,
         )
 
-        # TODO: split this so that the notes update if we use the dropdown
-        # rather than the buttons.
-        # It is a bit tricky, you want a callback that knows the state of the dropdown
-        # before the menu was changed.
-        # Maybe that's possible with state and input or something.
-        if not notes_value:
-            note_saved_info = ""
-
-        else:
-            current_country_notes_value_in_db = get_country_note_from_notes_db(
-                db_filepath=db_filepath, country=dropdown_country_current
-            )
-
-            if notes_value == current_country_notes_value_in_db:
-                # The note has already been saved, don't need to do anything more
-                note_saved_info = "Note already saved, input will be cleared"
-
-            else:
-                # Note differs, hence must save first
-                save_country_note_in_notes_db(
-                    db_filepath=db_filepath,
-                    country=dropdown_country_current,
-                    note=notes_value,
-                )
-                note_saved_info = ". ".join(
-                    [
-                        "WARNING: notes weren't saved before changing country, we have saved the notes for you",
-                        get_note_save_confirmation_string(
-                            db_filepath=db_filepath, country=dropdown_country_current
-                        ),
-                    ]
-                )
-
-        new_country_notes_value_in_db = get_country_note_from_notes_db(
-            db_filepath=db_filepath, country=new_country
-        )
-        if new_country_notes_value_in_db is None:
-            new_input_for_notes_value = ""
-        else:
-            new_input_for_notes_value = new_country_notes_value_in_db
-            msg = f"Loaded existing notes for {new_country}"
-            if note_saved_info:
-                note_saved_info = ". ".join([note_saved_info, msg])
-            else:
-                note_saved_info = msg
-
-        return new_country, note_saved_info, new_input_for_notes_value
+        return new_country
+        #
+        # # TODO: split this so that the notes update if we use the dropdown
+        # # rather than the buttons.
+        # # It is a bit tricky, you want a callback that knows the state of the dropdown
+        # # before the menu was changed.
+        # # Maybe that's possible with state and input or something.
+        # if not notes_value:
+        #     note_saved_info = ""
+        #
+        # else:
+        #     current_country_notes_value_in_db = get_country_note_from_notes_db(
+        #         db_filepath=db_filepath, country=dropdown_country_current
+        #     )
+        #
+        #     if notes_value == current_country_notes_value_in_db:
+        #         # The note has already been saved, don't need to do anything more
+        #         note_saved_info = "Note already saved, input will be cleared"
+        #
+        #     else:
+        #         # Note differs, hence must save first
+        #         save_country_note_in_notes_db(
+        #             db_filepath=db_filepath,
+        #             country=dropdown_country_current,
+        #             note=notes_value,
+        #         )
+        #         note_saved_info = ". ".join(
+        #             [
+        #                 "WARNING: notes weren't saved before changing country, we have saved the notes for you",
+        #                 get_note_save_confirmation_string(
+        #                     db_filepath=db_filepath, country=dropdown_country_current
+        #                 ),
+        #             ]
+        #         )
+        #
+        # new_country_notes_value_in_db = get_country_note_from_notes_db(
+        #     db_filepath=db_filepath, country=new_country
+        # )
+        # if new_country_notes_value_in_db is None:
+        #     new_input_for_notes_value = ""
+        # else:
+        #     new_input_for_notes_value = new_country_notes_value_in_db
+        #     msg = f"Loaded existing notes for {new_country}"
+        #     if note_saved_info:
+        #         note_saved_info = ". ".join([note_saved_info, msg])
+        #     else:
+        #         note_saved_info = msg
+        #
+        # return new_country, note_saved_info, new_input_for_notes_value
 
     @app.callback(
         Output("dropdown-entity", "value"),
@@ -299,8 +296,8 @@ def register_callbacks(app: Dash) -> None:
         )
 
     @app.callback(
-        Output("note-saved-div", "children", allow_duplicate=True),
-        Output("input-for-notes", "value", allow_duplicate=True),
+        Output("note-saved-div", "children"),
+        Output("input-for-notes", "value"),
         Input("save-button", "n_clicks"),
         # Input("memory", "data"),
         State("input-for-notes", "value"),
