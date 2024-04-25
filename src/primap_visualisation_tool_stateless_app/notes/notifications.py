@@ -26,4 +26,4 @@ def get_note_save_confirmation_string(db_filepath: Path, country: str) -> str:
     now = datetime.now()
     now_str = now.strftime("%Y-%m-%d-%H-%M-%S")
 
-    return f"Note for {country} saved at {now_str} in {db_filepath}"
+    return f"Notes for {country} saved at {now_str} in {db_filepath}"

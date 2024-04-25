@@ -30,6 +30,7 @@ def create_layout(  # noqa: PLR0913
     """
     Create the layout for our app
     """
+    stores = [dcc.Store(id="country-dropdown-store", storage_type="memory")]
     dropdowns_and_buttons = [
         html.B(
             children="Country",
@@ -134,7 +135,7 @@ def create_layout(  # noqa: PLR0913
         dbc.Row(
             [
                 dbc.Col(
-                    dbc.Stack(dropdowns_and_buttons)
+                    dbc.Stack([*stores, *dropdowns_and_buttons])
                 ),  # first column with dropdown menus
                 dbc.Col(dbc.Stack(notes)),
                 dbc.Col(
