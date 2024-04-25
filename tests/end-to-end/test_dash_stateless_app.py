@@ -494,6 +494,66 @@ def test_015_notes_step_without_user_save(dash_duo, tmp_path):
     assert note_saved_div.text == f"Loaded existing notes for {current_country}"
 
 
+def test_016_notes_step_without_input_is_quiet(dash_duo, tmp_path):
+    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds = pm.open_dataset(test_ds_file)
+
+    tmp_db = tmp_path / "notes_database.db"
+
+    dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
+    dash_duo.wait_for_element_by_id("save-button", timeout=2)
+
+    # Click forward without any input
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+
+    # Should get no input or messages
+    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
+    input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
+    assert not input_for_notes.text
+    note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
+    assert not note_saved_div.text
+
+    # Add some input
+    note_to_save = "All looks great!"
+    input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
+    input_for_notes.send_keys(note_to_save)
+
+    # Save
+    save_button = dash_duo.driver.find_element(By.ID, "save-button")
+    save_button.click()
+
+    dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
+    country_with_note = get_dropdown_value(dropdown_country)
+
+    # Click forward one country
+    button_country_next.click()
+
+    # We saved before clicking, hence inputs should be cleared
+    # and a confirmation shown.
+    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
+    assert not input_for_notes.text
+    note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
+    assert note_saved_div.text == "Note already saved, input field cleared"
+
+    # Output should be in the database too
+    db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
+        tmp_db
+    )
+    assert db.shape[0] == 1
+    assert db.set_index("country")["notes"].loc[country_with_note] == note_to_save
+
+    # Click back one country
+    button_country_previous = dash_duo.driver.find_element(By.ID, "prev_country")
+    button_country_previous.click()
+
+    # The previous note should be reloaded
+    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
+    assert input_for_notes.text == note_to_save
+    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
+    assert note_saved_div.text == f"Loaded existing notes for {country_with_note}"
+
+
 # def test_01y_notes_multi_step_flow(dash_duo, tmp_path):
 #     tmp_db = tmp_path / "notes_database.db"
 #     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
@@ -624,9 +684,7 @@ def test_015_notes_step_without_user_save(dash_duo, tmp_path):
 
 
 # Tests to write:
-# - start up, write note, go forward, note is saved and warning is shown and input is cleared, go back, note reappears
 # - selecting from dropdown works from selenium.webdriver.support.ui import Select
-# - start up, go forward, nothing is said/raised/whatever, write note, save, go back, everythign clears, go forward, note reappears
 # - keep the test above
 
 # # TODO: separate tests of what happens when you move forward without
