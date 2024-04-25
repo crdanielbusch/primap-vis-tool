@@ -155,8 +155,6 @@ def update_source_scenario_options(
         if i not in null_source_scenario_options
     ]
 
-    # TODO I'm not sure if that's the bevior we want
-    # how do we end up with no available option?
     if not new_source_scenario_options:
         return None
 
@@ -329,6 +327,12 @@ def register_callbacks(app: Dash) -> None:
             country=country, category=category, entity=entity, dataset=app_dataset
         )
 
+        # memory_data shares information between callbacks
+        # to make sure they are executed sequentially.
+        # When the user changes country, category, entity
+        # first the dropdown will be updated and then category and
+        # entity figure.
+        # The actual value of memory_data is irrelevant, but it must be JSON enumerable
         if not memory_data:
             memory_data = {"_": 0}
         else:

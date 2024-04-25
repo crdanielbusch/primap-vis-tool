@@ -9,6 +9,9 @@ import pytest
 from dash import html
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 
 import primap_visualisation_tool_stateless_app
 import primap_visualisation_tool_stateless_app.callbacks
@@ -317,6 +320,52 @@ def test_011_dropdown_source_scenario(dash_duo):
     assert (
         dropdown_category.find_element(By.ID, "react-select-5--value-item").text
         == "PRIMAP-hist_v2.5_final_nr, HISTCR"
+    )
+
+def test_012_dropdown_source_scenario_option_not_available(dash_duo):
+    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+
+    test_ds = pm.open_dataset(test_file)
+
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
+        test_ds
+    )
+
+    app = primap_visualisation_tool_stateless_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
+    dash_duo.start_server(app)
+
+    dropdown_source_scenario_div = dash_duo.driver.find_element(By.ID, "dropdown-source-scenario")
+
+    # Find the arrow that expands the dropdown options and click on it
+    dropdown_source_scenario = dropdown_source_scenario_div.find_element(By.CLASS_NAME, 'Select-arrow-zone').click()
+
+    # simulate keyboard
+    action = ActionChains(dash_duo.driver)
+    action.send_keys(Keys.ARROW_DOWN)
+    action.send_keys(Keys.ARROW_DOWN)
+    action.send_keys(Keys.ENTER)
+    action.perform()
+
+    # TODO: Test will fail without the sleep statement.
+    # Find out how to do it differently.
+    import time
+    time.sleep(2)
+
+    assert (
+            dropdown_source_scenario_div.find_element(By.ID, "react-select-5--value-item").text
+            == "UNFCCC NAI, 231015"
+    )
+
+    # Click next country
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+
+    time.sleep(2)
+
+    assert (
+            dropdown_source_scenario_div.find_element(By.ID, "react-select-5--value-item").text
+            == "PRIMAP-hist_v2.4.2_final_nr, HISTCR"
     )
 
 
