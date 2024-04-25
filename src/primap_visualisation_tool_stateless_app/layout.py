@@ -26,6 +26,8 @@ def create_layout(  # noqa: PLR0913
     category_options: tuple[str, ...],
     entity: str,
     entity_options: tuple[str, ...],
+    source_scenario: str,
+    source_scenario_options: tuple[str, ...],
 ) -> dbc.Container:
     """
     Create the layout for our app
@@ -94,6 +96,15 @@ def create_layout(  # noqa: PLR0913
                 ),
             ]
         ),
+        html.B(
+            children="Source Scenario",
+            style={"textAlign": "left", "fontSize": 14},
+        ),
+        dcc.Dropdown(
+            source_scenario_options,
+            value=source_scenario,
+            id="dropdown-source-scenario",
+        ),
     ]
 
     overview_figure = [
@@ -101,7 +112,20 @@ def create_layout(  # noqa: PLR0913
         dcc.Graph(id="graph-overview"),
     ]
 
+    category_figure = [
+        html.Br(),
+        html.B(children="Category split", style={"textAlign": "center"}),
+        dcc.Graph(id="graph-category-split"),
+    ]
+
+    entity_figure = [
+        html.Br(),
+        html.B(children="Entity split", style={"textAlign": "center"}),
+        dcc.Graph(id="graph-entity-split"),
+    ]
+
     return [
+        dcc.Store(id="memory"),
         dbc.Row(
             [
                 dbc.Col(
@@ -112,5 +136,17 @@ def create_layout(  # noqa: PLR0913
                     width=8,
                 ),
             ]
-        )
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    category_figure,
+                    width=6,
+                ),
+                dbc.Col(
+                    entity_figure,
+                    width=6,
+                ),
+            ]
+        ),
     ]
