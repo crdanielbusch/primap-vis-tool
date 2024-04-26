@@ -16,6 +16,7 @@ from dash import (
     ctx,
 )
 
+import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
 from primap_visualisation_tool_stateless_app.dataset_handling import (
     get_category_options,
     get_country_code_mapping,
@@ -31,7 +32,6 @@ from primap_visualisation_tool_stateless_app.figures import (
     create_overview_figure,
 )
 from primap_visualisation_tool_stateless_app.notes import (
-    get_application_notes_db_filepath,
     get_country_note_from_notes_db,
     get_note_save_confirmation_string,
     save_country_note_in_notes_db,
@@ -194,7 +194,9 @@ def register_callbacks(app: Dash) -> None:
             app_dataset = get_application_dataset()
 
         if db_filepath is None:
-            db_filepath = get_application_notes_db_filepath()
+            db_filepath = (
+                primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER
+            )
 
         new_country = update_dropdown_within_context(
             value_current=dropdown_country_current,
@@ -473,7 +475,9 @@ def register_callbacks(app: Dash) -> None:
         db_filepath: str | None = None,
     ) -> tuple[str, str, dict[str, str]]:
         if db_filepath is None:
-            db_filepath = get_application_notes_db_filepath()
+            db_filepath = (
+                primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER
+            )
 
         if not country_stored:
             # Initial callback or something

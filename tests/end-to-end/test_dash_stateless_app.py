@@ -20,6 +20,7 @@ import primap_visualisation_tool_stateless_app
 import primap_visualisation_tool_stateless_app.callbacks
 import primap_visualisation_tool_stateless_app.dataset_holder
 import primap_visualisation_tool_stateless_app.notes
+import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
 
 
 @pytest.fixture
@@ -378,7 +379,7 @@ def setup_app(
     Setup the app
     """
     primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(ds)
-    primap_visualisation_tool_stateless_app.notes.set_application_notes_db_filepath(
+    primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER = (
         db_path
     )
 
@@ -629,36 +630,42 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
 
     # Go to a country
-    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
-    for _ in range(5):
-        button_country_next.click()
+    dropdown_country_input = dash_duo.find_element("#dropdown-country input")
+    country_with_notes = "Egypt"
+    dropdown_country_input.send_keys(country_with_notes)
+    dropdown_country_input.send_keys(Keys.ENTER)
 
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
-    country_with_notes = get_dropdown_value(dropdown_country)
+    assert get_dropdown_value(dropdown_country) == country_with_notes
 
     # Save a note
     note_to_save = f"Note for {country_with_notes}"
     input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
     input_for_notes.send_keys(note_to_save)
+    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
+
     save_button = dash_duo.driver.find_element(By.ID, "save-button")
     save_button.click()
+
     dash_duo.wait_for_contains_text(
-        "#note-saved-div", f"Notes for {country_with_notes} saved", timeout=2
+        "#note-saved-div", f"Notes for {country_with_notes} saved at", timeout=2
     )
 
-    # Go to a different country
+    # Go to a different country via the buttons
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     for _ in range(15):
         button_country_next.click()
+    assert get_dropdown_value(dropdown_country) != country_with_notes
 
     # Go back to the first country via the dropdown menu
-    dropdown_country_input = dash_duo.find_element("#dropdown-country input")
     dropdown_country_input.send_keys(country_with_notes)
     dropdown_country_input.send_keys(Keys.ENTER)
 
     # Check that notes were loaded
     dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
-    note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
-    assert note_saved_div.text == f"Loaded existing notes for {country_with_notes}"
+    dash_duo.wait_for_contains_text(
+        "#note-saved-div", f"Loaded existing notes for {country_with_notes}", timeout=2
+    )
 
 
 def test_019_notes_multi_step_flow(dash_duo, tmp_path):
@@ -677,19 +684,29 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     input_for_first_country = "All looks great!"
     input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
     input_for_notes.send_keys(input_for_first_country)
+    dash_duo.wait_for_text_to_equal(
+        "#input-for-notes", input_for_first_country, timeout=2
+    )
 
     # Save
     save_button = dash_duo.driver.find_element(By.ID, "save-button")
     save_button.click()
+    dash_duo.wait_for_contains_text(
+        "#note-saved-div", f"Notes for {first_country} saved at", timeout=2
+    )
 
-    # Click forward a few countries
+    # Click forward a country
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
     second_country = get_dropdown_value(dropdown_country)
+    assert second_country != first_country
 
     # Add input
     input_for_second_country = "Not so good"
     input_for_notes.send_keys(input_for_second_country)
+    dash_duo.wait_for_text_to_equal(
+        "#input-for-notes", input_for_second_country, timeout=2
+    )
 
     # Save
     save_button.click()
@@ -698,6 +715,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     dash_duo.wait_for_contains_text(
         "#note-saved-div", f"Notes for {second_country} saved", timeout=2
     )
+
     # Both outputs should now be in the database
     db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
         tmp_db
@@ -761,10 +779,11 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
 
-    # Click forward a few countries
-    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
-    for _ in range(10):
-        button_country_next.click()
+    # Go to a country
+    dropdown_country_input = dash_duo.find_element("#dropdown-country input")
+    country_with_notes = "Jordan"
+    dropdown_country_input.send_keys(country_with_notes)
+    dropdown_country_input.send_keys(Keys.ENTER)
 
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
     first_country = get_dropdown_value(dropdown_country)
@@ -773,6 +792,9 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     input_for_first_country = "All looks great!"
     input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
     input_for_notes.send_keys(input_for_first_country)
+    dash_duo.wait_for_text_to_equal(
+        "#input-for-notes", input_for_first_country, timeout=2
+    )
 
     # Save
     save_button = dash_duo.driver.find_element(By.ID, "save-button")
@@ -783,6 +805,7 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     button_country_next.click()
     dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
     second_country = get_dropdown_value(dropdown_country)
+    assert second_country != first_country
 
     # Add input
     input_for_second_country = "Not so good"
