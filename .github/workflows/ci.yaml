@@ -91,7 +91,7 @@ jobs:
           poetry build --no-interaction
       - name: Check build
         run: |
-          tar -tvf dist/primap_visualisation_tool-*.tar.gz --wildcards '*primap_visualisation_tool/py.typed'
+          tar -tvf dist/primap_visualisation_tool_stateless_app-*.tar.gz --wildcards '*primap_visualisation_tool_stateless_app/py.typed'
 
   check-dependency-licences:
     runs-on: ubuntu-latest
