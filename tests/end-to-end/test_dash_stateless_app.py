@@ -18,21 +18,40 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 import primap_visualisation_tool_stateless_app
 import primap_visualisation_tool_stateless_app.callbacks
+import primap_visualisation_tool_stateless_app.create_app
 import primap_visualisation_tool_stateless_app.dataset_holder
 import primap_visualisation_tool_stateless_app.notes
 import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
 
 
 @pytest.fixture
-def app():
+def app_default():
     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_file)
     primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
         test_ds
     )
-    app = primap_visualisation_tool_stateless_app.create_app()
+    app = primap_visualisation_tool_stateless_app.create_app.create_app()
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     return app
+
+
+def setup_app(
+    dash_duo, ds: xr.Dataset, db_path: Path
+) -> dash.testing.composite.DashComposite:
+    """
+    Setup the app
+    """
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(ds)
+    primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER = (
+        db_path
+    )
+
+    app = primap_visualisation_tool_stateless_app.create_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
+    dash_duo.start_server(app)
+
+    return dash_duo
 
 
 def test_001_dash_example(dash_duo):
@@ -45,8 +64,8 @@ def test_001_dash_example(dash_duo):
     assert dash_duo.find_element("#nully-wrapper").text == "0"
 
 
-def test_002_app_starts(dash_duo, app):
-    dash_duo.start_server(app)
+def test_002_app_starts(dash_duo, app_default):
+    dash_duo.start_server(app_default)
 
 
 def test_003_dropdown_country(dash_duo, tmp_path):
@@ -328,24 +347,6 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
         "#dropdown-source-scenario",
         "PRIMAP-hist_v2.4.2_final_nr, HISTCR",
     )
-
-
-def setup_app(
-    dash_duo, ds: xr.Dataset, db_path: Path
-) -> dash.testing.composite.DashComposite:
-    """
-    Setup the app
-    """
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(ds)
-    primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER = (
-        db_path
-    )
-
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
-
-    return dash_duo
 
 
 def get_dropdown_value(

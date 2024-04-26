@@ -10,8 +10,8 @@ import click
 import primap2 as pm  # type: ignore
 
 import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
-from primap_visualisation_tool_stateless_app import create_app
 from primap_visualisation_tool_stateless_app.callbacks import register_callbacks
+from primap_visualisation_tool_stateless_app.create_app import create_app
 from primap_visualisation_tool_stateless_app.dataset_holder import (
     set_application_dataset,
 )
