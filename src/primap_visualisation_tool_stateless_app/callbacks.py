@@ -34,7 +34,7 @@ from primap_visualisation_tool_stateless_app.figures import (
 from primap_visualisation_tool_stateless_app.notes import (
     get_country_note_from_notes_db,
     get_note_save_confirmation_string,
-    save_country_note_in_notes_db,
+    save_country_notes_in_notes_db,
 )
 
 
@@ -167,7 +167,7 @@ def update_source_scenario_options(
     return tuple(new_source_scenario_options)
 
 
-def register_callbacks(app: Dash) -> None:
+def register_callbacks(app: Dash) -> None:  # noqa: PLR0915
     """
     Register callbacks onto an app
 
@@ -535,10 +535,10 @@ def register_callbacks(app: Dash) -> None:
             # hence do nothing.
             return "", "", country_store
 
-        save_country_note_in_notes_db(
+        save_country_notes_in_notes_db(
             db_filepath=db_filepath,
             country=dropdown_country_current,
-            note=notes_value,
+            notes=notes_value,
         )
 
         return (
@@ -644,10 +644,10 @@ def ensure_existing_note_saved(
 
     else:
         # Note differs, hence must save first
-        save_country_note_in_notes_db(
+        save_country_notes_in_notes_db(
             db_filepath=db_filepath,
             country=country_notes,
-            note=notes_value,
+            notes=notes_value,
         )
         note_saved_info = ". ".join(
             [
