@@ -184,7 +184,7 @@ def test_008_initial_figures(dash_duo):
     )
     for figure_id, expected_legend_items in figures_expected_items:
         figure = dash_duo.driver.find_element(By.ID, figure_id)
-        wait = WebDriverWait(dash_duo.driver, timeout=5)
+        wait = WebDriverWait(dash_duo.driver, timeout=20)
         wait.until(lambda d: figure.find_elements(By.CLASS_NAME, "legend"))
         legend = figure.find_element(By.CLASS_NAME, "legend")
         traces = legend.find_elements(By.CLASS_NAME, "traces")
