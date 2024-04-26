@@ -625,11 +625,13 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     # Click forward a country
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
-    second_country = get_dropdown_value(dropdown_country)
-    assert second_country != first_country
 
     # Make sure input field has finished updating
     dash_duo.wait_for_text_to_equal("#input-for-notes", "")
+
+    second_country = get_dropdown_value(dropdown_country)
+    assert second_country != first_country
+
     # Add input
     input_for_second_country = "Not so good"
     input_for_notes.send_keys(input_for_second_country)
