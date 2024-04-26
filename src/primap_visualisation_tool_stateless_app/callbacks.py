@@ -189,15 +189,9 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         n_clicks_next_country: int,
         n_clicks_previous_country: int,
         app_dataset: xr.Dataset | None = None,
-        db_filepath: Path | None = None,
     ) -> str:
         if app_dataset is None:
             app_dataset = get_application_dataset()
-
-        if db_filepath is None:
-            db_filepath = (
-                primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER
-            )
 
         new_country = update_dropdown_within_context(
             value_current=dropdown_country_current,
@@ -472,7 +466,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         country_store: dict[str, str],
         save_button_clicks: int,
         dropdown_country_current: str,
-        db_filepath: Path | None = None,
+        notes_db_filepath: Path | None = None,
     ) -> tuple[str, str, dict[str, str]]:
         """
         Save notes
@@ -495,7 +489,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         dropdown_country_current
             The current value of the country dropdown.
 
-        db_filepath
+        notes_db_filepath
             The path to the notes database file.
             If not supplied, we use
             {py:const}`primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER`.
@@ -506,11 +500,11 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             the new value to show in the notes input field (second element)
             and the new value of ``country_store``.
         """
-        if db_filepath is None:
-            db_filepath = (
+        if notes_db_filepath is None:
+            notes_db_filepath = (
                 primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER
             )
-            if db_filepath is None:
+            if notes_db_filepath is None:
                 msg = "Notes database filepath must be set at this point"
                 raise ValueError(msg)
 
@@ -526,7 +520,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
                 notes_value=notes_value,
                 country_notes=country_store["country"],
                 country_current=dropdown_country_current,
-                db_filepath=db_filepath,
+                notes_db_filepath=notes_db_filepath,
             )
 
             country_store["country"] = dropdown_country_current
@@ -540,13 +534,15 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return "", "", country_store
 
         save_country_notes_in_notes_db(
-            db_filepath=db_filepath,
+            db_filepath=notes_db_filepath,
             country=dropdown_country_current,
             notes_to_save=notes_value,
         )
 
         return (
-            get_note_save_confirmation_string(db_filepath, dropdown_country_current),
+            get_note_save_confirmation_string(
+                db_filepath=notes_db_filepath, country=dropdown_country_current
+            ),
             notes_value,
             country_store,
         )
@@ -556,7 +552,7 @@ def save_notes_and_load_existing_notes_after_dropdown_country_change(
     notes_value: str,
     country_notes: str,
     country_current: str,
-    db_filepath: Path,
+    notes_db_filepath: Path,
 ) -> tuple[str, str]:
     """
     Save the notes and load existing notes following a change in the country dropdown
@@ -574,7 +570,7 @@ def save_notes_and_load_existing_notes_after_dropdown_country_change(
         (this is not the country to which the notes apply,
         because the dropdown is updated before we save the notes).
 
-    db_filepath
+    notes_db_filepath
         The file path to the notes database
 
     Returns
@@ -589,12 +585,12 @@ def save_notes_and_load_existing_notes_after_dropdown_country_change(
         note_saved_info = ensure_existing_note_saved(
             notes_value=notes_value,
             country_notes=country_notes,
-            db_filepath=db_filepath,
+            notes_db_filepath=notes_db_filepath,
         )
 
     # Load any notes for the country that is now being displayed
     new_country_notes_value_in_db = get_country_notes_from_notes_db(
-        db_filepath=db_filepath, country=country_current
+        db_filepath=notes_db_filepath, country=country_current
     )
     if new_country_notes_value_in_db is None:
         new_input_for_notes_value = ""
@@ -616,7 +612,7 @@ def save_notes_and_load_existing_notes_after_dropdown_country_change(
 def ensure_existing_note_saved(
     notes_value: str,
     country_notes: str,
-    db_filepath: Path,
+    notes_db_filepath: Path,
 ) -> str:
     """
     Ensure that notes are saved in the notes database
@@ -632,7 +628,7 @@ def ensure_existing_note_saved(
     country_before_dropdown_change
         The country to which the notes apply
 
-    db_filepath
+    notes_db_filepath
         The file path to the notes database
 
     Returns
@@ -640,7 +636,7 @@ def ensure_existing_note_saved(
         Information about how the notes were saved.
     """
     current_country_notes_value_in_db = get_country_notes_from_notes_db(
-        db_filepath=db_filepath, country=country_notes
+        db_filepath=notes_db_filepath, country=country_notes
     )
     if notes_value == current_country_notes_value_in_db:
         # The note has already been saved, don't need to do anything more
@@ -649,7 +645,7 @@ def ensure_existing_note_saved(
     else:
         # Note differs, hence must save first
         save_country_notes_in_notes_db(
-            db_filepath=db_filepath,
+            db_filepath=notes_db_filepath,
             country=country_notes,
             notes_to_save=notes_value,
         )
@@ -661,7 +657,7 @@ def ensure_existing_note_saved(
                     "we have saved the notes for you"
                 ),
                 get_note_save_confirmation_string(
-                    db_filepath=db_filepath, country=country_notes
+                    db_filepath=notes_db_filepath, country=country_notes
                 ),
             ]
         )

@@ -37,15 +37,16 @@ def app_default():
 
 
 def setup_app(
-    dash_duo, ds: xr.Dataset, db_path: Path
+    dash_duo, ds: xr.Dataset, db_path: Path | None = None
 ) -> dash.testing.composite.DashComposite:
     """
     Setup the app
     """
     primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(ds)
-    primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER = (
-        db_path
-    )
+    if db_path is not None:
+        primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER = (
+            db_path
+        )
 
     app = primap_visualisation_tool_stateless_app.create_app.create_app()
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
@@ -81,17 +82,10 @@ def test_003_dropdown_country(dash_duo, tmp_path):
 
 def test_004_dropdown_country_earth_not_present(dash_duo):
     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
-
     test_ds = pm.open_dataset(test_file)
     test_ds = test_ds.pr.loc[{"area (ISO3)": ["AUT", "AUS"]}]
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
-
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
+    setup_app(dash_duo=dash_duo, ds=test_ds)
 
     dash_duo.wait_for_contains_text("#dropdown-country", "Australia")
 
@@ -101,13 +95,7 @@ def test_005_dropdown_category(dash_duo):
 
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
-
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
+    setup_app(dash_duo=dash_duo, ds=test_ds)
 
     dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL")
 
@@ -117,13 +105,7 @@ def test_006_dropdown_entity(dash_duo):
 
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
-
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
+    setup_app(dash_duo=dash_duo, ds=test_ds)
 
     dash_duo.wait_for_contains_text("#dropdown-entity", "CO2")
 
@@ -159,13 +141,7 @@ def test_008_initial_figures(dash_duo):
 
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
-
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
+    setup_app(dash_duo=dash_duo, ds=test_ds)
 
     figures_expected_items = (
         (
@@ -261,13 +237,7 @@ def test_010_entity_buttons(dash_duo):
 
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
-
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
+    setup_app(dash_duo=dash_duo, ds=test_ds)
 
     dash_duo.wait_for_contains_text("#dropdown-entity", "CO2")
 
@@ -291,13 +261,7 @@ def test_011_dropdown_source_scenario(dash_duo):
 
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
-
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
+    setup_app(dash_duo=dash_duo, ds=test_ds)
 
     dash_duo.wait_for_contains_text(
         "#dropdown-source-scenario",
@@ -314,9 +278,7 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
         test_ds
     )
 
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
+    setup_app(dash_duo=dash_duo, ds=test_ds)
 
     dropdown_source_scenario_div = dash_duo.driver.find_element(
         By.ID, "dropdown-source-scenario"
