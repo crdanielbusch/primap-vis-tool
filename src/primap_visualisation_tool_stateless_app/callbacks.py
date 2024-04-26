@@ -32,7 +32,7 @@ from primap_visualisation_tool_stateless_app.figures import (
     create_overview_figure,
 )
 from primap_visualisation_tool_stateless_app.notes import (
-    get_country_note_from_notes_db,
+    get_country_notes_from_notes_db,
     get_note_save_confirmation_string,
     save_country_notes_in_notes_db,
 )
@@ -589,7 +589,7 @@ def save_notes_and_load_existing_notes_after_dropdown_country_change(
         )
 
     # Load any notes for the country that is now being displayed
-    new_country_notes_value_in_db = get_country_note_from_notes_db(
+    new_country_notes_value_in_db = get_country_notes_from_notes_db(
         db_filepath=db_filepath, country=country_current
     )
     if new_country_notes_value_in_db is None:
@@ -635,7 +635,7 @@ def ensure_existing_note_saved(
     -------
         Information about how the notes were saved.
     """
-    current_country_notes_value_in_db = get_country_note_from_notes_db(
+    current_country_notes_value_in_db = get_country_notes_from_notes_db(
         db_filepath=db_filepath, country=country_notes
     )
     if notes_value == current_country_notes_value_in_db:

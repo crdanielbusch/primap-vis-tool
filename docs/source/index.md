@@ -30,7 +30,7 @@
 :maxdepth: 2
 notebooks
 development
-api/primap_visualisation_tool
+api/primap_visualisation_tool_stateless_app
 changelog
 ```
 
