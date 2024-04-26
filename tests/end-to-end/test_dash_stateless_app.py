@@ -296,14 +296,14 @@ def test_010_entity_buttons(dash_duo):
     button_entity_prev.click()
 
     # Entity dropdown should update
-    assert dropdown_entity_select_element.text == "CH4"
+    dash_duo.wait_for_text_to_equal("#react-select-4--value-item", "CH4", timeout=2)
 
     # Click next
     button_entity_next = dash_duo.driver.find_element(By.ID, "next_entity")
     button_entity_next.click()
 
     # Entity dropdown should update back to where it started
-    assert dropdown_entity_select_element.text == "CO2"
+    dash_duo.wait_for_text_to_equal("#react-select-4--value-item", "CO2", timeout=2)
 
 
 # TODO: re-use this in other tests too
@@ -338,7 +338,7 @@ def test_012_notes_save_no_input(dash_duo, tmp_path):
     test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "notes_database.db"
+    tmp_db = tmp_path / "012_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -356,7 +356,7 @@ def test_013_notes_save_basic(dash_duo, tmp_path):
     test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "notes_database.db"
+    tmp_db = tmp_path / "013_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -395,7 +395,7 @@ def test_014_notes_save_and_step(dash_duo, tmp_path):
     test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "notes_database.db"
+    tmp_db = tmp_path / "014_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -447,7 +447,7 @@ def test_015_notes_step_without_user_save(dash_duo, tmp_path):
     test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "notes_database.db"
+    tmp_db = tmp_path / "015_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -499,7 +499,7 @@ def test_016_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "notes_database.db"
+    tmp_db = tmp_path / "016_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -559,7 +559,7 @@ def test_017_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "notes_database.db"
+    tmp_db = tmp_path / "017_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -578,6 +578,9 @@ def test_017_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     input_for_notes.send_keys(note_to_save)
     save_button = dash_duo.driver.find_element(By.ID, "save-button")
     save_button.click()
+    dash_duo.wait_for_contains_text(
+        "#note-saved-div", f"Notes for {country_with_notes} saved", timeout=2
+    )
 
     # Go to a different country
     for _ in range(15):
@@ -598,7 +601,7 @@ def test_018_notes_multi_step_flow(dash_duo, tmp_path):
     test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "notes_database.db"
+    tmp_db = tmp_path / "018_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -677,8 +680,9 @@ def test_018_notes_multi_step_flow(dash_duo, tmp_path):
         "#input-for-notes", input_for_second_country, timeout=2
     )
     assert input_for_notes.text == input_for_second_country
-    # Clicks are fast so you don't load and unload the Earth note in between
-    assert note_saved_div.text == f"Loaded existing notes for {second_country}"
+    # Depending on how fast you click, the note about EARTH already
+    # being saved may or may not appear, so don't check that here.
+    assert f"Loaded existing notes for {second_country}" in note_saved_div.text
 
 
 def test_019_auto_save_and_load_existing(dash_duo, tmp_path):
@@ -688,7 +692,7 @@ def test_019_auto_save_and_load_existing(dash_duo, tmp_path):
     test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "notes_database.db"
+    tmp_db = tmp_path / "019_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -718,6 +722,9 @@ def test_019_auto_save_and_load_existing(dash_duo, tmp_path):
     # Add input
     input_for_second_country = "Not so good"
     input_for_notes.send_keys(input_for_second_country)
+    dash_duo.wait_for_text_to_equal(
+        "#input-for-notes", input_for_second_country, timeout=2
+    )
 
     # Click back to the previous country without saving
     button_country_previous = dash_duo.driver.find_element(By.ID, "prev_country")
