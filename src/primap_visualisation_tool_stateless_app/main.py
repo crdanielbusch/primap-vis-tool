@@ -9,13 +9,11 @@ from pathlib import Path
 import click
 import primap2 as pm  # type: ignore
 
+import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
 from primap_visualisation_tool_stateless_app import create_app
 from primap_visualisation_tool_stateless_app.callbacks import register_callbacks
 from primap_visualisation_tool_stateless_app.dataset_holder import (
     set_application_dataset,
-)
-from primap_visualisation_tool_stateless_app.notes import (
-    set_application_notes_db_filepath,
 )
 
 
@@ -46,7 +44,9 @@ def run_app(port: int, dataset: str, notes_db: str, debug: bool) -> None:
     loaded_ds = pm.open_dataset(dataset)
     set_application_dataset(loaded_ds)
 
-    set_application_notes_db_filepath(Path(notes_db))
+    primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER = Path(
+        notes_db
+    )
 
     app = create_app()
     register_callbacks(app)

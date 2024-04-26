@@ -129,18 +129,14 @@ def test_006_dropdown_entity(dash_duo):
     )
 
 
-def test_007_country_buttons(dash_duo):
+def test_007_country_buttons(dash_duo, tmp_path):
     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
 
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
+    tmp_db = tmp_path / "007_notes_database.db"
 
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
+    dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
 
     dash_duo.wait_for_element_by_id("next_country", timeout=2)
 
@@ -242,18 +238,13 @@ def test_008_initial_figures(dash_duo):
                     raise NotImplementedError(exp_dash)
 
 
-def test_009_category_buttons(dash_duo):
+def test_009_category_buttons(dash_duo, tmp_path):
     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
-
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
+    tmp_db = tmp_path / "009_notes_database.db"
 
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
+    dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
 
     dropdown_category = dash_duo.driver.find_element(By.ID, "dropdown-category")
     dropdown_category_select_element = dropdown_category.find_element(
@@ -265,14 +256,14 @@ def test_009_category_buttons(dash_duo):
     button_category_next = dash_duo.driver.find_element(By.ID, "next_category")
     button_category_next.click()
 
-    # Country dropdown should update
+    # Category dropdown should update
     assert dropdown_category_select_element.text == "M.AG"
 
     # Click previous
     button_category_prev = dash_duo.driver.find_element(By.ID, "prev_category")
     button_category_prev.click()
 
-    # Country dropdown should update back to where it started
+    # Category dropdown should update back to where it started
     assert dropdown_category_select_element.text == "M.0.EL"
 
 
@@ -395,6 +386,9 @@ def get_dropdown_value(
 ) -> str:
     """
     Dropdowns contain a clear element too, hence this isn't trivial
+
+    Probably not the best way to do this, but also easier than
+    always referring to 'react-select-x--value-item' IDs.
     """
     return dropdown_element.text.splitlines()[0]
 
