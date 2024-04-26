@@ -22,12 +22,12 @@ runs:
   steps:
     - name: Set up Python ${{ inputs.python-version }}
       id: setup-python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ inputs.python-version }}
     - name: Load cached Poetry installation
       id: cached-poetry
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.local  # the path depends on the OS
         key: poetry-2  # increment to reset cache
@@ -37,7 +37,7 @@ runs:
     - name: Load cached venv
       if: ${{ inputs.run-poetry-install == 'true' }}
       id: cached-poetry-dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: .venv
         key: "venv-${{ inputs.venv-id }}-${{ inputs.python-version }}-${{ hashFiles('**/poetry.lock') }}"
