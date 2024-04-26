@@ -659,9 +659,7 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     )
 
     # Go to a different country via the buttons
-    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
-    for _ in range(15):
-        button_country_next.click()
+    dash_duo.multiple_click("#next_country", 15)
     assert get_dropdown_value(dropdown_country) != country_with_notes
 
     # Go back to the first country via the dropdown menu
