@@ -147,6 +147,8 @@ def test_008_initial_figures(dash_duo):
     test_ds = pm.open_dataset(test_file)
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
+    dash_duo.wait_for_element_by_id("graph-overview", timeout=10)
+    dash_duo.wait_for_element_by_id("graph-entity-split", timeout=10)
 
     figures_expected_items = (
         (
