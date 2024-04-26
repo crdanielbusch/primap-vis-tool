@@ -7,7 +7,7 @@ import warnings
 from pathlib import Path
 
 import click
-import primap2 as pm
+import primap2 as pm  # type: ignore
 
 from primap_visualisation_tool_stateless_app import create_app
 from primap_visualisation_tool_stateless_app.callbacks import register_callbacks

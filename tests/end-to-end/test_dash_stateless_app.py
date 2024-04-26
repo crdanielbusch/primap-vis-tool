@@ -7,9 +7,11 @@ from pathlib import Path
 import dash
 import dash.testing
 import primap2 as pm
+import pytest
 import selenium.webdriver.remote.webelement
 import xarray as xr
 from dash import html
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
@@ -18,6 +20,18 @@ import primap_visualisation_tool_stateless_app
 import primap_visualisation_tool_stateless_app.callbacks
 import primap_visualisation_tool_stateless_app.dataset_holder
 import primap_visualisation_tool_stateless_app.notes
+
+
+@pytest.fixture
+def app():
+    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds = pm.open_dataset(test_file)
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
+        test_ds
+    )
+    app = primap_visualisation_tool_stateless_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
+    return app
 
 
 def test_001_dash_example(dash_duo):
@@ -30,17 +44,7 @@ def test_001_dash_example(dash_duo):
     assert dash_duo.find_element("#nully-wrapper").text == "0"
 
 
-def test_002_app_starts(dash_duo):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
-
-    test_ds = pm.open_dataset(test_file)
-
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
-
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
+def test_002_app_starts(dash_duo, app):
     dash_duo.start_server(app)
 
 
@@ -188,27 +192,24 @@ def test_008_initial_figures(dash_duo):
                 ("UNFCCC NAI, 231015", "rgb(255, 0, 0)", "solid", None),
             ],
         ),
-        # (
-        #     "graph-category-split",
-        #     [
-        #         "total",
-        #         "1 pos",
-        #         "2 pos",
-        #         "4 pos",
-        #         "5 pos",
-        #         "M.AG pos",
-        #     ],
-        # ),
-        # (
-        #     "graph-entity-split",
-        #     [
-        #         "total",
-        #         "CH4 (AR6GWP100) pos",
-        #         "CO2 (AR6GWP100) pos",
-        #         "N2O (AR6GWP100) pos",
-        #         "FGASES (AR6GWP100) pos",
-        #     ],
-        # ),
+        (
+            "graph-category-split",
+            [
+                ("total", None, None, None),
+                ("1 pos", None, None, None),
+                ("2 pos", None, None, None),
+                ("4 pos", None, None, None),
+                ("5 pos", None, None, None),
+                ("M.AG pos", None, None, None),
+            ],
+        ),
+        (
+            "graph-entity-split",
+            [
+                ("total", None, None, None),
+                ("CO2 pos", None, None, None),
+            ],
+        ),
     )
     for figure_id, expected_legend_items in figures_expected_items:
         figure = dash_duo.driver.find_element(By.ID, figure_id)
@@ -222,20 +223,22 @@ def test_008_initial_figures(dash_duo):
 
         for i, (name, color, exp_dash, width) in enumerate(expected_legend_items):
             assert legend_items[i] == name
-            trace = traces[i]
-            js_line = trace.find_element(By.CLASS_NAME, "js-line")
-            style = js_line.get_attribute("style")
-            assert f"stroke: {color}" in style
+            # TODO right we just test name of traces in category in entity
+            if all([color, exp_dash]):
+                trace = traces[i]
+                js_line = trace.find_element(By.CLASS_NAME, "js-line")
+                style = js_line.get_attribute("style")
+                assert f"stroke: {color}" in style
 
-            if width is not None:
-                assert f"stroke-width: {width}px" in style
+                if width is not None:
+                    assert f"stroke-width: {width}px" in style
 
-            if exp_dash == "solid":
-                assert "stroke-dasharray" not in style
-            elif exp_dash == "dot":
-                assert "stroke-dasharray: 3px, 3px" in style
-            else:
-                raise NotImplementedError(exp_dash)
+                if exp_dash == "solid":
+                    assert "stroke-dasharray" not in style
+                elif exp_dash == "dot":
+                    assert "stroke-dasharray: 3px, 3px" in style
+                else:
+                    raise NotImplementedError(exp_dash)
 
 
 def test_009_category_buttons(dash_duo):
@@ -306,6 +309,83 @@ def test_010_entity_buttons(dash_duo):
     dash_duo.wait_for_text_to_equal("#react-select-4--value-item", "CO2", timeout=2)
 
 
+def test_011_dropdown_source_scenario(dash_duo):
+    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+
+    test_ds = pm.open_dataset(test_file)
+
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
+        test_ds
+    )
+
+    app = primap_visualisation_tool_stateless_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
+    dash_duo.start_server(app)
+
+    dropdown_category = dash_duo.driver.find_element(By.ID, "dropdown-source-scenario")
+    assert (
+        dropdown_category.find_element(By.ID, "react-select-5--value-item").text
+        == "PRIMAP-hist_v2.5_final_nr, HISTCR"
+    )
+
+
+def test_012_dropdown_source_scenario_option_not_available(dash_duo):
+    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+
+    test_ds = pm.open_dataset(test_file)
+
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
+        test_ds
+    )
+
+    app = primap_visualisation_tool_stateless_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
+    dash_duo.start_server(app)
+
+    dropdown_source_scenario_div = dash_duo.driver.find_element(
+        By.ID, "dropdown-source-scenario"
+    )
+
+    # Find the arrow that expands the dropdown options and click on it
+    dropdown_source_scenario_div.find_element(
+        By.CLASS_NAME, "Select-arrow-zone"
+    ).click()
+
+    # simulate keyboard
+    action = ActionChains(dash_duo.driver)
+    action.send_keys(Keys.ARROW_DOWN)
+    action.send_keys(Keys.ARROW_DOWN)
+    action.send_keys(Keys.ENTER)
+    action.perform()
+
+    # TODO: Test will fail without the sleep statement.
+    # Find out how to do it differently.
+    assert False, "Fix this"
+    import time
+
+    time.sleep(2)
+
+    assert (
+        dropdown_source_scenario_div.find_element(
+            By.ID, "react-select-5--value-item"
+        ).text
+        == "UNFCCC NAI, 231015"
+    )
+
+    # Click next country
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+
+    time.sleep(2)
+
+    assert (
+        dropdown_source_scenario_div.find_element(
+            By.ID, "react-select-5--value-item"
+        ).text
+        == "PRIMAP-hist_v2.4.2_final_nr, HISTCR"
+    )
+
+
 # TODO: re-use this in other tests too
 def setup_app(
     dash_duo, ds: xr.Dataset, db_path: Path
@@ -334,7 +414,7 @@ def get_dropdown_value(
     return dropdown_element.text.splitlines()[0]
 
 
-def test_012_notes_save_no_input(dash_duo, tmp_path):
+def test_013_notes_save_no_input(dash_duo, tmp_path):
     test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_ds_file)
 
@@ -352,7 +432,7 @@ def test_012_notes_save_no_input(dash_duo, tmp_path):
     assert not note_saved_div.text
 
 
-def test_013_notes_save_basic(dash_duo, tmp_path):
+def test_014_notes_save_basic(dash_duo, tmp_path):
     test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_ds_file)
 
@@ -391,7 +471,7 @@ def test_013_notes_save_basic(dash_duo, tmp_path):
     )
 
 
-def test_014_notes_save_and_step(dash_duo, tmp_path):
+def test_015_notes_save_and_step(dash_duo, tmp_path):
     test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_ds_file)
 
@@ -443,7 +523,7 @@ def test_014_notes_save_and_step(dash_duo, tmp_path):
     assert note_saved_div.text == f"Loaded existing notes for {current_country}"
 
 
-def test_015_notes_step_without_user_save(dash_duo, tmp_path):
+def test_016_notes_step_without_user_save(dash_duo, tmp_path):
     test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_ds_file)
 
@@ -495,7 +575,7 @@ def test_015_notes_step_without_user_save(dash_duo, tmp_path):
     assert note_saved_div.text == f"Loaded existing notes for {current_country}"
 
 
-def test_016_notes_step_without_input_is_quiet(dash_duo, tmp_path):
+def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_ds_file)
 
@@ -555,7 +635,7 @@ def test_016_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     assert note_saved_div.text == f"Loaded existing notes for {country_with_notes}"
 
 
-def test_017_notes_load_from_dropdown_selection(dash_duo, tmp_path):
+def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_ds_file)
 
@@ -597,7 +677,7 @@ def test_017_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     assert note_saved_div.text == f"Loaded existing notes for {country_with_notes}"
 
 
-def test_018_notes_multi_step_flow(dash_duo, tmp_path):
+def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
     test_ds = pm.open_dataset(test_ds_file)
 
@@ -685,7 +765,7 @@ def test_018_notes_multi_step_flow(dash_duo, tmp_path):
     assert f"Loaded existing notes for {second_country}" in note_saved_div.text
 
 
-def test_019_auto_save_and_load_existing(dash_duo, tmp_path):
+def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     """
     Test behaviour if changing country triggers both auto-saving and loading of an existing note
     """

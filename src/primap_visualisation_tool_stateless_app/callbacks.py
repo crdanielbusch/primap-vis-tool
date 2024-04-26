@@ -3,6 +3,7 @@ Callback definitions
 """
 from __future__ import annotations
 
+import warnings
 from collections.abc import Sequence
 
 import plotly.graph_objects as go  # type: ignore
@@ -17,13 +18,18 @@ from dash import (
 
 from primap_visualisation_tool_stateless_app.dataset_handling import (
     get_category_options,
+    get_country_code_mapping,
     get_country_options,
     get_entity_options,
 )
 from primap_visualisation_tool_stateless_app.dataset_holder import (
     get_application_dataset,
 )
-from primap_visualisation_tool_stateless_app.figures import create_overview_figure
+from primap_visualisation_tool_stateless_app.figures import (
+    create_category_figure,
+    create_entity_figure,
+    create_overview_figure,
+)
 from primap_visualisation_tool_stateless_app.notes import (
     get_application_notes_db_filepath,
     get_country_note_from_notes_db,
@@ -109,6 +115,56 @@ def update_dropdown_within_context(
         options=options,
         increment=increment,
     )
+
+
+def update_source_scenario_options(
+    country: str,
+    category: str,
+    entity: str,
+    dataset: xr.Dataset,
+) -> tuple[str]:
+    """
+    Update the source scenario dropdown options according to country, category and entity
+
+    """
+    country_code_mapping = get_country_code_mapping(dataset)
+
+    iso_country = country_code_mapping[country]
+
+    with warnings.catch_warnings(action="ignore"):  # type: ignore
+        filtered = (
+            dataset[entity]
+            .pr.loc[
+                {
+                    "category": category,
+                    "area (ISO3)": iso_country,
+                }
+            ]
+            .squeeze()
+        )
+
+    filtered_pandas = filtered.to_dataframe().reset_index()
+
+    null_source_scenario_options = filtered_pandas.groupby(by="SourceScen")[
+        entity
+    ].apply(lambda x: x.isna().all())
+
+    null_source_scenario_options = null_source_scenario_options[
+        list(null_source_scenario_options)
+    ].index
+
+    original_source_scenario_options = tuple(dataset["SourceScen"].to_numpy())
+
+    new_source_scenario_options = [
+        i
+        for i in original_source_scenario_options
+        if i not in null_source_scenario_options
+    ]
+
+    if not new_source_scenario_options:
+        return None
+
+    return tuple(new_source_scenario_options)
 
 
 def register_callbacks(app: Dash) -> None:
@@ -246,6 +302,156 @@ def register_callbacks(app: Dash) -> None:
 
         return create_overview_figure(
             country=country, category=category, entity=entity, dataset=app_dataset
+        )
+
+    @app.callback(  # type: ignore
+        Output("dropdown-source-scenario", "options"),
+        Output("dropdown-source-scenario", "value"),
+        Output("memory", "data"),
+        Input("dropdown-country", "value"),
+        Input("dropdown-category", "value"),
+        Input("dropdown-entity", "value"),
+        State("dropdown-source-scenario", "value"),
+        State("dropdown-source-scenario", "options"),
+        State("memory", "data"),
+    )
+    def update_source_scenario_dropdown(  # noqa: PLR0913
+        country: str,
+        category: str,
+        entity: str,
+        source_scenario: str,
+        source_scenario_options: list[str],
+        memory_data: dict[str, int],
+        app_dataset: xr.Dataset | None = None,
+    ) -> tuple[tuple[str, ...], str, dict[str, int]]:
+        if app_dataset is None:
+            app_dataset = get_application_dataset()
+
+        if any(v is None for v in (country, category, entity)):
+            # User cleared one of the selections in the dropdown, do nothing
+            return (
+                source_scenario_options,
+                source_scenario,
+                memory_data,
+            )
+
+        source_scenario_options_out = update_source_scenario_options(
+            country=country, category=category, entity=entity, dataset=app_dataset
+        )
+
+        # memory_data shares information between callbacks
+        # to make sure they are executed sequentially.
+        # When the user changes country, category, entity
+        # first the dropdown will be updated and then category and
+        # entity figure.
+        # The actual value of memory_data is irrelevant, but it must be JSON enumerable
+        if not memory_data:
+            memory_data = {"_": 0}
+        else:
+            memory_data["_"] += 1
+
+        if not source_scenario_options_out:
+            return (
+                source_scenario_options,
+                source_scenario,
+                memory_data,
+            )
+
+        if source_scenario in source_scenario_options_out:
+            source_scenario_out = source_scenario
+        else:
+            source_scenario_out = source_scenario_options_out[0]
+
+        return (
+            source_scenario_options_out,
+            source_scenario_out,
+            memory_data,
+        )
+
+    @app.callback(  # type: ignore
+        Output("graph-category-split", "figure"),
+        State("graph-category-split", "figure"),
+        State("dropdown-country", "value"),
+        State("dropdown-category", "value"),
+        State("dropdown-entity", "value"),
+        Input("dropdown-source-scenario", "value"),
+        Input("memory", "data"),
+        # Input("xyrange-category", "data"),
+        # State("xyrange-entity", "data"),
+    )
+    def update_category_figure(  # noqa: PLR0913
+        graph_figure_current: go.Figure,
+        country: str,
+        category: str,
+        entity: str,
+        source_scenario: str,
+        memory_data: dict[str, int],
+        # xyrange_data: str | None,
+        # xyrange_data_entity: str | None,
+        app_dataset: xr.Dataset | None = None,
+    ) -> go.Figure:
+        if app_dataset is None:
+            app_dataset = get_application_dataset()
+
+        if any(v is None for v in (country, category, entity)):
+            # User cleared one of the selections in the dropdown, do nothing
+            return graph_figure_current
+
+        return create_category_figure(
+            country=country,
+            category=category,
+            entity=entity,
+            source_scenario=source_scenario,
+            dataset=app_dataset,
+        )
+
+    @app.callback(  # type: ignore
+        Output("graph-entity-split", "figure"),
+        State("graph-entity-split", "figure"),
+        State("dropdown-country", "value"),
+        State("dropdown-category", "value"),
+        State("dropdown-entity", "value"),
+        Input("dropdown-source-scenario", "value"),
+        Input("memory", "data"),
+        # Input("xyrange-entity", "data"),
+        # State("xyrange-category", "data"),
+    )
+    def update_entity_graph(  # noqa: PLR0913
+        graph_figure_current: go.Figure,
+        country: str,
+        category: str,
+        entity: str,
+        source_scenario: str,
+        memory_data: dict[str, int],
+        app_dataset: xr.Dataset | None = None,
+        # xyrange_data: str | None,
+        # xyrange_data_category: str | None,
+    ) -> go.Figure:
+        if app_dataset is None:
+            app_dataset = get_application_dataset()
+
+        # if ctx.triggered_id == "xyrange-entity" and xyrange_data :
+        #     return app_state.update_entity_range(xyrange_data)
+
+        if any(v is None for v in (country, category, entity, source_scenario)):
+            # User cleared one of the selections in the dropdown, do nothing
+            return graph_figure_current
+
+        # app_state.source_scenario_index = app_state.source_scenario_options.index(
+        #     source_scenario
+        # )
+
+        # in case user adjusts category figure layout
+        # and then changes country, category or entity
+        # if not xyrange_data :
+        #     xyrange_data = xyrange_data_category
+
+        return create_entity_figure(
+            country=country,
+            category=category,
+            entity=entity,
+            source_scenario=source_scenario,
+            dataset=app_dataset,
         )
 
     @app.callback(
