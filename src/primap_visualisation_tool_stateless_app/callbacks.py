@@ -464,41 +464,76 @@ def register_callbacks(app: Dash) -> None:
         State("country-dropdown-store", "data"),
         Input("save-button", "n_clicks"),
         Input("dropdown-country", "value"),
-        # Input("memory", "data"),
         prevent_initial_call=True,
     )  # type:ignore
     def save_note(
         notes_value: str,
-        country_stored: dict[str, str],
+        country_store: dict[str, str],
         save_button_clicks: int,
         dropdown_country_current: str,
         db_filepath: str | None = None,
     ) -> tuple[str, str, dict[str, str]]:
+        """
+        Save notes
+
+        Parameters
+        ----------
+        notes_value
+            The notes to save
+
+        country_store
+            The country store value.
+
+            We use this to store the country dropdown value before it was changed.
+            This is required because the country dropdown has already changed
+            by the time this callback is triggered.
+
+        save_button_clicks
+            The number of times the save button was pressed.
+
+        dropdown_country_current
+            The current value of the country dropdown.
+
+        db_filepath
+            The path to the notes database file.
+            If not supplied, we use
+            {py:const}`primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER`.
+
+        Returns
+        -------
+            Information about which notes were saved/loaded (first element),
+            the new value to show in the notes input field (second element)
+            and the new value of ``country_store``.
+        """
         if db_filepath is None:
             db_filepath = (
                 primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER
             )
 
-        if not country_stored:
-            # Initial callback or something
-            country_stored = {"country": dropdown_country_current}
+        if not country_store:
+            # Initial callback so just set sensible starting value
+            country_store = {"country": dropdown_country_current}
 
         if ctx.triggered_id == "dropdown-country":
-            note_saved_div, input_field_value = save_note_after_dropdown_country_change(
+            (
+                note_saved_div,
+                input_field_value,
+            ) = save_notes_and_load_existing_notes_after_dropdown_country_change(
                 notes_value=notes_value,
-                country_before_dropdown_change=country_stored["country"],
+                country_notes=country_store["country"],
                 country_current=dropdown_country_current,
                 db_filepath=db_filepath,
             )
 
-            country_stored["country"] = dropdown_country_current
+            country_store["country"] = dropdown_country_current
 
-            return (note_saved_div, input_field_value, country_stored)
+            return (note_saved_div, input_field_value, country_store)
 
+        # If we get here, the user pressed save
         if not notes_value:
             # User hit save with no input (e.g. at initial callback),
             # hence do nothing.
-            return "", "", country_stored
+            return "", "", country_store
 
         save_country_note_in_notes_db(
             db_filepath=db_filepath,
@@ -509,63 +544,122 @@ def register_callbacks(app: Dash) -> None:
         return (
             get_note_save_confirmation_string(db_filepath, dropdown_country_current),
             notes_value,
-            country_stored,
+            country_store,
         )
 
 
-def save_note_after_dropdown_country_change(
+def save_notes_and_load_existing_notes_after_dropdown_country_change(
     notes_value: str,
-    country_before_dropdown_change: str,
+    country_notes: str,
     country_current: str,
     db_filepath: str,
 ) -> tuple[str, str]:
+    """
+    Save the notes and load existing notes following a change in the country dropdown
+
+    Parameters
+    ----------
+    notes_value
+        Notes to save
+
+    country_before_dropdown_change
+        The country to which the notes apply
+
+    country_current
+        The current country showing in the dropdown
+        (this is not the country to which the notes apply,
+        because the dropdown is updated before we save the notes).
+
+    db_filepath
+        The file path to the notes database
+
+    Returns
+    -------
+        Information about which notes were saved/loaded (first element)
+        and the new value to show in the notes input field (second element).
+    """
     if not notes_value:
         note_saved_info = ""
 
     else:
-        current_country_notes_value_in_db = get_country_note_from_notes_db(
-            db_filepath=db_filepath, country=country_before_dropdown_change
+        note_saved_info = ensure_existing_note_saved(
+            notes_value=notes_value,
+            country_notes=country_notes,
+            db_filepath=db_filepath,
         )
 
-        if notes_value == current_country_notes_value_in_db:
-            # The note has already been saved, don't need to do anything more
-            note_saved_info = (
-                f"Notes for {country_before_dropdown_change} already saved"
-            )
-
-        else:
-            # Note differs, hence must save first
-            save_country_note_in_notes_db(
-                db_filepath=db_filepath,
-                country=country_before_dropdown_change,
-                note=notes_value,
-            )
-            note_saved_info = ". ".join(
-                [
-                    (
-                        f"WARNING: notes for {country_before_dropdown_change} "
-                        "weren't saved before changing country, "
-                        "we have saved the notes for you"
-                    ),
-                    get_note_save_confirmation_string(
-                        db_filepath=db_filepath, country=country_before_dropdown_change
-                    ),
-                ]
-            )
-
+    # Load any notes for the country that is now being displayed
     new_country_notes_value_in_db = get_country_note_from_notes_db(
         db_filepath=db_filepath, country=country_current
     )
     if new_country_notes_value_in_db is None:
         new_input_for_notes_value = ""
+        note_loaded_info = ""
 
     else:
         new_input_for_notes_value = new_country_notes_value_in_db
-        msg = f"Loaded existing notes for {country_current}"
-        if note_saved_info:
-            note_saved_info = ". ".join([note_saved_info, msg])
+        note_loaded_info = f"Loaded existing notes for {country_current}"
 
-        else:
-            note_saved_info = msg
+    note_saved_div_new_value_l = [v for v in [note_saved_info, note_loaded_info] if v]
+    if note_saved_div_new_value_l:
+        note_saved_div_new_value = ". ".join(note_saved_div_new_value_l)
+    else:
+        note_saved_div_new_value = ""
 
-    return note_saved_info, new_input_for_notes_value
+    return note_saved_div_new_value, new_input_for_notes_value
+
+
+def ensure_existing_note_saved(
+    notes_value: str,
+    country_notes: str,
+    db_filepath: str,
+) -> str:
+    """
+    Ensure that notes are saved in the notes database
+
+    This makes sure that users don't lose notes,
+    even if they change country from the dropdown without saving.
+
+    Parameters
+    ----------
+    notes_value
+        Notes to save
+
+    country_before_dropdown_change
+        The country to which the notes apply
+
+    db_filepath
+        The file path to the notes database
+
+    Returns
+    -------
+        Information about how the notes were saved.
+    """
+    current_country_notes_value_in_db = get_country_note_from_notes_db(
+        db_filepath=db_filepath, country=country_notes
+    )
+    if notes_value == current_country_notes_value_in_db:
+        # The note has already been saved, don't need to do anything more
+        note_saved_info = f"Notes for {country_notes} already saved"
+
+    else:
+        # Note differs, hence must save first
+        save_country_note_in_notes_db(
+            db_filepath=db_filepath,
+            country=country_notes,
+            note=notes_value,
+        )
+        note_saved_info = ". ".join(
+            [
+                (
+                    f"WARNING: notes for {country_notes} "
+                    "weren't saved before changing country, "
+                    "we have saved the notes for you"
+                ),
+                get_note_save_confirmation_string(
+                    db_filepath=db_filepath, country=country_notes
+                ),
+            ]
+        )
+
+    return note_saved_info
