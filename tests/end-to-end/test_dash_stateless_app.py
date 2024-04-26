@@ -23,16 +23,21 @@ import primap_visualisation_tool_stateless_app.dataset_holder
 import primap_visualisation_tool_stateless_app.notes
 import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
 
+TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
+TEST_DS_FILE = TEST_DATA_DIR / "test_ds.nc"
+
 
 @pytest.fixture
 def app_default():
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_file)
+
     primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
         test_ds
     )
     app = primap_visualisation_tool_stateless_app.create_app.create_app()
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
+
     return app
 
 
@@ -70,7 +75,7 @@ def test_002_app_starts(dash_duo, app_default):
 
 
 def test_003_dropdown_country(dash_duo, tmp_path):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
@@ -81,7 +86,7 @@ def test_003_dropdown_country(dash_duo, tmp_path):
 
 
 def test_004_dropdown_country_earth_not_present(dash_duo):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_file)
     test_ds = test_ds.pr.loc[{"area (ISO3)": ["AUT", "AUS"]}]
 
@@ -91,7 +96,7 @@ def test_004_dropdown_country_earth_not_present(dash_duo):
 
 
 def test_005_dropdown_category(dash_duo):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
@@ -101,7 +106,7 @@ def test_005_dropdown_category(dash_duo):
 
 
 def test_006_dropdown_entity(dash_duo):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
@@ -111,7 +116,7 @@ def test_006_dropdown_entity(dash_duo):
 
 
 def test_007_country_buttons(dash_duo, tmp_path):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_file)
 
     tmp_db = tmp_path / "007_notes_database.db"
@@ -137,7 +142,7 @@ def test_007_country_buttons(dash_duo, tmp_path):
 
 
 def test_008_initial_figures(dash_duo):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
@@ -208,7 +213,7 @@ def test_008_initial_figures(dash_duo):
 
 
 def test_009_category_buttons(dash_duo, tmp_path):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_file)
 
     tmp_db = tmp_path / "009_notes_database.db"
@@ -233,7 +238,7 @@ def test_009_category_buttons(dash_duo, tmp_path):
 
 
 def test_010_entity_buttons(dash_duo):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
@@ -257,7 +262,7 @@ def test_010_entity_buttons(dash_duo):
 
 
 def test_011_dropdown_source_scenario(dash_duo):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
@@ -270,7 +275,7 @@ def test_011_dropdown_source_scenario(dash_duo):
 
 
 def test_012_dropdown_source_scenario_option_not_available(dash_duo):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
@@ -324,7 +329,7 @@ def get_dropdown_value(
 
 
 def test_013_notes_save_no_input(dash_duo, tmp_path):
-    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "012_notes_database.db"
@@ -342,7 +347,7 @@ def test_013_notes_save_no_input(dash_duo, tmp_path):
 
 
 def test_014_notes_save_basic(dash_duo, tmp_path):
-    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "013_notes_database.db"
@@ -381,7 +386,7 @@ def test_014_notes_save_basic(dash_duo, tmp_path):
 
 
 def test_015_notes_save_and_step(dash_duo, tmp_path):
-    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "014_notes_database.db"
@@ -433,7 +438,7 @@ def test_015_notes_save_and_step(dash_duo, tmp_path):
 
 
 def test_016_notes_step_without_user_save(dash_duo, tmp_path):
-    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "015_notes_database.db"
@@ -485,7 +490,7 @@ def test_016_notes_step_without_user_save(dash_duo, tmp_path):
 
 
 def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
-    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "016_notes_database.db"
@@ -545,7 +550,7 @@ def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
 
 
 def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
-    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "017_notes_database.db"
@@ -591,7 +596,7 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
 
 
 def test_019_notes_multi_step_flow(dash_duo, tmp_path):
-    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "018_notes_database.db"
@@ -694,7 +699,7 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     """
     Test behaviour if changing country triggers both auto-saving and loading of an existing note
     """
-    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "019_notes_database.db"
