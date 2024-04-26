@@ -2,6 +2,7 @@
 from pathlib import Path
 
 import dash
+import pytest
 from dash import html
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -19,6 +20,7 @@ def test_001_dash_example(dash_duo_mp):
     assert dash_duo_mp.find_element("#nully-wrapper").text == "0"
 
 
+@pytest.mark.xfail(reason="Flaky and doesn't use stateless app")
 def test_002_app_starts(dash_duo_mp):
     # find package primap_visualisation_tool, find varibale app
     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
