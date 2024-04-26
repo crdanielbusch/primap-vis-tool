@@ -132,7 +132,7 @@ def update_source_scenario_options(
 
     iso_country = country_code_mapping[country]
 
-    with warnings.catch_warnings(action="ignore"):  # type: ignore
+    with warnings.catch_warnings(action="ignore"):
         filtered = (
             dataset[entity]
             .pr.loc[

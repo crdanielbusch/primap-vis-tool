@@ -3,7 +3,6 @@ Run the app
 """
 from __future__ import annotations
 
-import warnings
 from pathlib import Path
 
 import click
@@ -50,8 +49,7 @@ def run_app(port: int, dataset: str, notes_db: str, debug: bool) -> None:
 
     app = create_app()
     register_callbacks(app)
-    with warnings.catch_warnings(action="ignore"):  # type: ignore
-        app.run(debug=debug, port=port)
+    app.run(debug=debug, port=port)
 
 
 if __name__ == "__main__":

@@ -25,5 +25,5 @@ if __name__ == "__main__":
     )
     app = create_app(app_state=app_state)
 
-    with warnings.catch_warnings(action="ignore"):  # type: ignore
+    with warnings.catch_warnings(action="ignore"):
         app.run(debug=True, port=port)

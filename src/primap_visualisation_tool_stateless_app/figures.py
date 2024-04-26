@@ -248,7 +248,7 @@ def create_overview_figure(  # type: ignore
 
     iso_country = get_country_code_mapping(dataset)[country]
 
-    with warnings.catch_warnings(action="ignore"):  # type: ignore
+    with warnings.catch_warnings(action="ignore"):
         filtered = (
             dataset[entity]
             .pr.loc[
@@ -385,7 +385,7 @@ def create_category_figure(  # type: ignore
 
     categories_plot = sorted(select_cat_children(category, category_options))
 
-    with warnings.catch_warnings(action="ignore"):  # type: ignore
+    with warnings.catch_warnings(action="ignore"):
         filtered = (
             dataset[entity]
             .pr.loc[
@@ -402,7 +402,7 @@ def create_category_figure(  # type: ignore
 
     if filtered_pandas[entity].isna().all():
         # filter again but only for parent category
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = (
                 dataset[entity]
                 .pr.loc[
@@ -594,7 +594,7 @@ def create_entity_figure(  # type: ignore
         entities_to_plot = [*entities_to_plot, entity]
         drop_parent = True
 
-    with warnings.catch_warnings(action="ignore"):  # type: ignore
+    with warnings.catch_warnings(action="ignore"):
         filtered = dataset[entities_to_plot].pr.loc[
             {
                 "category": [category],
@@ -611,7 +611,7 @@ def create_entity_figure(  # type: ignore
     if drop_parent:
         filtered = filtered.drop_vars(entity)
 
-    with warnings.catch_warnings(action="ignore"):  # type: ignore
+    with warnings.catch_warnings(action="ignore"):
         stacked = filtered.pr.to_interchange_format().melt(
             id_vars=index_cols, var_name="time", value_name="value"
         )
@@ -619,7 +619,7 @@ def create_entity_figure(  # type: ignore
     # if all values are NaN
     if stacked["value"].isna().all():
         # filter again but only for parent entity
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = dataset[entity].pr.loc[
                 {
                     "category": [category],
