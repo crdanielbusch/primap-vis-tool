@@ -270,6 +270,7 @@ def register_callbacks(app: Dash) -> None:
             db_filepath = get_application_notes_db_filepath()
 
         if not country_stored:
+            # Initial callback or something
             country_stored = {"country": dropdown_country_current}
 
         if ctx.triggered_id == "dropdown-country":
@@ -318,7 +319,7 @@ def save_note_after_dropdown_country_change(
 
         if notes_value == current_country_notes_value_in_db:
             # The note has already been saved, don't need to do anything more
-            note_saved_info = "Note already saved, input field cleared"
+            note_saved_info = f"Notes for {country_current} already saved"
 
         else:
             # Note differs, hence must save first
@@ -329,7 +330,11 @@ def save_note_after_dropdown_country_change(
             )
             note_saved_info = ". ".join(
                 [
-                    "WARNING: notes weren't saved before changing country, we have saved the notes for you",
+                    (
+                        f"WARNING: notes for {country_before_dropdown_change} "
+                        "weren't saved before changing country, "
+                        "we have saved the notes for you"
+                    ),
                     get_note_save_confirmation_string(
                         db_filepath=db_filepath, country=country_before_dropdown_change
                     ),
@@ -341,11 +346,13 @@ def save_note_after_dropdown_country_change(
     )
     if new_country_notes_value_in_db is None:
         new_input_for_notes_value = ""
+
     else:
         new_input_for_notes_value = new_country_notes_value_in_db
         msg = f"Loaded existing notes for {country_current}"
         if note_saved_info:
             note_saved_info = ". ".join([note_saved_info, msg])
+
         else:
             note_saved_info = msg
 
