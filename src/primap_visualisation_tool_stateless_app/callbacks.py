@@ -319,7 +319,9 @@ def save_note_after_dropdown_country_change(
 
         if notes_value == current_country_notes_value_in_db:
             # The note has already been saved, don't need to do anything more
-            note_saved_info = f"Notes for {country_current} already saved"
+            note_saved_info = (
+                f"Notes for {country_before_dropdown_change} already saved"
+            )
 
         else:
             # Note differs, hence must save first

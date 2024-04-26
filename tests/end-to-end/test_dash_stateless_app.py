@@ -424,7 +424,7 @@ def test_014_notes_save_and_step(dash_duo, tmp_path):
     dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
     assert not input_for_notes.text
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
-    assert note_saved_div.text == "Note already saved, input field cleared"
+    assert note_saved_div.text == f"Notes for {current_country} already saved"
 
     # Output should be in the database too
     db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
@@ -472,7 +472,7 @@ def test_015_notes_step_without_user_save(dash_duo, tmp_path):
     assert not input_for_notes.text
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
     assert re.match(
-        "WARNING: notes weren't saved before changing country, "
+        f"WARNING: notes for {country_before_click} weren't saved before changing country, "
         "we have saved the notes for you. "
         rf"Notes for {country_before_click} saved at .* in {tmp_db}",
         note_saved_div.text,
@@ -535,7 +535,7 @@ def test_016_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
     assert not input_for_notes.text
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
-    assert note_saved_div.text == "Note already saved, input field cleared"
+    assert note_saved_div.text == f"Notes for {country_with_notes} already saved"
 
     # Output should be in the database too
     db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
@@ -654,7 +654,7 @@ def test_018_notes_multi_step_flow(dash_duo, tmp_path):
     assert input_for_notes.text == input_for_first_country
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
     assert note_saved_div.text == (
-        "Note already saved, input field cleared. "
+        f"Notes for {second_country} already saved. "
         f"Loaded existing notes for {first_country}"
     )
 
@@ -665,7 +665,7 @@ def test_018_notes_multi_step_flow(dash_duo, tmp_path):
     dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
     assert not input_for_notes.text
     dash_duo.wait_for_text_to_equal(
-        "#note-saved-div", "Note already saved, input field cleared", timeout=2
+        "#note-saved-div", f"Notes for {first_country} already saved", timeout=2
     )
 
     # Click forward two countries
@@ -677,10 +677,8 @@ def test_018_notes_multi_step_flow(dash_duo, tmp_path):
         "#input-for-notes", input_for_second_country, timeout=2
     )
     assert input_for_notes.text == input_for_second_country
-    assert note_saved_div.text == (
-        "Note already saved, input field cleared. "
-        f"Loaded existing notes for {second_country}"
-    )
+    # Clicks are fast so you don't load and unload the Earth note in between
+    assert note_saved_div.text == f"Loaded existing notes for {second_country}"
 
 
 def test_019_auto_save_and_load_existing(dash_duo, tmp_path):
