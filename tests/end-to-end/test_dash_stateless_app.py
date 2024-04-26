@@ -358,35 +358,19 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
     action.send_keys(Keys.ENTER)
     action.perform()
 
-    # TODO: Test will fail without the sleep statement.
-    # Find out how to do it differently.
-    assert False, "Fix this"
-    import time
-
-    time.sleep(2)
-
-    assert (
-        dropdown_source_scenario_div.find_element(
-            By.ID, "react-select-5--value-item"
-        ).text
-        == "UNFCCC NAI, 231015"
+    dash_duo.wait_for_text_to_equal(
+        "#react-select-5--value-item", "UNFCCC NAI, 231015", timeout=2
     )
 
     # Click next country
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
 
-    time.sleep(2)
-
-    assert (
-        dropdown_source_scenario_div.find_element(
-            By.ID, "react-select-5--value-item"
-        ).text
-        == "PRIMAP-hist_v2.4.2_final_nr, HISTCR"
+    dash_duo.wait_for_text_to_equal(
+        "#react-select-5--value-item", "PRIMAP-hist_v2.4.2_final_nr, HISTCR", timeout=2
     )
 
 
-# TODO: re-use this in other tests too
 def setup_app(
     dash_duo, ds: xr.Dataset, db_path: Path
 ) -> dash.testing.composite.DashComposite:
@@ -797,6 +781,7 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     # Click forward a country
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
+    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
     second_country = get_dropdown_value(dropdown_country)
 
     # Add input
