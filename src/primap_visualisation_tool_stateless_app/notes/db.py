@@ -4,6 +4,7 @@ Database handling
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -14,7 +15,7 @@ COUNTRY_NOTES_TABLE_NAME: str = "country_notes"
 
 
 @contextmanager
-def notes_db_connection(db_filepath: Path) -> sqlite3.Connection:
+def notes_db_connection(db_filepath: Path) -> Iterator[sqlite3.Connection]:
     """
     Get a new connection to the notes database
 
@@ -36,7 +37,7 @@ def notes_db_connection(db_filepath: Path) -> sqlite3.Connection:
 
 
 @contextmanager
-def get_notes_db_cursor(db_filepath: Path) -> sqlite3.Cursor:
+def get_notes_db_cursor(db_filepath: Path) -> Iterator[sqlite3.Cursor]:
     """
     Get a new cursor for the notes database
 
@@ -72,7 +73,9 @@ def setup_db(cur: sqlite3.Cursor) -> None:
     cur.execute("CREATE TABLE country_notes(country TEXT PRIMARY KEY, notes TEXT)")
 
 
-def save_country_notes_in_notes_db(db_filepath: Path, country: str, notes: str) -> str:
+def save_country_notes_in_notes_db(
+    db_filepath: Path, country: str, notes_to_save: str
+) -> str | None:
     """
     Save a country's notes in the notes database
 
@@ -84,8 +87,7 @@ def save_country_notes_in_notes_db(db_filepath: Path, country: str, notes: str) 
     country
         Country to which the notes apply
 
-    Notes
-    -----
+    notes_to_save
         Notes to save
 
     Returns
@@ -101,7 +103,7 @@ def save_country_notes_in_notes_db(db_filepath: Path, country: str, notes: str) 
         """
         db_cursor.execute(
             sql_comand,
-            (country, notes),
+            (country, notes_to_save),
         )
 
     return get_country_notes_from_notes_db(db_filepath, country=country)
@@ -143,7 +145,7 @@ def get_country_notes_from_notes_db(db_filepath: Path, country: str) -> str | No
     if not existing_notes:
         return None
 
-    return existing_notes[0]
+    return str(existing_notes[0])
 
 
 def read_country_notes_db_as_pd(db_filepath: Path) -> pd.DataFrame:

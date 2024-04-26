@@ -4,9 +4,7 @@ Creation of app instances
 from __future__ import annotations
 
 import dash_bootstrap_components as dbc  # type: ignore
-from dash import (
-    Dash,  # type: ignore
-)
+from dash import Dash  # type: ignore
 
 from primap_visualisation_tool_stateless_app.dataset_handling import (
     get_category_options,
@@ -24,7 +22,7 @@ from primap_visualisation_tool_stateless_app.dataset_holder import (
 from primap_visualisation_tool_stateless_app.layout import create_layout
 
 
-def create_app() -> Dash:
+def create_app() -> Dash:  # type: ignore
     """
     Create an instance of the app
 

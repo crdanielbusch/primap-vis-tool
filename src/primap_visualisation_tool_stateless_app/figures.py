@@ -100,7 +100,7 @@ index_cols: list[str] = [
 
 def sort_source_scenario_options(
     inp_options: Iterable[str],
-    lines_order: tuple[str, ...] = None,
+    lines_order: tuple[str, ...] | None = None,
 ) -> list[str]:
     """
     Sort source scenario options according to definition.
@@ -212,7 +212,7 @@ def apply_gwp(
     return inp
 
 
-def create_overview_figure(
+def create_overview_figure(  # type: ignore
     country: str,
     category: str,
     entity: str,
@@ -347,7 +347,7 @@ def create_overview_figure(
     return fig
 
 
-def create_category_figure(
+def create_category_figure(  # type: ignore
     country: str,
     category: str,
     entity: str,
@@ -574,7 +574,7 @@ def create_category_figure(
     return fig
 
 
-def create_entity_figure(
+def create_entity_figure(  # type: ignore
     country: str, category: str, entity: str, source_scenario: str, dataset: xr.Dataset
 ) -> go.Figure:
     """

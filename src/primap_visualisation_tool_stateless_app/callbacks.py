@@ -5,11 +5,12 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Sequence
+from pathlib import Path
 
 import plotly.graph_objects as go  # type: ignore
 import xarray as xr
-from dash import (
-    Dash,  # type: ignore
+from dash import (  # type: ignore
+    Dash,
     Input,
     Output,
     State,
@@ -64,7 +65,7 @@ def update_dropdown(value_current: str, options: Sequence[str], increment: int) 
     return options[new_index]
 
 
-def update_dropdown_within_context(
+def update_dropdown_within_context(  # type: ignore
     value_current: str,
     options: Sequence[str],
     context: ctx,
@@ -122,7 +123,7 @@ def update_source_scenario_options(
     category: str,
     entity: str,
     dataset: xr.Dataset,
-) -> tuple[str]:
+) -> tuple[str] | None:
     """
     Update the source scenario dropdown options according to country, category and entity
 
@@ -167,7 +168,7 @@ def update_source_scenario_options(
     return tuple(new_source_scenario_options)
 
 
-def register_callbacks(app: Dash) -> None:  # noqa: PLR0915
+def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     """
     Register callbacks onto an app
 
@@ -177,7 +178,7 @@ def register_callbacks(app: Dash) -> None:  # noqa: PLR0915
         App with which to register the callbacks
     """
 
-    @app.callback(
+    @app.callback(  # type: ignore
         Output("dropdown-country", "value"),
         State("dropdown-country", "value"),
         Input("next_country", "n_clicks"),
@@ -188,7 +189,7 @@ def register_callbacks(app: Dash) -> None:  # noqa: PLR0915
         n_clicks_next_country: int,
         n_clicks_previous_country: int,
         app_dataset: xr.Dataset | None = None,
-        db_filepath: str | None = None,
+        db_filepath: Path | None = None,
     ) -> str:
         if app_dataset is None:
             app_dataset = get_application_dataset()
@@ -206,7 +207,7 @@ def register_callbacks(app: Dash) -> None:  # noqa: PLR0915
 
         return new_country
 
-    @app.callback(
+    @app.callback(  # type: ignore
         Output("dropdown-entity", "value"),
         State("dropdown-entity", "value"),
         Input("next_entity", "n_clicks"),
@@ -227,7 +228,7 @@ def register_callbacks(app: Dash) -> None:  # noqa: PLR0915
             context=ctx,
         )
 
-    @app.callback(
+    @app.callback(  # type: ignore
         Output("dropdown-category", "value"),
         State("dropdown-category", "value"),
         Input("next_category", "n_clicks"),
@@ -322,7 +323,7 @@ def register_callbacks(app: Dash) -> None:  # noqa: PLR0915
         category: str,
         entity: str,
         source_scenario: str,
-        source_scenario_options: list[str],
+        source_scenario_options: tuple[str, ...],
         memory_data: dict[str, int],
         app_dataset: xr.Dataset | None = None,
     ) -> tuple[tuple[str, ...], str, dict[str, int]]:
@@ -471,7 +472,7 @@ def register_callbacks(app: Dash) -> None:  # noqa: PLR0915
         country_store: dict[str, str],
         save_button_clicks: int,
         dropdown_country_current: str,
-        db_filepath: str | None = None,
+        db_filepath: Path | None = None,
     ) -> tuple[str, str, dict[str, str]]:
         """
         Save notes
@@ -509,6 +510,9 @@ def register_callbacks(app: Dash) -> None:  # noqa: PLR0915
             db_filepath = (
                 primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER
             )
+            if db_filepath is None:
+                msg = "Notes database filepath must be set at this point"
+                raise ValueError(msg)
 
         if not country_store:
             # Initial callback so just set sensible starting value
@@ -538,7 +542,7 @@ def register_callbacks(app: Dash) -> None:  # noqa: PLR0915
         save_country_notes_in_notes_db(
             db_filepath=db_filepath,
             country=dropdown_country_current,
-            notes=notes_value,
+            notes_to_save=notes_value,
         )
 
         return (
@@ -552,7 +556,7 @@ def save_notes_and_load_existing_notes_after_dropdown_country_change(
     notes_value: str,
     country_notes: str,
     country_current: str,
-    db_filepath: str,
+    db_filepath: Path,
 ) -> tuple[str, str]:
     """
     Save the notes and load existing notes following a change in the country dropdown
@@ -612,7 +616,7 @@ def save_notes_and_load_existing_notes_after_dropdown_country_change(
 def ensure_existing_note_saved(
     notes_value: str,
     country_notes: str,
-    db_filepath: str,
+    db_filepath: Path,
 ) -> str:
     """
     Ensure that notes are saved in the notes database
@@ -647,7 +651,7 @@ def ensure_existing_note_saved(
         save_country_notes_in_notes_db(
             db_filepath=db_filepath,
             country=country_notes,
-            notes=notes_value,
+            notes_to_save=notes_value,
         )
         note_saved_info = ". ".join(
             [

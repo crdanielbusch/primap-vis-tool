@@ -96,7 +96,7 @@ class AppState:  # type: ignore
     ds: xr.Dataset
     """Dataset to plot from"""
 
-    filename: str
+    filename: Path
     """The name of the data set."""
 
     present_index_cols: list[str]
@@ -1070,7 +1070,7 @@ class AppState:  # type: ignore
         text_input
             Text that the user wrote in the input box.
         """
-        filename = f"{self.filename[:-3]}_notes.csv"
+        filename = f"{str(self.filename)[:-3]}_notes.csv"
 
         new_row = [
             self.country_name_iso_mapping[self.country],
@@ -1170,7 +1170,7 @@ class AppState:  # type: ignore
 
 
 def get_default_app_starting_state(
-    filename: str,
+    filename: Path,
     start_values: dict[str, str] = {
         "country": "EARTH",
         "category": "M.0.EL",
