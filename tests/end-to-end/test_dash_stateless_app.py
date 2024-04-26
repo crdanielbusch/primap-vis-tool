@@ -49,32 +49,15 @@ def test_002_app_starts(dash_duo, app):
     dash_duo.start_server(app)
 
 
-def wait_for_dropdown_text_to_equal(dash_duo, dropdown_id, exp_value, timeout=2):
-    """
-    Assert that a dropdown has an expected value
-
-    This isn't trivial, because dash puts extra characters in.
-    This function is a convenience to workaround that headache
-    """
-    dash_duo.wait_for_text_to_equal(dropdown_id, f"{exp_value}\nx", timeout=timeout)
-
-
-def test_003_dropdown_country(dash_duo):
+def test_003_dropdown_country(dash_duo, tmp_path):
     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
 
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
+    tmp_db = tmp_path / "003_notes_database.db"
 
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
-
-    wait_for_dropdown_text_to_equal(
-        dash_duo=dash_duo, dropdown_id="#dropdown-country", exp_value="EARTH"
-    )
+    dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
+    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH")
 
 
 def test_004_dropdown_country_earth_not_present(dash_duo):
@@ -91,9 +74,7 @@ def test_004_dropdown_country_earth_not_present(dash_duo):
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
-    wait_for_dropdown_text_to_equal(
-        dash_duo=dash_duo, dropdown_id="#dropdown-country", exp_value="Australia"
-    )
+    dash_duo.wait_for_contains_text("#dropdown-country", "Australia")
 
 
 def test_005_dropdown_category(dash_duo):
@@ -109,9 +90,7 @@ def test_005_dropdown_category(dash_duo):
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
-    wait_for_dropdown_text_to_equal(
-        dash_duo=dash_duo, dropdown_id="#dropdown-category", exp_value="M.0.EL"
-    )
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL")
 
 
 def test_006_dropdown_entity(dash_duo):
@@ -127,43 +106,33 @@ def test_006_dropdown_entity(dash_duo):
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
-    wait_for_dropdown_text_to_equal(
-        dash_duo=dash_duo, dropdown_id="#dropdown-entity", exp_value="CO2"
-    )
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2")
 
 
 def test_007_country_buttons(dash_duo, tmp_path):
     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
-
     test_ds = pm.open_dataset(test_file)
 
     tmp_db = tmp_path / "007_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-
     dash_duo.wait_for_element_by_id("next_country", timeout=2)
 
-    wait_for_dropdown_text_to_equal(
-        dash_duo=dash_duo, dropdown_id="#dropdown-country", exp_value="EARTH"
-    )
+    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH")
 
     # Click next
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
 
     # Country dropdown should update
-    wait_for_dropdown_text_to_equal(
-        dash_duo=dash_duo, dropdown_id="#dropdown-country", exp_value="EU27BX"
-    )
+    dash_duo.wait_for_contains_text("#dropdown-country", "EU27BX")
 
     # Click previous
     button_country_prev = dash_duo.driver.find_element(By.ID, "prev_country")
     button_country_prev.click()
 
     # Country dropdown should be back to where it started
-    wait_for_dropdown_text_to_equal(
-        dash_duo=dash_duo, dropdown_id="#dropdown-country", exp_value="EARTH"
-    )
+    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH")
 
 
 def test_008_initial_figures(dash_duo):
@@ -251,27 +220,21 @@ def test_009_category_buttons(dash_duo, tmp_path):
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
 
-    wait_for_dropdown_text_to_equal(
-        dash_duo=dash_duo, dropdown_id="#dropdown-category", exp_value="M.0.EL"
-    )
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL")
 
     # Click next
     button_category_next = dash_duo.driver.find_element(By.ID, "next_category")
     button_category_next.click()
 
     # Category dropdown should update
-    wait_for_dropdown_text_to_equal(
-        dash_duo=dash_duo, dropdown_id="#dropdown-category", exp_value="M.AG"
-    )
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.AG")
 
     # Click previous
     button_category_prev = dash_duo.driver.find_element(By.ID, "prev_category")
     button_category_prev.click()
 
     # Category dropdown should update back to where it started
-    wait_for_dropdown_text_to_equal(
-        dash_duo=dash_duo, dropdown_id="#dropdown-category", exp_value="M.0.EL"
-    )
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL")
 
 
 def test_010_entity_buttons(dash_duo):
@@ -287,27 +250,21 @@ def test_010_entity_buttons(dash_duo):
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
-    wait_for_dropdown_text_to_equal(
-        dash_duo=dash_duo, dropdown_id="#dropdown-entity", exp_value="CO2"
-    )
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2")
 
     # Click previous
     button_entity_prev = dash_duo.driver.find_element(By.ID, "prev_entity")
     button_entity_prev.click()
 
     # Entity dropdown should update
-    wait_for_dropdown_text_to_equal(
-        dash_duo=dash_duo, dropdown_id="#dropdown-entity", exp_value="CH4"
-    )
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CH4")
 
     # Click next
     button_entity_next = dash_duo.driver.find_element(By.ID, "next_entity")
     button_entity_next.click()
 
     # Entity dropdown should update back to where it started
-    wait_for_dropdown_text_to_equal(
-        dash_duo=dash_duo, dropdown_id="#dropdown-entity", exp_value="CO2"
-    )
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2")
 
 
 def test_011_dropdown_source_scenario(dash_duo):
@@ -323,10 +280,9 @@ def test_011_dropdown_source_scenario(dash_duo):
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
-    wait_for_dropdown_text_to_equal(
-        dash_duo=dash_duo,
-        dropdown_id="#dropdown-source-scenario",
-        exp_value="PRIMAP-hist_v2.5_final_nr, HISTCR",
+    dash_duo.wait_for_contains_text(
+        "#dropdown-source-scenario",
+        "PRIMAP-hist_v2.5_final_nr, HISTCR",
     )
 
 
@@ -359,20 +315,18 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
     action.send_keys(Keys.ENTER)
     action.perform()
 
-    wait_for_dropdown_text_to_equal(
-        dash_duo=dash_duo,
-        dropdown_id="#dropdown-source-scenario",
-        exp_value="UNFCCC NAI, 231015",
+    dash_duo.wait_for_contains_text(
+        "#dropdown-source-scenario",
+        "UNFCCC NAI, 231015",
     )
 
     # Click next country
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
 
-    wait_for_dropdown_text_to_equal(
-        dash_duo=dash_duo,
-        dropdown_id="#dropdown-source-scenario",
-        exp_value="PRIMAP-hist_v2.4.2_final_nr, HISTCR",
+    dash_duo.wait_for_contains_text(
+        "#dropdown-source-scenario",
+        "PRIMAP-hist_v2.4.2_final_nr, HISTCR",
     )
 
 
@@ -659,7 +613,7 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     )
 
     # Go to a different country via the buttons
-    dash_duo.multiple_click("#next_country", 15)
+    dash_duo.multiple_click("#next_country", 15, delay=0.01)
     assert get_dropdown_value(dropdown_country) != country_with_notes
 
     # Go back to the first country via the dropdown menu
@@ -706,6 +660,8 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     second_country = get_dropdown_value(dropdown_country)
     assert second_country != first_country
 
+    # Make sure input field has finished updating
+    dash_duo.wait_for_text_to_equal("#input-for-notes", "")
     # Add input
     input_for_second_country = "Not so good"
     input_for_notes.send_keys(input_for_second_country)
@@ -759,8 +715,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     )
 
     # Click forward two countries
-    button_country_next.click()
-    button_country_next.click()
+    dash_duo.multiple_click("#next_country", 2, delay=0.01)
 
     # Previous input should reappear
     dash_duo.wait_for_text_to_equal(
