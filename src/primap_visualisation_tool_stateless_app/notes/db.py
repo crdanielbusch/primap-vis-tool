@@ -72,9 +72,7 @@ def setup_db(cur: sqlite3.Cursor) -> None:
     cur.execute("CREATE TABLE country_notes(country TEXT PRIMARY KEY, notes TEXT)")
 
 
-def save_country_note_in_notes_db(
-    db_filepath: Path, country: str, note: str
-) -> str | None:
+def save_country_note_in_notes_db(db_filepath: Path, country: str, note: str) -> str:
     with get_notes_db_cursor(db_filepath=db_filepath) as db_cursor:
         sql_comand = """
             INSERT INTO country_notes(country, notes)
@@ -87,8 +85,6 @@ def save_country_note_in_notes_db(
             (country, note),
         )
 
-    # If success, return the note, else return None
-    # TODO: check for failure
     return get_country_note_from_notes_db(db_filepath, country=country)
 
 
@@ -119,7 +115,7 @@ def get_country_note_from_notes_db(db_filepath: Path, country: str) -> str | Non
 def read_country_notes_db_as_pd(db_filepath: Path) -> pd.DataFrame:
     with notes_db_connection(db_filepath=db_filepath) as db_connection:
         db = pd.read_sql(
-            sql=f"SELECT * FROM {COUNTRY_NOTES_TABLE_NAME}",
+            sql="SELECT * FROM country_notes",
             con=db_connection,
         )
 
