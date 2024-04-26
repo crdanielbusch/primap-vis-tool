@@ -11,6 +11,7 @@ import selenium.webdriver.remote.webelement
 import xarray as xr
 from dash import html
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 
 import primap_visualisation_tool_stateless_app
@@ -524,7 +525,7 @@ def test_016_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     save_button.click()
 
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
-    country_with_note = get_dropdown_value(dropdown_country)
+    country_with_notes = get_dropdown_value(dropdown_country)
 
     # Click forward one country
     button_country_next.click()
@@ -541,7 +542,7 @@ def test_016_notes_step_without_input_is_quiet(dash_duo, tmp_path):
         tmp_db
     )
     assert db.shape[0] == 1
-    assert db.set_index("country")["notes"].loc[country_with_note] == note_to_save
+    assert db.set_index("country")["notes"].loc[country_with_notes] == note_to_save
 
     # Click back one country
     button_country_previous = dash_duo.driver.find_element(By.ID, "prev_country")
@@ -551,7 +552,46 @@ def test_016_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
     assert input_for_notes.text == note_to_save
     dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
-    assert note_saved_div.text == f"Loaded existing notes for {country_with_note}"
+    assert note_saved_div.text == f"Loaded existing notes for {country_with_notes}"
+
+
+def test_017_notes_load_from_dropdown_selection(dash_duo, tmp_path):
+    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds = pm.open_dataset(test_ds_file)
+
+    tmp_db = tmp_path / "notes_database.db"
+
+    dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
+    dash_duo.wait_for_element_by_id("save-button", timeout=2)
+
+    # Go to a country
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    for _ in range(5):
+        button_country_next.click()
+
+    dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
+    country_with_notes = get_dropdown_value(dropdown_country)
+
+    # Save a note
+    note_to_save = f"Note for {country_with_notes}"
+    input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
+    input_for_notes.send_keys(note_to_save)
+    save_button = dash_duo.driver.find_element(By.ID, "save-button")
+    save_button.click()
+
+    # Go to a different country
+    for _ in range(15):
+        button_country_next.click()
+
+    # Go back to the first country via the dropdown menu
+    dropdown_country_input = dash_duo.find_element("#dropdown-country input")
+    dropdown_country_input.send_keys(country_with_notes)
+    dropdown_country_input.send_keys(Keys.ENTER)
+
+    # Check that notes were loaded
+    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
+    note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
+    assert note_saved_div.text == f"Loaded existing notes for {country_with_notes}"
 
 
 # def test_01y_notes_multi_step_flow(dash_duo, tmp_path):
@@ -684,11 +724,4 @@ def test_016_notes_step_without_input_is_quiet(dash_duo, tmp_path):
 
 
 # Tests to write:
-# - selecting from dropdown works from selenium.webdriver.support.ui import Select
 # - keep the test above
-
-# # TODO: separate tests of what happens when you move forward without
-# # clearing the field first.
-# # Input field and notes div should be empty again
-# assert not input_for_notes.text
-# assert not note_saved_div.text
