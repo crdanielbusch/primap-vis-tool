@@ -49,6 +49,16 @@ def test_002_app_starts(dash_duo, app):
     dash_duo.start_server(app)
 
 
+def wait_for_dropdown_text_to_equal(dash_duo, dropdown_id, exp_value, timeout=2):
+    """
+    Assert that a dropdown has an expected value
+
+    This isn't trivial, because dash puts extra characters in.
+    This function is a convenience to workaround that headache
+    """
+    dash_duo.wait_for_text_to_equal(dropdown_id, f"{exp_value}\nx", timeout=timeout)
+
+
 def test_003_dropdown_country(dash_duo):
     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
 
@@ -62,11 +72,9 @@ def test_003_dropdown_country(dash_duo):
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
-    dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
-    dropdown_country_select_element = dropdown_country.find_element(
-        By.ID, "react-select-2--value-item"
+    wait_for_dropdown_text_to_equal(
+        dash_duo=dash_duo, dropdown_id="#dropdown-country", exp_value="EARTH"
     )
-    assert dropdown_country_select_element.text == "EARTH"
 
 
 def test_004_dropdown_country_earth_not_present(dash_duo):
@@ -83,10 +91,8 @@ def test_004_dropdown_country_earth_not_present(dash_duo):
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
-    dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
-    assert (
-        dropdown_country.find_element(By.ID, "react-select-2--value-item").text
-        == "Australia"
+    wait_for_dropdown_text_to_equal(
+        dash_duo=dash_duo, dropdown_id="#dropdown-country", exp_value="Australia"
     )
 
 
@@ -103,10 +109,8 @@ def test_005_dropdown_category(dash_duo):
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
-    dropdown_category = dash_duo.driver.find_element(By.ID, "dropdown-category")
-    assert (
-        dropdown_category.find_element(By.ID, "react-select-3--value-item").text
-        == "M.0.EL"
+    wait_for_dropdown_text_to_equal(
+        dash_duo=dash_duo, dropdown_id="#dropdown-category", exp_value="M.0.EL"
     )
 
 
@@ -123,9 +127,8 @@ def test_006_dropdown_entity(dash_duo):
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
-    dropdown_entity = dash_duo.driver.find_element(By.ID, "dropdown-entity")
-    assert (
-        dropdown_entity.find_element(By.ID, "react-select-4--value-item").text == "CO2"
+    wait_for_dropdown_text_to_equal(
+        dash_duo=dash_duo, dropdown_id="#dropdown-entity", exp_value="CO2"
     )
 
 
@@ -140,25 +143,27 @@ def test_007_country_buttons(dash_duo, tmp_path):
 
     dash_duo.wait_for_element_by_id("next_country", timeout=2)
 
-    dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
-    dropdown_country_select_element = dropdown_country.find_element(
-        By.ID, "react-select-2--value-item"
+    wait_for_dropdown_text_to_equal(
+        dash_duo=dash_duo, dropdown_id="#dropdown-country", exp_value="EARTH"
     )
-    assert dropdown_country_select_element.text == "EARTH"
 
     # Click next
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
 
     # Country dropdown should update
-    assert dropdown_country_select_element.text == "EU27BX"
+    wait_for_dropdown_text_to_equal(
+        dash_duo=dash_duo, dropdown_id="#dropdown-country", exp_value="EU27BX"
+    )
 
     # Click previous
     button_country_prev = dash_duo.driver.find_element(By.ID, "prev_country")
     button_country_prev.click()
 
     # Country dropdown should be back to where it started
-    assert dropdown_country_select_element.text == "EARTH"
+    wait_for_dropdown_text_to_equal(
+        dash_duo=dash_duo, dropdown_id="#dropdown-country", exp_value="EARTH"
+    )
 
 
 def test_008_initial_figures(dash_duo):
@@ -246,25 +251,27 @@ def test_009_category_buttons(dash_duo, tmp_path):
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
 
-    dropdown_category = dash_duo.driver.find_element(By.ID, "dropdown-category")
-    dropdown_category_select_element = dropdown_category.find_element(
-        By.ID, "react-select-3--value-item"
+    wait_for_dropdown_text_to_equal(
+        dash_duo=dash_duo, dropdown_id="#dropdown-category", exp_value="M.0.EL"
     )
-    assert dropdown_category_select_element.text == "M.0.EL"
 
     # Click next
     button_category_next = dash_duo.driver.find_element(By.ID, "next_category")
     button_category_next.click()
 
     # Category dropdown should update
-    assert dropdown_category_select_element.text == "M.AG"
+    wait_for_dropdown_text_to_equal(
+        dash_duo=dash_duo, dropdown_id="#dropdown-category", exp_value="M.AG"
+    )
 
     # Click previous
     button_category_prev = dash_duo.driver.find_element(By.ID, "prev_category")
     button_category_prev.click()
 
     # Category dropdown should update back to where it started
-    assert dropdown_category_select_element.text == "M.0.EL"
+    wait_for_dropdown_text_to_equal(
+        dash_duo=dash_duo, dropdown_id="#dropdown-category", exp_value="M.0.EL"
+    )
 
 
 def test_010_entity_buttons(dash_duo):
@@ -280,25 +287,27 @@ def test_010_entity_buttons(dash_duo):
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
-    dropdown_entity = dash_duo.driver.find_element(By.ID, "dropdown-entity")
-    dropdown_entity_select_element = dropdown_entity.find_element(
-        By.ID, "react-select-4--value-item"
+    wait_for_dropdown_text_to_equal(
+        dash_duo=dash_duo, dropdown_id="#dropdown-entity", exp_value="CO2"
     )
-    assert dropdown_entity_select_element.text == "CO2"
 
     # Click previous
     button_entity_prev = dash_duo.driver.find_element(By.ID, "prev_entity")
     button_entity_prev.click()
 
     # Entity dropdown should update
-    dash_duo.wait_for_text_to_equal("#react-select-4--value-item", "CH4", timeout=2)
+    wait_for_dropdown_text_to_equal(
+        dash_duo=dash_duo, dropdown_id="#dropdown-entity", exp_value="CH4"
+    )
 
     # Click next
     button_entity_next = dash_duo.driver.find_element(By.ID, "next_entity")
     button_entity_next.click()
 
     # Entity dropdown should update back to where it started
-    dash_duo.wait_for_text_to_equal("#react-select-4--value-item", "CO2", timeout=2)
+    wait_for_dropdown_text_to_equal(
+        dash_duo=dash_duo, dropdown_id="#dropdown-entity", exp_value="CO2"
+    )
 
 
 def test_011_dropdown_source_scenario(dash_duo):
@@ -314,10 +323,10 @@ def test_011_dropdown_source_scenario(dash_duo):
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
 
-    dropdown_category = dash_duo.driver.find_element(By.ID, "dropdown-source-scenario")
-    assert (
-        dropdown_category.find_element(By.ID, "react-select-5--value-item").text
-        == "PRIMAP-hist_v2.5_final_nr, HISTCR"
+    wait_for_dropdown_text_to_equal(
+        dash_duo=dash_duo,
+        dropdown_id="#dropdown-source-scenario",
+        exp_value="PRIMAP-hist_v2.5_final_nr, HISTCR",
     )
 
 
@@ -350,16 +359,20 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
     action.send_keys(Keys.ENTER)
     action.perform()
 
-    dash_duo.wait_for_text_to_equal(
-        "#react-select-5--value-item", "UNFCCC NAI, 231015", timeout=2
+    wait_for_dropdown_text_to_equal(
+        dash_duo=dash_duo,
+        dropdown_id="#dropdown-source-scenario",
+        exp_value="UNFCCC NAI, 231015",
     )
 
     # Click next country
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
 
-    dash_duo.wait_for_text_to_equal(
-        "#react-select-5--value-item", "PRIMAP-hist_v2.4.2_final_nr, HISTCR", timeout=2
+    wait_for_dropdown_text_to_equal(
+        dash_duo=dash_duo,
+        dropdown_id="#dropdown-source-scenario",
+        exp_value="PRIMAP-hist_v2.4.2_final_nr, HISTCR",
     )
 
 
