@@ -60,9 +60,9 @@ jobs:
           sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 & # optional
       - name: Run tests
         run: |
-          poetry run pytest --headless -r a -v tests
-          poetry run pytest --headless -r a -v tests --cov=src --cov-report=term-missing --cov-report=xml
-          poetry run pytest --headless -r a -v tests --cov=src --cov-report=term-missing --cov-report=xml src
+          # Adding src to `pytest`'s inputs seems to break things, not sure why.
+          # (No doctests for us when running the end to end tests)
+          poetry run pytest --headless -r a -v --cov=src/primap_visualisation_tool_stateless_app --cov-report=term-missing --cov-report=xml tests
           poetry run coverage report
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
