@@ -36,7 +36,7 @@ def notes_db_connection(db_filepath: Path) -> sqlite3.Connection:
 
 
 @contextmanager
-def get_notes_db_cursor(db_filepath: Path) -> sqlite3.Cursor:
+def notes_db_cursor(db_filepath: Path) -> sqlite3.Cursor:
     """
     Get a new cursor for the notes database
 
@@ -72,27 +72,29 @@ def setup_db(cur: sqlite3.Cursor) -> None:
     cur.execute("CREATE TABLE country_notes(country TEXT PRIMARY KEY, notes TEXT)")
 
 
-def save_country_note_in_notes_db(db_filepath: Path, country: str, note: str) -> str:
-    with get_notes_db_cursor(db_filepath=db_filepath) as db_cursor:
-        sql_comand = """
-            INSERT INTO country_notes(country, notes)
-            VALUES(?, ?)
-            ON CONFLICT(country)
-            DO UPDATE SET notes=excluded.notes
-        """
-        db_cursor.execute(
-            sql_comand,
-            (country, note),
-        )
+def save_country_note_in_notes_db(
+    db_cursor: sqlite3.Cursor, country: str, note: str
+) -> str:
+    sql_comand = """
+        INSERT INTO country_notes(country, notes)
+        VALUES(?, ?)
+        ON CONFLICT(country)
+        DO UPDATE SET notes=excluded.notes
+    """
+    db_cursor.execute(
+        sql_comand,
+        (country, note),
+    )
 
-    return get_country_note_from_notes_db(db_filepath, country=country)
+    return get_country_note_from_notes_db(db_cursor=db_cursor, country=country)
 
 
-def get_country_note_from_notes_db(db_filepath: Path, country: str) -> str | None:
-    with get_notes_db_cursor(db_filepath=db_filepath) as db_cursor:
-        country_notes: list[tuple[str]] = db_cursor.execute(
-            "SELECT notes FROM country_notes WHERE country=?", (country,)
-        ).fetchall()
+def get_country_note_from_notes_db(
+    db_cursor: sqlite3.Cursor, country: str
+) -> str | None:
+    country_notes: list[tuple[str]] = db_cursor.execute(
+        "SELECT notes FROM country_notes WHERE country=?", (country,)
+    ).fetchall()
 
     # Country notes is our primary key, so we have exactly two cases:
     # Case 1: no notes for this country

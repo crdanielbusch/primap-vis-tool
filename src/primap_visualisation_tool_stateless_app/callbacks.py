@@ -34,6 +34,7 @@ from primap_visualisation_tool_stateless_app.figures import (
 from primap_visualisation_tool_stateless_app.notes import (
     get_country_note_from_notes_db,
     get_note_save_confirmation_string,
+    notes_db_cursor,
     save_country_note_in_notes_db,
 )
 
@@ -529,11 +530,12 @@ def register_callbacks(app: Dash) -> None:
             # hence do nothing.
             return "", "", country_store
 
-        save_country_note_in_notes_db(
-            db_filepath=db_filepath,
-            country=dropdown_country_current,
-            note=notes_value,
-        )
+        with notes_db_cursor(db_filepath=db_filepath) as db_cursor:
+            save_country_note_in_notes_db(
+                db_cursor=db_cursor,
+                country=dropdown_country_current,
+                note=notes_value,
+            )
 
         return (
             get_note_save_confirmation_string(db_filepath, dropdown_country_current),
@@ -583,9 +585,10 @@ def save_notes_and_load_existing_notes_after_dropdown_country_change(
         )
 
     # Load any notes for the country that is now being displayed
-    new_country_notes_value_in_db = get_country_note_from_notes_db(
-        db_filepath=db_filepath, country=country_current
-    )
+    with notes_db_cursor(db_filepath=db_filepath) as db_cursor:
+        new_country_notes_value_in_db = get_country_note_from_notes_db(
+            db_cursor=db_cursor, country=country_current
+        )
     if new_country_notes_value_in_db is None:
         new_input_for_notes_value = ""
         note_loaded_info = ""
@@ -629,27 +632,29 @@ def ensure_existing_note_saved(
     -------
         Information about how the notes were saved.
     """
-    current_country_notes_value_in_db = get_country_note_from_notes_db(
-        db_filepath=db_filepath, country=country_notes
-    )
-    if notes_value == current_country_notes_value_in_db:
-        # The note has already been saved, don't need to do anything more
-        note_saved_info = f"Notes for {country_notes} already saved"
+    with notes_db_cursor(db_filepath=db_filepath) as db_cursor:
+        current_country_notes_value_in_db = get_country_note_from_notes_db(
+            db_cursor=db_cursor, country=country_notes
+        )
+        if notes_value == current_country_notes_value_in_db:
+            # The note has already been saved, don't need to do anything more
+            note_saved_info = f"Notes for {country_notes} already saved"
 
-    else:
-        # Note differs, hence must save first
-        save_country_note_in_notes_db(
-            db_filepath=db_filepath,
-            country=country_notes,
-            note=notes_value,
-        )
-        note_saved_info = ". ".join(
-            [
-                f"Autosaved notes for {country_notes}",
-                get_note_save_confirmation_string(
-                    db_filepath=db_filepath, country=country_notes
-                ),
-            ]
-        )
+        else:
+            # Note differs, hence must save first
+            save_country_note_in_notes_db(
+                db_cursor=db_cursor,
+                country=country_notes,
+                note=notes_value,
+            )
+
+            note_saved_info = ". ".join(
+                [
+                    f"Autosaved notes for {country_notes}",
+                    get_note_save_confirmation_string(
+                        db_filepath=db_filepath, country=country_notes
+                    ),
+                ]
+            )
 
     return note_saved_info
