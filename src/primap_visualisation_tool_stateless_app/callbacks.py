@@ -188,15 +188,9 @@ def register_callbacks(app: Dash) -> None:
         n_clicks_next_country: int,
         n_clicks_previous_country: int,
         app_dataset: xr.Dataset | None = None,
-        db_filepath: str | None = None,
     ) -> str:
         if app_dataset is None:
             app_dataset = get_application_dataset()
-
-        if db_filepath is None:
-            db_filepath = (
-                primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER
-            )
 
         new_country = update_dropdown_within_context(
             value_current=dropdown_country_current,
