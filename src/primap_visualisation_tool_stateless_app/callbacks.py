@@ -36,7 +36,7 @@ from primap_visualisation_tool_stateless_app.notes import (
     get_country_notes_from_notes_db,
     get_note_save_confirmation_string,
     notes_db_cursor,
-    save_country_note_in_notes_db,
+    save_country_notes_in_notes_db,
 )
 
 
@@ -535,10 +535,10 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return "", "", country_store
 
         with notes_db_cursor(db_filepath=notes_db_filepath) as db_cursor:
-            save_country_note_in_notes_db(
+            save_country_notes_in_notes_db(
                 db_cursor=db_cursor,
                 country=dropdown_country_current,
-                note=notes_value,
+                notes_to_save=notes_value,
             )
 
         return (
@@ -649,10 +649,10 @@ def ensure_existing_note_saved(
 
         else:
             # Note differs, hence must save first
-            save_country_note_in_notes_db(
+            save_country_notes_in_notes_db(
                 db_cursor=db_cursor,
                 country=country_notes,
-                note=notes_value,
+                notes_to_save=notes_value,
             )
 
             note_saved_info = ". ".join(
