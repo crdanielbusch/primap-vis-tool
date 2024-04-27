@@ -619,7 +619,7 @@ def ensure_existing_note_saved(
     notes_value
         Notes to save
 
-    country_before_dropdown_change
+    country_notes
         The country to which the notes apply
 
     db_filepath
