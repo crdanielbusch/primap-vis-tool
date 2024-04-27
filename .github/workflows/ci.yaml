@@ -60,7 +60,11 @@ jobs:
           sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 & # optional
       - name: Run tests
         run: |
-          poetry run pytest --headless -r a -v src tests --cov=src --cov-report=term-missing --cov-report=xml -k 008
+          poetry run pytest --headless -r a -v tests -k 008
+          poetry run pytest --headless -r a -v tests -k 'not 008'
+          poetry run pytest --headless -r a -v tests
+          poetry run pytest --headless -r a -v tests --cov=src --cov-report=term-missing --cov-report=xml
+          poetry run pytest --headless -r a -v tests --cov=src --cov-report=term-missing --cov-report=xml src
           poetry run coverage report
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
