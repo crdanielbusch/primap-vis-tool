@@ -141,12 +141,14 @@ def test_007_country_buttons(dash_duo, tmp_path):
     dash_duo.wait_for_contains_text("#dropdown-country", "EARTH")
 
 
-def test_008_initial_figures(dash_duo):
+def test_008_initial_figures(dash_duo, tmp_path):
     test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
-    setup_app(dash_duo=dash_duo, ds=test_ds)
+    tmp_db = tmp_path / "008_notes_database.db"
+
+    setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("graph-overview", timeout=10)
     dash_duo.wait_for_element_by_id("graph-entity-split", timeout=10)
 
