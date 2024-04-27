@@ -645,11 +645,7 @@ def ensure_existing_note_saved(
         )
         note_saved_info = ". ".join(
             [
-                (
-                    f"WARNING: notes for {country_notes} "
-                    "weren't saved before changing country, "
-                    "we have saved the notes for you"
-                ),
+                f"Autosaved notes for {country_notes}",
                 get_note_save_confirmation_string(
                     db_filepath=db_filepath, country=country_notes
                 ),

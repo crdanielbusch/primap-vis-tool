@@ -498,8 +498,7 @@ def test_016_notes_step_without_user_save(dash_duo, tmp_path):
     assert not input_for_notes.text
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
     assert re.match(
-        f"WARNING: notes for {country_before_click} weren't saved before changing country, "
-        "we have saved the notes for you. "
+        f"Autosaved notes for {country_before_click}. "
         rf"Notes for {country_before_click} saved at .* in {tmp_db}",
         note_saved_div.text,
     )
@@ -785,8 +784,7 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     # Check information provided to the user
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
     assert re.match(
-        f"WARNING: notes for {second_country} weren't saved before changing country, "
-        "we have saved the notes for you. "
+        f"Autosaved notes for {second_country}. "
         rf"Notes for {second_country} saved at .* in {tmp_db}. "
         f"Loaded existing notes for {first_country}",
         note_saved_div.text,
