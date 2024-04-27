@@ -2,6 +2,7 @@
 End to end testing of an app that doesn't use global state
 """
 import re
+import time
 from pathlib import Path
 
 import dash
@@ -151,6 +152,11 @@ def test_008_initial_figures(dash_duo, tmp_path):
     setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("graph-overview", timeout=10)
     dash_duo.wait_for_element_by_id("graph-entity-split", timeout=10)
+    # Add a sleep to give the page time to load.
+    # Working out if the page is actually loaded looks incredibly difficult
+    # (e.g. https://stackoverflow.com/a/11002061),
+    # hence we go for this very basic solution.
+    time.sleep(2.0)
 
     figures_expected_items = (
         (
