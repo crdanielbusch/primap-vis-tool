@@ -37,7 +37,7 @@ def notes_db_connection(db_filepath: Path) -> Iterator[sqlite3.Connection]:
 
 
 @contextmanager
-def get_notes_db_cursor(db_filepath: Path) -> Iterator[sqlite3.Cursor]:
+def notes_db_cursor(db_filepath: Path) -> Iterator[sqlite3.Cursor]:
     """
     Get a new cursor for the notes database
 
@@ -46,8 +46,8 @@ def get_notes_db_cursor(db_filepath: Path) -> Iterator[sqlite3.Cursor]:
     db_filepath
         Filepath to the note's database
 
-    Returns
-    -------
+    Yields
+    ------
         Database cursor
     """
     new_db = not db_filepath.exists()
@@ -74,15 +74,15 @@ def setup_db(cur: sqlite3.Cursor) -> None:
 
 
 def save_country_notes_in_notes_db(
-    db_filepath: Path, country: str, notes_to_save: str
+    db_cursor: sqlite3.Cursor, country: str, notes_to_save: str
 ) -> str | None:
     """
     Save a country's notes in the notes database
 
     Parameters
     ----------
-    db_filepath
-        Notes database's filepath
+    db_cursor
+        Cursor for the notes database
 
     country
         Country to which the notes apply
@@ -94,29 +94,30 @@ def save_country_notes_in_notes_db(
     -------
         Saved notes
     """
-    with get_notes_db_cursor(db_filepath=db_filepath) as db_cursor:
-        sql_comand = """
-            INSERT INTO country_notes(country, notes)
-            VALUES(?, ?)
-            ON CONFLICT(country)
-            DO UPDATE SET notes=excluded.notes
-        """
-        db_cursor.execute(
-            sql_comand,
-            (country, notes_to_save),
-        )
+    sql_comand = """
+        INSERT INTO country_notes(country, notes)
+        VALUES(?, ?)
+        ON CONFLICT(country)
+        DO UPDATE SET notes=excluded.notes
+    """
+    db_cursor.execute(
+        sql_comand,
+        (country, notes_to_save),
+    )
 
-    return get_country_notes_from_notes_db(db_filepath, country=country)
+    return get_country_notes_from_notes_db(db_cursor=db_cursor, country=country)
 
 
-def get_country_notes_from_notes_db(db_filepath: Path, country: str) -> str | None:
+def get_country_notes_from_notes_db(
+    db_cursor: sqlite3.Cursor, country: str
+) -> str | None:
     """
     Get a country's notes from the notes database
 
     Parameters
     ----------
-    db_filepath
-        Notes database's filepath
+    db_cursor
+        Cursor for the notes database
 
     country
         Country for which to get the notes
@@ -125,27 +126,19 @@ def get_country_notes_from_notes_db(db_filepath: Path, country: str) -> str | No
     -------
         Country's notes
     """
-    with get_notes_db_cursor(db_filepath=db_filepath) as db_cursor:
-        country_notes = db_cursor.execute(
-            "SELECT notes FROM country_notes WHERE country=?", (country,)
-        ).fetchall()
+    country_notes: list[tuple[str]] = db_cursor.execute(
+        "SELECT notes FROM country_notes WHERE country=?", (country,)
+    ).fetchall()
 
-    if len(country_notes) > 1:
-        msg = f"Should only be one entry per country, have {len(country_notes)=}"
-        raise AssertionError(msg)
-
+    # Country notes is our primary key, so we have exactly two cases:
+    # Case 1: no notes for this country
     if not country_notes:
         return None
 
-    existing_notes = country_notes[0]
-    if len(existing_notes) != 1:
-        msg = f"Number of notes isn't 1, received {len(existing_notes)=}"
-        raise AssertionError(msg)
-
-    if not existing_notes:
-        return None
-
-    return str(existing_notes[0])
+    # Case 2: there is a country note,
+    # in which case it is stored as a list with one element.
+    # This element is a tuple which contains a single str.
+    return country_notes[0][0]
 
 
 def read_country_notes_db_as_pd(db_filepath: Path) -> pd.DataFrame:
