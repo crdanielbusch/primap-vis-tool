@@ -62,6 +62,9 @@ jobs:
         run: |
           # Adding src to `pytest`'s inputs seems to break things, not sure why.
           # (No doctests for us when running the end to end tests)
+          # Run without coverage
+          poetry run pytest --headless -r a -v tests
+          # Run with coverage (seems flakier for some reason)
           poetry run pytest --headless -r a -v --cov=src/primap_visualisation_tool_stateless_app --cov-report=term-missing --cov-report=xml tests
           poetry run coverage report
       - name: Upload coverage reports to Codecov
