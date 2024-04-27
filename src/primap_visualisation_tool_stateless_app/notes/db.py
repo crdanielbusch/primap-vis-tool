@@ -90,26 +90,19 @@ def save_country_note_in_notes_db(db_filepath: Path, country: str, note: str) ->
 
 def get_country_note_from_notes_db(db_filepath: Path, country: str) -> str | None:
     with get_notes_db_cursor(db_filepath=db_filepath) as db_cursor:
-        country_notes = db_cursor.execute(
+        country_notes: list[tuple[str]] = db_cursor.execute(
             "SELECT notes FROM country_notes WHERE country=?", (country,)
         ).fetchall()
 
-    if len(country_notes) > 1:
-        msg = f"Should only be one entry per country, have {len(country_notes)=}"
-        raise AssertionError(msg)
-
+    # Country notes is our primary key, so we have exactly two cases:
+    # Case 1: no notes for this country
     if not country_notes:
         return None
 
-    existing_notes = country_notes[0]
-    if len(existing_notes) != 1:
-        msg = f"Number of notes isn't 1, received {len(existing_notes)=}"
-        raise AssertionError(msg)
-
-    if not existing_notes:
-        return None
-
-    return existing_notes[0]
+    # Case 2: there is a country note,
+    # in which case it is stored as a list with one element.
+    # This element is a tuple which contains a single str.
+    return country_notes[0][0]
 
 
 def read_country_notes_db_as_pd(db_filepath: Path) -> pd.DataFrame:
