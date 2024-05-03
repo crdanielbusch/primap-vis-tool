@@ -19,10 +19,10 @@ notes\_db\_connection
 .. autofunction:: notes_db_connection
 
 
-get\_notes\_db\_cursor
-======================
+notes\_db\_cursor
+=================
 
-.. autofunction:: get_notes_db_cursor
+.. autofunction:: notes_db_cursor
 
 
 setup\_db
