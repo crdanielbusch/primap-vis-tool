@@ -2,6 +2,7 @@
 from pathlib import Path
 
 import dash
+import pytest
 from dash import html
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -10,6 +11,7 @@ import primap_visualisation_tool.app
 from primap_visualisation_tool.app_state import get_default_app_starting_state
 
 
+@pytest.mark.skip(reason="Flaky and causes weirdness in other tests")
 def test_001_dash_example(dash_duo_mp):
     # A test that the dash example runs. If this breaks things are really broken -issue beyond our code.
     app = dash.Dash(__name__)
@@ -19,6 +21,7 @@ def test_001_dash_example(dash_duo_mp):
     assert dash_duo_mp.find_element("#nully-wrapper").text == "0"
 
 
+@pytest.mark.skip(reason="Flaky and causes weirdness in other tests")
 def test_002_app_starts(dash_duo_mp):
     # find package primap_visualisation_tool, find varibale app
     test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"

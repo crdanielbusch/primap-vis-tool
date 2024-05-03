@@ -32,6 +32,7 @@ def create_layout(  # noqa: PLR0913
     """
     Create the layout for our app
     """
+    stores = [dcc.Store(id="country-dropdown-store", storage_type="memory")]
     dropdowns_and_buttons = [
         html.B(
             children="Country",
@@ -107,6 +108,35 @@ def create_layout(  # noqa: PLR0913
         ),
     ]
 
+    notes = [
+        html.B(
+            children="Notes",
+            style={"textAlign": "left", "fontSize": 14},
+        ),
+        dcc.Textarea(
+            id="input-for-notes",
+            placeholder="No notes for this country yet",
+            style={"width": "100%"},
+            rows=8,  # used to define height of text area
+        ),
+        dbc.Button(
+            children="Save",
+            id="save-button",
+            n_clicks=0,
+            color="light",
+            style={"fontsize": 12, "height": "37px"},
+        ),
+        html.H4(
+            id="note-saved-div",
+            children="",
+            style={
+                "textAlign": "center",
+                "color": "grey",
+                "fontSize": 12,
+            },
+        ),
+    ]
+
     overview_figure = [
         html.B(children="Overview", style={"textAlign": "center"}),
         dcc.Graph(id="graph-overview"),
@@ -129,8 +159,9 @@ def create_layout(  # noqa: PLR0913
         dbc.Row(
             [
                 dbc.Col(
-                    dbc.Stack(dropdowns_and_buttons)
+                    dbc.Stack([*stores, *dropdowns_and_buttons])
                 ),  # first column with dropdown menus
+                dbc.Col(dbc.Stack(notes)),
                 dbc.Col(
                     overview_figure,
                     width=8,
