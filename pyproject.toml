@@ -91,7 +91,7 @@ addopts = [
 
 [tool.ruff]
 src = ["src"]
-target-version = "py39"
+target-version = "py311"
 select = [
     "E",  # pycodestyle error
     "W",  # pycodestyle warning
