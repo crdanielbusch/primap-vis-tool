@@ -49,7 +49,7 @@ def get_country_options(dataset: xr.Dataset) -> tuple[str, ...]:
     """
     country_code_mapping = get_country_code_mapping(dataset)
 
-    return sorted(tuple(country_code_mapping.keys()))
+    return tuple(sorted(country_code_mapping.keys()))
 
 
 def get_category_start(
@@ -92,7 +92,7 @@ def get_category_options(dataset: xr.Dataset) -> tuple[str, ...]:
     -------
         Sorted category options within the dataset
     """
-    return sorted(tuple(dataset["category (IPCC2006_PRIMAP)"].to_numpy()))
+    return tuple(sorted(dataset["category (IPCC2006_PRIMAP)"].to_numpy()))
 
 
 def get_entity_start(
@@ -135,7 +135,7 @@ def get_entity_options(dataset: xr.Dataset) -> tuple[str, ...]:
     -------
         Sorted entity options within the dataset
     """
-    return sorted(tuple(i for i in dataset.data_vars))
+    return tuple(sorted(str(i) for i in dataset.data_vars))
 
 
 def get_country_code_mapping(dataset: xr.Dataset) -> dict[str, str]:
@@ -179,13 +179,13 @@ def get_source_scenario_options(dataset: xr.Dataset) -> tuple[str, ...]:
         All available source scenario options.
 
     """
-    return sorted(tuple(dataset.coords["SourceScen"].to_numpy()))
+    return tuple(sorted(dataset.coords["SourceScen"].to_numpy()))
 
 
 def get_source_scenario_start(
     dataset: xr.Dataset,
     preferred_starting_source_scenario: str = "PRIMAP-hist_v2.5_final_nr, HISTCR",
-):
+) -> str:
     """
     Get starting source scenario.
 

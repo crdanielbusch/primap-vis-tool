@@ -2,6 +2,7 @@
 End to end testing of an app that doesn't use global state
 """
 import re
+import time
 from pathlib import Path
 
 import dash
@@ -18,21 +19,46 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 import primap_visualisation_tool_stateless_app
 import primap_visualisation_tool_stateless_app.callbacks
+import primap_visualisation_tool_stateless_app.create_app
 import primap_visualisation_tool_stateless_app.dataset_holder
 import primap_visualisation_tool_stateless_app.notes
 import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
 
+TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
+TEST_DS_FILE = TEST_DATA_DIR / "test_ds.nc"
+
 
 @pytest.fixture
-def app():
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+def app_default():
+    test_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_file)
+
     primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
         test_ds
     )
-    app = primap_visualisation_tool_stateless_app.create_app()
+    app = primap_visualisation_tool_stateless_app.create_app.create_app()
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
+
     return app
+
+
+def setup_app(
+    dash_duo, ds: xr.Dataset, db_path: Path | None = None
+) -> dash.testing.composite.DashComposite:
+    """
+    Setup the app
+    """
+    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(ds)
+    if db_path is not None:
+        primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER = (
+            db_path
+        )
+
+    app = primap_visualisation_tool_stateless_app.create_app.create_app()
+    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
+    dash_duo.start_server(app)
+
+    return dash_duo
 
 
 def test_001_dash_example(dash_duo):
@@ -45,12 +71,12 @@ def test_001_dash_example(dash_duo):
     assert dash_duo.find_element("#nully-wrapper").text == "0"
 
 
-def test_002_app_starts(dash_duo, app):
-    dash_duo.start_server(app)
+def test_002_app_starts(dash_duo, app_default):
+    dash_duo.start_server(app_default)
 
 
 def test_003_dropdown_country(dash_duo, tmp_path):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
@@ -61,56 +87,37 @@ def test_003_dropdown_country(dash_duo, tmp_path):
 
 
 def test_004_dropdown_country_earth_not_present(dash_duo):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
-
+    test_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_file)
     test_ds = test_ds.pr.loc[{"area (ISO3)": ["AUT", "AUS"]}]
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
-
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
+    setup_app(dash_duo=dash_duo, ds=test_ds)
 
     dash_duo.wait_for_contains_text("#dropdown-country", "Australia")
 
 
 def test_005_dropdown_category(dash_duo):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
-
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
+    setup_app(dash_duo=dash_duo, ds=test_ds)
 
     dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL")
 
 
 def test_006_dropdown_entity(dash_duo):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
-
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
+    setup_app(dash_duo=dash_duo, ds=test_ds)
 
     dash_duo.wait_for_contains_text("#dropdown-entity", "CO2")
 
 
 def test_007_country_buttons(dash_duo, tmp_path):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_file)
 
     tmp_db = tmp_path / "007_notes_database.db"
@@ -135,18 +142,21 @@ def test_007_country_buttons(dash_duo, tmp_path):
     dash_duo.wait_for_contains_text("#dropdown-country", "EARTH")
 
 
-def test_008_initial_figures(dash_duo):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+def test_008_initial_figures(dash_duo, tmp_path):
+    test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
+    tmp_db = tmp_path / "008_notes_database.db"
 
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
+    setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
+    dash_duo.wait_for_element_by_id("graph-overview", timeout=10)
+    dash_duo.wait_for_element_by_id("graph-entity-split", timeout=10)
+    # Add a sleep to give the page time to load.
+    # Working out if the page is actually loaded looks incredibly difficult
+    # (e.g. https://stackoverflow.com/a/11002061),
+    # hence we go for this very basic solution.
+    time.sleep(2.0)
 
     figures_expected_items = (
         (
@@ -184,7 +194,7 @@ def test_008_initial_figures(dash_duo):
     )
     for figure_id, expected_legend_items in figures_expected_items:
         figure = dash_duo.driver.find_element(By.ID, figure_id)
-        wait = WebDriverWait(dash_duo.driver, timeout=5)
+        wait = WebDriverWait(dash_duo.driver, timeout=20)
         wait.until(lambda d: figure.find_elements(By.CLASS_NAME, "legend"))
         legend = figure.find_element(By.CLASS_NAME, "legend")
         traces = legend.find_elements(By.CLASS_NAME, "traces")
@@ -213,7 +223,7 @@ def test_008_initial_figures(dash_duo):
 
 
 def test_009_category_buttons(dash_duo, tmp_path):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_file)
 
     tmp_db = tmp_path / "009_notes_database.db"
@@ -238,17 +248,11 @@ def test_009_category_buttons(dash_duo, tmp_path):
 
 
 def test_010_entity_buttons(dash_duo):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
-
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
+    setup_app(dash_duo=dash_duo, ds=test_ds)
 
     dash_duo.wait_for_contains_text("#dropdown-entity", "CO2")
 
@@ -268,17 +272,11 @@ def test_010_entity_buttons(dash_duo):
 
 
 def test_011_dropdown_source_scenario(dash_duo):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
-        test_ds
-    )
-
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
+    setup_app(dash_duo=dash_duo, ds=test_ds)
 
     dash_duo.wait_for_contains_text(
         "#dropdown-source-scenario",
@@ -287,7 +285,7 @@ def test_011_dropdown_source_scenario(dash_duo):
 
 
 def test_012_dropdown_source_scenario_option_not_available(dash_duo):
-    test_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
@@ -295,9 +293,7 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
         test_ds
     )
 
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
+    setup_app(dash_duo=dash_duo, ds=test_ds)
 
     dropdown_source_scenario_div = dash_duo.driver.find_element(
         By.ID, "dropdown-source-scenario"
@@ -330,24 +326,6 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
     )
 
 
-def setup_app(
-    dash_duo, ds: xr.Dataset, db_path: Path
-) -> dash.testing.composite.DashComposite:
-    """
-    Setup the app
-    """
-    primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(ds)
-    primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER = (
-        db_path
-    )
-
-    app = primap_visualisation_tool_stateless_app.create_app()
-    primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
-    dash_duo.start_server(app)
-
-    return dash_duo
-
-
 def get_dropdown_value(
     dropdown_element: selenium.webdriver.remote.webelement.WebElement,
 ) -> str:
@@ -361,7 +339,7 @@ def get_dropdown_value(
 
 
 def test_013_notes_save_no_input(dash_duo, tmp_path):
-    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "012_notes_database.db"
@@ -379,7 +357,7 @@ def test_013_notes_save_no_input(dash_duo, tmp_path):
 
 
 def test_014_notes_save_basic(dash_duo, tmp_path):
-    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "013_notes_database.db"
@@ -418,7 +396,7 @@ def test_014_notes_save_basic(dash_duo, tmp_path):
 
 
 def test_015_notes_save_and_step(dash_duo, tmp_path):
-    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "014_notes_database.db"
@@ -470,7 +448,7 @@ def test_015_notes_save_and_step(dash_duo, tmp_path):
 
 
 def test_016_notes_step_without_user_save(dash_duo, tmp_path):
-    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "015_notes_database.db"
@@ -521,7 +499,7 @@ def test_016_notes_step_without_user_save(dash_duo, tmp_path):
 
 
 def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
-    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "016_notes_database.db"
@@ -581,7 +559,7 @@ def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
 
 
 def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
-    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "017_notes_database.db"
@@ -627,7 +605,7 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
 
 
 def test_019_notes_multi_step_flow(dash_duo, tmp_path):
-    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "018_notes_database.db"
@@ -656,11 +634,13 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     # Click forward a country
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
-    second_country = get_dropdown_value(dropdown_country)
-    assert second_country != first_country
 
     # Make sure input field has finished updating
     dash_duo.wait_for_text_to_equal("#input-for-notes", "")
+
+    second_country = get_dropdown_value(dropdown_country)
+    assert second_country != first_country
+
     # Add input
     input_for_second_country = "Not so good"
     input_for_notes.send_keys(input_for_second_country)
@@ -730,7 +710,7 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     """
     Test behaviour if changing country triggers both auto-saving and loading of an existing note
     """
-    test_ds_file = Path(__file__).parent.parent.parent / "data" / "test_ds.nc"
+    test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "019_notes_database.db"

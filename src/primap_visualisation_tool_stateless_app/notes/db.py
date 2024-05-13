@@ -4,6 +4,7 @@ Database handling
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -14,7 +15,7 @@ COUNTRY_NOTES_TABLE_NAME: str = "country_notes"
 
 
 @contextmanager
-def notes_db_connection(db_filepath: Path) -> sqlite3.Connection:
+def notes_db_connection(db_filepath: Path) -> Iterator[sqlite3.Connection]:
     """
     Get a new connection to the notes database
 
@@ -36,7 +37,7 @@ def notes_db_connection(db_filepath: Path) -> sqlite3.Connection:
 
 
 @contextmanager
-def notes_db_cursor(db_filepath: Path) -> sqlite3.Cursor:
+def notes_db_cursor(db_filepath: Path) -> Iterator[sqlite3.Cursor]:
     """
     Get a new cursor for the notes database
 
@@ -45,8 +46,8 @@ def notes_db_cursor(db_filepath: Path) -> sqlite3.Cursor:
     db_filepath
         Filepath to the note's database
 
-    Returns
-    -------
+    Yields
+    ------
         Database cursor
     """
     new_db = not db_filepath.exists()
@@ -72,9 +73,27 @@ def setup_db(cur: sqlite3.Cursor) -> None:
     cur.execute("CREATE TABLE country_notes(country TEXT PRIMARY KEY, notes TEXT)")
 
 
-def save_country_note_in_notes_db(
-    db_cursor: sqlite3.Cursor, country: str, note: str
-) -> str:
+def save_country_notes_in_notes_db(
+    db_cursor: sqlite3.Cursor, country: str, notes_to_save: str
+) -> str | None:
+    """
+    Save a country's notes in the notes database
+
+    Parameters
+    ----------
+    db_cursor
+        Cursor for the notes database
+
+    country
+        Country to which the notes apply
+
+    notes_to_save
+        Notes to save
+
+    Returns
+    -------
+        Saved notes
+    """
     sql_comand = """
         INSERT INTO country_notes(country, notes)
         VALUES(?, ?)
@@ -83,15 +102,30 @@ def save_country_note_in_notes_db(
     """
     db_cursor.execute(
         sql_comand,
-        (country, note),
+        (country, notes_to_save),
     )
 
-    return get_country_note_from_notes_db(db_cursor=db_cursor, country=country)
+    return get_country_notes_from_notes_db(db_cursor=db_cursor, country=country)
 
 
-def get_country_note_from_notes_db(
+def get_country_notes_from_notes_db(
     db_cursor: sqlite3.Cursor, country: str
 ) -> str | None:
+    """
+    Get a country's notes from the notes database
+
+    Parameters
+    ----------
+    db_cursor
+        Cursor for the notes database
+
+    country
+        Country for which to get the notes
+
+    Returns
+    -------
+        Country's notes
+    """
     country_notes: list[tuple[str]] = db_cursor.execute(
         "SELECT notes FROM country_notes WHERE country=?", (country,)
     ).fetchall()
@@ -108,6 +142,18 @@ def get_country_note_from_notes_db(
 
 
 def read_country_notes_db_as_pd(db_filepath: Path) -> pd.DataFrame:
+    """
+    Read the country notes database as a :obj:`pd.DataFrame`
+
+    Parameters
+    ----------
+    db_filepath
+        Notes database's filepath
+
+    Returns
+    -------
+        The database's values as a :obj:`pd.DataFrame`
+    """
     with notes_db_connection(db_filepath=db_filepath) as db_connection:
         db = pd.read_sql(
             sql="SELECT * FROM country_notes",

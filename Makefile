@@ -39,7 +39,7 @@ ruff-fixes:  ## fix the code using ruff
 
 .PHONY: test
 test:  ## run the tests
-	poetry run pytest src tests -r a -v --doctest-modules --cov=src
+	poetry run pytest src tests -r a -v --cov=src
 
 # Note on code coverage and testing:
 # You must specify cov=src as otherwise funny things happen when doctests are

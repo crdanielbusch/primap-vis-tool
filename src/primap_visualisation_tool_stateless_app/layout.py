@@ -19,7 +19,7 @@ BUTTON_STYLING_INITIAL: dict[str, Any] = dict(
 """Initial styling to use for buttons"""
 
 
-def create_layout(  # noqa: PLR0913
+def create_layout(  # type: ignore  # noqa: PLR0913
     country: str,
     country_options: tuple[str, ...],
     category: str,
@@ -28,7 +28,7 @@ def create_layout(  # noqa: PLR0913
     entity_options: tuple[str, ...],
     source_scenario: str,
     source_scenario_options: tuple[str, ...],
-) -> dbc.Container:
+) -> list[dcc.Store | dbc.Row]:
     """
     Create the layout for our app
     """

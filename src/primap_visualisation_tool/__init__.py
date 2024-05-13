@@ -5,4 +5,4 @@ It is based on the Primap dataset.
 """
 import importlib.metadata
 
-__version__ = importlib.metadata.version("primap_visualisation_tool")
+__version__ = importlib.metadata.version("primap_visualisation_tool_stateless_app")

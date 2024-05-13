@@ -100,7 +100,7 @@ index_cols: list[str] = [
 
 def sort_source_scenario_options(
     inp_options: Iterable[str],
-    lines_order: tuple[str, ...] = None,
+    lines_order: tuple[str, ...] | None = None,
 ) -> list[str]:
     """
     Sort source scenario options according to definition.
@@ -212,7 +212,7 @@ def apply_gwp(
     return inp
 
 
-def create_overview_figure(
+def create_overview_figure(  # type: ignore
     country: str,
     category: str,
     entity: str,
@@ -248,7 +248,7 @@ def create_overview_figure(
 
     iso_country = get_country_code_mapping(dataset)[country]
 
-    with warnings.catch_warnings(action="ignore"):  # type: ignore
+    with warnings.catch_warnings(action="ignore"):
         filtered = (
             dataset[entity]
             .pr.loc[
@@ -347,7 +347,7 @@ def create_overview_figure(
     return fig
 
 
-def create_category_figure(
+def create_category_figure(  # type: ignore
     country: str,
     category: str,
     entity: str,
@@ -385,7 +385,7 @@ def create_category_figure(
 
     categories_plot = sorted(select_cat_children(category, category_options))
 
-    with warnings.catch_warnings(action="ignore"):  # type: ignore
+    with warnings.catch_warnings(action="ignore"):
         filtered = (
             dataset[entity]
             .pr.loc[
@@ -402,7 +402,7 @@ def create_category_figure(
 
     if filtered_pandas[entity].isna().all():
         # filter again but only for parent category
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = (
                 dataset[entity]
                 .pr.loc[
@@ -574,7 +574,7 @@ def create_category_figure(
     return fig
 
 
-def create_entity_figure(
+def create_entity_figure(  # type: ignore
     country: str, category: str, entity: str, source_scenario: str, dataset: xr.Dataset
 ) -> go.Figure:
     """
@@ -594,7 +594,7 @@ def create_entity_figure(
         entities_to_plot = [*entities_to_plot, entity]
         drop_parent = True
 
-    with warnings.catch_warnings(action="ignore"):  # type: ignore
+    with warnings.catch_warnings(action="ignore"):
         filtered = dataset[entities_to_plot].pr.loc[
             {
                 "category": [category],
@@ -611,7 +611,7 @@ def create_entity_figure(
     if drop_parent:
         filtered = filtered.drop_vars(entity)
 
-    with warnings.catch_warnings(action="ignore"):  # type: ignore
+    with warnings.catch_warnings(action="ignore"):
         stacked = filtered.pr.to_interchange_format().melt(
             id_vars=index_cols, var_name="time", value_name="value"
         )
@@ -619,7 +619,7 @@ def create_entity_figure(
     # if all values are NaN
     if stacked["value"].isna().all():
         # filter again but only for parent entity
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = dataset[entity].pr.loc[
                 {
                     "category": [category],

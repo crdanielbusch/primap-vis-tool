@@ -3,6 +3,7 @@ Main entry point for running the app
 """
 import argparse
 import warnings
+from pathlib import Path
 
 import primap_visualisation_tool.app_state
 from primap_visualisation_tool.app import (
@@ -20,9 +21,9 @@ if __name__ == "__main__":
     filename = get_filename(user_input=args.f, test_ds=True)
 
     app_state = primap_visualisation_tool.app_state.get_default_app_starting_state(
-        filename=filename
+        filename=Path(filename)
     )
     app = create_app(app_state=app_state)
 
-    with warnings.catch_warnings(action="ignore"):  # type: ignore
+    with warnings.catch_warnings(action="ignore"):
         app.run(debug=True, port=port)

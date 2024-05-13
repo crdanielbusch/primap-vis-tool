@@ -3,15 +3,14 @@ Run the app
 """
 from __future__ import annotations
 
-import warnings
 from pathlib import Path
 
 import click
 import primap2 as pm  # type: ignore
 
 import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
-from primap_visualisation_tool_stateless_app import create_app
 from primap_visualisation_tool_stateless_app.callbacks import register_callbacks
+from primap_visualisation_tool_stateless_app.create_app import create_app
 from primap_visualisation_tool_stateless_app.dataset_holder import (
     set_application_dataset,
 )
@@ -50,8 +49,7 @@ def run_app(port: int, dataset: str, notes_db: str, debug: bool) -> None:
 
     app = create_app()
     register_callbacks(app)
-    with warnings.catch_warnings(action="ignore"):  # type: ignore
-        app.run(debug=debug, port=port)
+    app.run(debug=debug, port=port)
 
 
 if __name__ == "__main__":

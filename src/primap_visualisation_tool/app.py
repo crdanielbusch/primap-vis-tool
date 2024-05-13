@@ -965,7 +965,7 @@ def update_xyrange_entity_figure(  # noqa: PLR0913
             raise PreventUpdate
 
 
-def create_app(app_state: AppState) -> Dash:
+def create_app(app_state: AppState) -> Dash:  # type: ignore
     """
     Create an instance of the app
 

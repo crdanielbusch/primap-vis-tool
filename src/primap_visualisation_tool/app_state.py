@@ -96,7 +96,7 @@ class AppState:  # type: ignore
     ds: xr.Dataset
     """Dataset to plot from"""
 
-    filename: str
+    filename: Path
     """The name of the data set."""
 
     present_index_cols: list[str]
@@ -162,7 +162,7 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = (
                 self.ds[self.entity]
                 .pr.loc[
@@ -359,7 +359,7 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = (
                 self.ds[self.entity]
                 .pr.loc[
@@ -460,7 +460,7 @@ class AppState:  # type: ignore
 
         categories_plot = select_cat_children(self.category, self.category_options)
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = (
                 self.ds[self.entity]
                 .pr.loc[
@@ -477,7 +477,7 @@ class AppState:  # type: ignore
 
         if filtered_pandas[self.entity].isna().all():
             # filter again but only for parent category
-            with warnings.catch_warnings(action="ignore"):  # type: ignore
+            with warnings.catch_warnings(action="ignore"):
                 filtered = (
                     self.ds[self.entity]
                     .pr.loc[
@@ -669,7 +669,7 @@ class AppState:  # type: ignore
             entities_to_plot = [*entities_to_plot, self.entity]
             drop_parent = True
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = self.ds[entities_to_plot].pr.loc[
                 {
                     "category": [self.category],
@@ -686,7 +686,7 @@ class AppState:  # type: ignore
         if drop_parent:
             filtered = filtered.drop_vars(self.entity)
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             stacked = filtered.pr.to_interchange_format().melt(
                 id_vars=index_cols, var_name="time", value_name="value"
             )
@@ -695,7 +695,7 @@ class AppState:  # type: ignore
         if stacked["value"].isna().all():
             print(f"All sub-entities for {self.entity} are nan")
             # filter again but only for parent entity
-            with warnings.catch_warnings(action="ignore"):  # type: ignore
+            with warnings.catch_warnings(action="ignore"):
                 filtered = self.ds[self.entity].pr.loc[
                     {
                         "category": [self.category],
@@ -1070,7 +1070,7 @@ class AppState:  # type: ignore
         text_input
             Text that the user wrote in the input box.
         """
-        filename = f"{self.filename[:-3]}_notes.csv"
+        filename = f"{str(self.filename)[:-3]}_notes.csv"
 
         new_row = [
             self.country_name_iso_mapping[self.country],
@@ -1116,7 +1116,7 @@ class AppState:  # type: ignore
         """
         iso_country = self.country_name_iso_mapping[self.country]
 
-        with warnings.catch_warnings(action="ignore"):  # type: ignore
+        with warnings.catch_warnings(action="ignore"):
             filtered = (
                 self.ds[self.entity]
                 .pr.loc[
@@ -1170,7 +1170,7 @@ class AppState:  # type: ignore
 
 
 def get_default_app_starting_state(
-    filename: str,
+    filename: Path,
     start_values: dict[str, str] = {
         "country": "EARTH",
         "category": "M.0.EL",

@@ -31,8 +31,19 @@ def get_application_dataset() -> xr.Dataset:
     Returns
     -------
         Dataset to use with the application
+
+    Raises
+    ------
+    ValueError
+        The application dataset has not been set
     """
-    return APPLICATION_DATASET_HOLDER.dataset
+    out = APPLICATION_DATASET_HOLDER.dataset
+
+    if out is None:
+        msg = "Application dataset has not been set yet"
+        raise ValueError(msg)
+
+    return out
 
 
 def set_application_dataset(dataset: xr.Dataset) -> None:

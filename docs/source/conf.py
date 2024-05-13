@@ -8,7 +8,7 @@ from functools import wraps
 
 from sphinxcontrib_autodocgen import AutoDocGen
 
-import primap_visualisation_tool
+import primap_visualisation_tool_stateless_app
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -18,7 +18,7 @@ project = "Primap visualisation tool"
 authors = ", ".join(["Daniel Busch"])
 # add a copyright year variable, we can extend this over time in future as
 # needed
-copyright_year = "2023"
+copyright_year = "2023-2024"
 copyright = f"{copyright_year}, {authors}"
 
 # -- General configuration ---------------------------------------------------
@@ -81,11 +81,11 @@ autosummary_generate_overwrite = False
 
 autodocgen_config = [
     {
-        "modules": [primap_visualisation_tool],
+        "modules": [primap_visualisation_tool_stateless_app],
         "generated_source_dir": "docs/source/api",
         # choose a different title for specific modules, e.g. the toplevel one
         "module_title_decider": lambda modulename: "API Reference"
-        if modulename == "primap_visualisation_tool"
+        if modulename == "primap_visualisation_tool_stateless_app"
         else modulename,
     }
 ]

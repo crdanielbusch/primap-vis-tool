@@ -8,7 +8,7 @@ Thanks https://stackoverflow.com/a/25562415/10473080
 import importlib
 import pkgutil
 
-import primap_visualisation_tool
+import primap_visualisation_tool_stateless_app
 
 
 def import_submodules(package_name):
@@ -24,5 +24,5 @@ def import_submodules(package_name):
             import_submodules(full_name)
 
 
-import_submodules("primap_visualisation_tool")
-print(primap_visualisation_tool.__version__)
+import_submodules("primap_visualisation_tool_stateless_app")
+print(primap_visualisation_tool_stateless_app.__version__)
