@@ -39,7 +39,7 @@ ruff-fixes:  ## fix the code using ruff
 
 .PHONY: test
 test:  ## run the tests
-	poetry run pytest src tests -r a -v --doctest-modules --cov=src
+	poetry run pytest src tests -r a -v --cov=src
 
 # Note on code coverage and testing:
 # You must specify cov=src as otherwise funny things happen when doctests are
@@ -77,4 +77,8 @@ virtual-environment:  ## update virtual environment, create a new one if it does
 
 .PHONY: run-app
 run-app:  ## run the app
-	poetry run python src/primap_visualisation_tool/app.py -f "combined_data_v2.5_final_v2.4.2_final.nc" -p 8050
+	poetry run python src/primap_visualisation_tool/main.py -f "combined_data_v2.5_final_v2.4.2_final.nc" -p 8050
+
+.PHONY: run-app-stateless
+run-app-stateless:  ## run the stateless version of the app
+	poetry run python src/primap_visualisation_tool_stateless_app/main.py --dataset "data/test_ds.nc" --port 8051

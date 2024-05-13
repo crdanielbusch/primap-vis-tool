@@ -1,10 +1,13 @@
 [tool.poetry]
-name = "primap-visualisation-tool"
+name = "primap-visualisation-tool-stateless-app"
 version = "0.1.0"
 description = "This app visualises GHG-emissions over time based on sectors, countries and entities. It is based on the Primap dataset."
 authors = ["Daniel Busch <daniel.busch@climate-resource.com>"]
 readme = "README.md"
-packages = [{include = "primap_visualisation_tool", from = "src"}]
+packages = [
+    {include = "primap_visualisation_tool_stateless_app", from = "src"},
+    {include = "primap_visualisation_tool", from = "src"},
+]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
@@ -27,6 +30,7 @@ plots = ["matplotlib"]
 [tool.poetry.group.tests.dependencies]
 pytest = "^7.3.1"
 dash = {extras = ["testing"], version = "^2.14.2"}
+selenium = ">=4.2.0"
 
 [tool.poetry.group.docs.dependencies]
 myst-nb = "^0.17.0"
