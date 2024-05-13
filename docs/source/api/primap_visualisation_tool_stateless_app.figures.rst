@@ -7,16 +7,10 @@ primap\_visualisation\_tool\_stateless\_app.figures
 
 
 
-LINES\_ORDER
-============
+PLOTTING\_CONFIG
+================
 
-.. autodata:: LINES_ORDER
-
-
-LINES\_LAYOUT
-=============
-
-.. autodata:: LINES_LAYOUT
+.. autodata:: PLOTTING_CONFIG
 
 
 SUBENTITIES
@@ -31,10 +25,17 @@ index\_cols
 .. autodata:: index_cols
 
 
-sort\_source\_scenario\_options
-===============================
+PlottingConfig
+==============
 
-.. autofunction:: sort_source_scenario_options
+.. autoclass:: PlottingConfig
+   :members:
+
+
+create\_default\_plotting\_config
+=================================
+
+.. autofunction:: create_default_plotting_config
 
 
 select\_cat\_children
