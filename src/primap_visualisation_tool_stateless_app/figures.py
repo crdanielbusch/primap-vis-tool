@@ -2,18 +2,151 @@
 Figure handling and creation
 """
 import warnings
+from collections import OrderedDict
 from collections.abc import Iterable
-from typing import Union
 
 import climate_categories as cc
 import pandas as pd
 import plotly.express as px  # type: ignore
 import plotly.graph_objects as go  # type: ignore
 import xarray as xr
+from attrs import define
 
 from primap_visualisation_tool_stateless_app.dataset_handling import (
+    SourceScenarioDefinition,
     get_country_code_mapping,
+    group_other_source_scenarios,
 )
+
+
+@define
+class PlottingConfig:
+    """Plotting config"""
+
+    source_scenario_settings: dict[str, dict[str, str | int]]
+    """
+    Plotting settings to use for each source-scenario
+
+    The order of keys in the dictionary determines the order of plotting
+    (first key is plotted first)
+    """
+
+
+def create_default_plotting_config(  # noqa: PLR0913
+    source_scenarios: SourceScenarioDefinition,
+    primap_cr_colour: str = "rgb(0, 0, 0)",
+    primap_tp_colour: str = "rgb(166, 166, 166)",
+    primap_width: int = 3,
+    new_dash: str = "solid",
+    old_dashes: tuple[str, ...] = ("dot", "dash", "longdash", "dashdot", "longdashdot"),
+    colour_palette: tuple[str, ...] = (
+        "rgb(0, 0, 255)",
+        "rgb(50, 200, 255)",
+        "rgb(0, 0, 255)",
+        "rgb(60, 179, 113)",
+        "rgb(238, 130, 238)",
+        "rgb(255, 165, 0)",
+        "rgb(106, 90, 205)",
+        "rgb(50, 0, 255)",
+        "rgb(100, 0, 255)",
+        "rgb(150, 0, 255)",
+        "rgb(200, 0, 255)",
+        "rgb(50, 50, 255)",
+        "rgb(255, 0, 0)",
+    ),
+) -> PlottingConfig:
+    """
+    Create default plotting config
+
+    Parameters
+    ----------
+    source_scenarios
+        Source-scenario definition
+
+    primap_cr_colour
+        Colour to use for PRIMAP country-reported
+
+    primap_tp_colour
+        Colour to use for PRIMAP third-party
+
+    primap_width
+        Width to use when plotting PRIMAP data
+
+    new_dash
+        Dash to use for the new version of source-scenarios
+
+    old_dashes
+        Dashes to use for the old version(s) of source-scenarios.
+
+    colour_palette
+        Colours to cycle through for the non-PRIMAP source-scenarios
+
+    Returns
+    -------
+        Default plotting config
+    """
+    source_scenario_groups = group_other_source_scenarios(
+        source_scenarios.other_source_scenarios
+    )
+
+    source_scenario_settings_non_primap = OrderedDict()
+    for i, source_scenario_group in enumerate(source_scenario_groups):
+        colour = colour_palette[i % len(colour_palette)]
+        for j, source_scenario in enumerate(source_scenario_group[::-1]):
+            if j == 0:
+                dash = new_dash
+            else:
+                dash = old_dashes[(j - 1) % len(old_dashes)]
+
+            source_scenario_settings_non_primap[source_scenario] = {
+                "color": colour,
+                "dash": dash,
+            }
+
+    return PlottingConfig(
+        source_scenario_settings=OrderedDict(
+            {
+                source_scenarios.primap_old_cr: {
+                    "color": primap_cr_colour,
+                    "dash": old_dashes[0],
+                    "width": primap_width,
+                },
+                source_scenarios.primap_old_tp: {
+                    "color": primap_tp_colour,
+                    "dash": old_dashes[0],
+                    "width": primap_width,
+                },
+                source_scenarios.primap_new_cr: {
+                    "color": primap_cr_colour,
+                    "dash": new_dash,
+                    "width": primap_width,
+                },
+                source_scenarios.primap_new_tp: {
+                    "color": primap_tp_colour,
+                    "dash": new_dash,
+                    "width": primap_width,
+                },
+                **source_scenario_settings_non_primap
+                # "Andrew cement, HISTORY": {"color": "rgb(0,0,255)", "dash": "solid"},
+                # "CDIAC 2020, HISTORY": {"color": "rgb(50,200,255)", "dash": "solid"},
+                # "CEDS 2020, HISTORY": {"color": "rgb(0, 0, 255)", "dash": "solid"},
+                # "CRF 2022, 230510": {"color": "rgb(60, 179, 113)", "dash": "solid"},
+                # "CRF 2023, 230926": {"color": "rgb(238, 130, 238)", "dash": "solid"},
+                # "EDGAR 7.0, HISTORY": {"color": "rgb(255, 165, 0)", "dash": "solid"},
+                # "EDGAR-HYDE 1.4, HISTORY": {
+                #     "color": "rgb(106, 90, 205)",
+                #     "dash": "solid",
+                # },
+                # "EI 2023, HISTORY": {"color": "rgb(50,0,255)", "dash": "solid"},
+                # "FAOSTAT 2022, HISTORY": {"color": "rgb(100,0,255)", "dash": "solid"},
+                # "Houghton, HISTORY": {"color": "rgb(150,0,255)", "dash": "solid"},
+                # "MATCH, HISTORY": {"color": "rgb(200,0,255)", "dash": "solid"},
+                # "RCP hist, HISTORY": {"color": "rgb(50,50,255)", "dash": "solid"},
+                # "UNFCCC NAI, 231015": {"color": "rgb(255,0,0)", "dash": "solid"},
+            }
+        )
+    )
+
 
 LINES_ORDER: tuple[str, ...] = (
     "PRIMAP-hist_v2.5_final_nr, HISTCR",
@@ -23,7 +156,7 @@ LINES_ORDER: tuple[str, ...] = (
 )
 """The order to plot the lines in the main figure, from background to foreground"""
 
-LINES_LAYOUT: dict[str, dict[str, Union[str, int]]] = {
+LINES_LAYOUT: dict[str, dict[str, str | int]] = {
     "Andrew cement, HISTORY": {"color": "rgb(0,0,255)", "dash": "solid"},
     "CDIAC 2020, HISTORY": {"color": "rgb(50,200,255)", "dash": "solid"},
     "CEDS 2020, HISTORY": {"color": "rgb(0, 0, 255)", "dash": "solid"},
@@ -217,7 +350,7 @@ def create_overview_figure(  # type: ignore
     category: str,
     entity: str,
     dataset: xr.Dataset,
-    lines_layout: Union[dict[str, dict[str, Union[str, int]]], None] = None,
+    lines_layout: dict[str, dict[str, str | int]] | None = None,
 ) -> go.Figure:
     """
     Create the overview (i.e. main) figure
