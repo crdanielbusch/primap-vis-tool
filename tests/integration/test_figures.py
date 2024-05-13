@@ -41,16 +41,6 @@ from primap_visualisation_tool_stateless_app.figures import (
             PlottingConfig(
                 source_scenario_settings=OrderedDict(
                     {
-                        "PRIMAP-hist_v2.5.1, HISTCR": {
-                            "color": "rgb(0, 0, 0)",
-                            "dash": "dot",
-                            "width": 3,
-                        },
-                        "PRIMAP-hist_v2.5.1, HISTTP": {
-                            "color": "rgb(166, 166, 166)",
-                            "dash": "dot",
-                            "width": 3,
-                        },
                         "PRIMAP-hist_v3.0, HISTCR": {
                             "color": "rgb(0, 0, 0)",
                             "dash": "solid",
@@ -59,6 +49,16 @@ from primap_visualisation_tool_stateless_app.figures import (
                         "PRIMAP-hist_v3.0, HISTTP": {
                             "color": "rgb(166, 166, 166)",
                             "dash": "solid",
+                            "width": 3,
+                        },
+                        "PRIMAP-hist_v2.5.1, HISTCR": {
+                            "color": "rgb(0, 0, 0)",
+                            "dash": "dot",
+                            "width": 3,
+                        },
+                        "PRIMAP-hist_v2.5.1, HISTTP": {
+                            "color": "rgb(166, 166, 166)",
+                            "dash": "dot",
                             "width": 3,
                         },
                         # Other source-scenarios are sorted.
