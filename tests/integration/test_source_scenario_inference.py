@@ -193,8 +193,8 @@ def test_infer_source_scenarios(  # noqa: PLR0913
             (
                 "SSPs",
                 "Andrews, History",
-                "EDGAR 2022, History",
                 "EDGAR 2023, History",
+                "EDGAR 2022, History",
             ),
             (
                 ("Andrews, History",),
@@ -234,12 +234,31 @@ def test_infer_source_scenarios(  # noqa: PLR0913
         pytest.param(
             (
                 "SSPs",
+                "Andrews, History",
+                "RCP rcp26, HISTORY",
+                "EDGAR-HYDE 1.4, History",
+                "EDGAR-HYDE 1.5, History",
+                "RCP hist, HISTORY",
+            ),
+            (
+                ("Andrews, History",),
+                ("EDGAR-HYDE 1.4, History", "EDGAR-HYDE 1.5, History"),
+                ("RCP hist, HISTORY", "RCP rcp26, HISTORY"),
+                ("SSPs",),
+            ),
+            id="version_string_malformed",
+        ),
+        pytest.param(
+            (
+                "SSPs",
                 "RCMIP v2.4, SSP126",
                 "RCMIP v2.5, SSP126",
                 "EDGAR 2022, History",
+                "RCP rcp26, HISTORY",
                 "EDGAR 2023, History",
                 "Andrews, History",
                 "EDGAR-HYDE 1.4, History",
+                "RCP hist, HISTORY",
                 "EDGAR-HYDE 1.5, History",
             ),
             (
@@ -247,6 +266,7 @@ def test_infer_source_scenarios(  # noqa: PLR0913
                 ("EDGAR 2022, History", "EDGAR 2023, History"),
                 ("EDGAR-HYDE 1.4, History", "EDGAR-HYDE 1.5, History"),
                 ("RCMIP v2.4, SSP126", "RCMIP v2.5, SSP126"),
+                ("RCP hist, HISTORY", "RCP rcp26, HISTORY"),
                 ("SSPs",),
             ),
             id="full",

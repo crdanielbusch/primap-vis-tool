@@ -3,10 +3,12 @@ Dataset handling
 """
 from __future__ import annotations
 
+from collections import defaultdict
+
 import pycountry
 import xarray as xr
 from attrs import define
-from packaging.version import Version
+from packaging.version import InvalidVersion, Version
 
 
 def get_country_start(
@@ -314,4 +316,45 @@ def group_other_source_scenarios(inp: tuple[str, ...]) -> tuple[tuple[str, ...],
         Grouped source-scenarios.
         Each element is a group, sorted in order from oldest to newest version.
     """
-    pass
+    stem_groups = defaultdict(list)
+    for source_scen in inp:
+        stem = source_scen.split(" ")[0]
+        stem_groups[stem].append(source_scen)
+
+    res = []
+    for stem_group in sorted(stem_groups.keys()):
+        stem_group_vals = stem_groups[stem_group]
+        if len(stem_group_vals) == 1:
+            res.append((stem_group_vals[0],))
+
+        else:
+            res.append(attempt_to_sort_source_scenarios_in_group(stem_group_vals))
+
+    return tuple(res)
+
+
+def attempt_to_sort_source_scenarios_in_group(inp: tuple[str, ...]) -> tuple[str, ...]:
+    """
+    Attempt to sort the source-scenarios in a group
+
+    Parameters
+    ----------
+    inp
+        Source-scenarios to sort
+
+    Returns
+    -------
+        Sorted source-scenarios.
+        If no obvious pattern can be found, the source-scenarios are simply sorted and returned.
+    """
+    try:
+        versions_names = [[Version(v.split(" ")[1].strip(",")), v] for v in inp]
+    except InvalidVersion:
+        # TOOD: log here
+        return tuple(sorted(inp))
+
+    versions_names_sorted = sorted(versions_names, key=lambda x: x[0])
+
+    res = tuple([v[1] for v in versions_names_sorted])
+
+    return res
