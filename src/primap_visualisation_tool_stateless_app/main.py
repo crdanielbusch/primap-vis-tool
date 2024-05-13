@@ -8,9 +8,13 @@ from pathlib import Path
 import click
 import primap2 as pm  # type: ignore
 
+import primap_visualisation_tool_stateless_app.figures
 import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
 from primap_visualisation_tool_stateless_app.callbacks import register_callbacks
 from primap_visualisation_tool_stateless_app.create_app import create_app
+from primap_visualisation_tool_stateless_app.dataset_handling import (
+    infer_source_scenarios,
+)
 from primap_visualisation_tool_stateless_app.dataset_holder import (
     set_application_dataset,
 )
@@ -48,6 +52,14 @@ def run_app(port: int, dataset: str, notes_db: str | None, debug: bool) -> None:
     dataset = Path(dataset)
     loaded_ds = pm.open_dataset(dataset)
     set_application_dataset(loaded_ds)
+
+    source_scenario_definition = infer_source_scenarios(loaded_ds)
+    plotting_config = (
+        primap_visualisation_tool_stateless_app.figures.create_default_plotting_config(
+            source_scenarios=source_scenario_definition
+        )
+    )
+    primap_visualisation_tool_stateless_app.figures.PLOTTING_CONFIG = plotting_config
 
     if notes_db is None:
         notes_db = dataset.with_suffix(".db")
