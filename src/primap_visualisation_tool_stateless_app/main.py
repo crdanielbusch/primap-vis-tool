@@ -117,7 +117,10 @@ def run_app(
     logger.info(f"Loaded data from {dataset_p.absolute()}")
     set_application_dataset(loaded_ds)
 
-    if plotting_config_yaml is None:
+    if plotting_config_yaml is not None:
+        plotting_config_yaml_p = Path(plotting_config_yaml)
+
+    else:
         plotting_config_yaml_default_name = f"{dataset_p.stem}_plotting-config.yaml"
         plotting_config_yaml_default = (
             dataset_p.parent / plotting_config_yaml_default_name
@@ -142,9 +145,9 @@ def run_app(
                 f"Wrote plotting config to {plotting_config_yaml_default}. Config={plotting_config}"
             )
 
-        plotting_config_yaml = plotting_config_yaml_default
+        plotting_config_yaml_p = plotting_config_yaml_default
 
-    with open(plotting_config_yaml) as fh:
+    with open(plotting_config_yaml_p) as fh:
         plotting_config = converter_yaml.loads(
             fh.read(), primap_visualisation_tool_stateless_app.figures.PlottingConfig
         )
@@ -152,8 +155,9 @@ def run_app(
     primap_visualisation_tool_stateless_app.figures.PLOTTING_CONFIG = plotting_config
 
     if notes_db is None:
-        notes_db = dataset_p.with_suffix(".db")
-        logger.info(f"Will save notes into: {notes_db.absolute()}")
+        notes_db_p = dataset_p.with_suffix(".db")
+        logger.info(f"Will save notes into: {notes_db_p.absolute()}")
+        notes_db = str(notes_db_p)
 
     primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER = Path(
         notes_db

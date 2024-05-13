@@ -4,6 +4,7 @@ Dataset handling
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Iterable
 
 import pycountry
 import xarray as xr
@@ -322,7 +323,7 @@ def group_other_source_scenarios(inp: tuple[str, ...]) -> tuple[tuple[str, ...],
         stem = source_scen.split(" ")[0]
         stem_groups[stem].append(source_scen)
 
-    res = []
+    res: list[tuple[str, ...]] = []
     for stem_group in sorted(stem_groups.keys()):
         stem_group_vals = stem_groups[stem_group]
         if len(stem_group_vals) == 1:
@@ -334,7 +335,7 @@ def group_other_source_scenarios(inp: tuple[str, ...]) -> tuple[tuple[str, ...],
     return tuple(res)
 
 
-def attempt_to_sort_source_scenarios_in_group(inp: tuple[str, ...]) -> tuple[str, ...]:
+def attempt_to_sort_source_scenarios_in_group(inp: Iterable[str]) -> tuple[str, ...]:
     """
     Attempt to sort the source-scenarios in a group
 
@@ -349,7 +350,9 @@ def attempt_to_sort_source_scenarios_in_group(inp: tuple[str, ...]) -> tuple[str
         If no obvious pattern can be found, the source-scenarios are simply sorted and returned.
     """
     try:
-        versions_names = [[Version(v.split(" ")[1].strip(",")), v] for v in inp]
+        versions_names: list[tuple[Version, str]] = [
+            (Version(v.split(" ")[1].strip(",")), v) for v in inp
+        ]
     except InvalidVersion:
         logger.warning(
             "Source-scenarios will simply be sorted "

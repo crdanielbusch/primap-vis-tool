@@ -94,7 +94,9 @@ def create_default_plotting_config(  # noqa: PLR0913
         source_scenarios.other_source_scenarios
     )
 
-    source_scenario_settings_non_primap = OrderedDict()
+    source_scenario_settings_non_primap: OrderedDict[
+        str, dict[str, str | int]
+    ] = OrderedDict()
     for i, source_scenario_group in enumerate(source_scenario_groups):
         colour = colour_palette[i % len(colour_palette)]
         for j, source_scenario in enumerate(source_scenario_group[::-1]):
