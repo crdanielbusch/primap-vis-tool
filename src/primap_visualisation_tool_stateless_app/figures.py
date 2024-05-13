@@ -10,11 +10,13 @@ import plotly.express as px  # type: ignore
 import plotly.graph_objects as go  # type: ignore
 import xarray as xr
 from attrs import define
+from loguru import logger
 
 from primap_visualisation_tool_stateless_app.dataset_handling import (
     SourceScenarioDefinition,
     get_country_code_mapping,
     group_other_source_scenarios,
+    infer_source_scenarios,
 )
 
 
@@ -288,11 +290,20 @@ def create_overview_figure(  # type: ignore
         Created figure
     """
     if plotting_config is None:
-        if PLOTTING_CONFIG is None:
-            msg = "plotting_config not supplied and PLOTTING_CONFIG is None"
-            raise AssertionError(msg)
+        if PLOTTING_CONFIG is not None:
+            plotting_config = PLOTTING_CONFIG
 
-        plotting_config = PLOTTING_CONFIG
+        else:
+            msg = (
+                "plotting_config not supplied and PLOTTING_CONFIG is None. "
+                "plotting_config will be created now. "
+                "Consider creating it before running the app."
+            )
+            logger.warning(msg)
+            source_scenario_definition = infer_source_scenarios(dataset)
+            plotting_config = create_default_plotting_config(
+                source_scenarios=source_scenario_definition
+            )
 
     iso_country = get_country_code_mapping(dataset)[country]
 
