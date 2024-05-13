@@ -10,6 +10,7 @@ import pytest
 import xarray as xr
 
 from primap_visualisation_tool_stateless_app.dataset_handling import (
+    group_other_source_scenarios,
     infer_source_scenarios,
 )
 
@@ -73,8 +74,13 @@ def create_testing_dataset(
             "PRIMAP-hist_v2.5_final_nr, HISTCR",
             "PRIMAP-hist_v2.5_final_nr, HISTTP",
             tuple(
-                ("EDGAR",),
-                ("RCMIP v2.5.1", "RCMIP v3.2"),
+                sorted(
+                    [
+                        "RCMIP v2.5.1",
+                        "RCMIP v3.2",
+                        "EDGAR",
+                    ]
+                )
             ),
             id="basic",
         ),
@@ -94,10 +100,14 @@ def create_testing_dataset(
             "PRIMAP-hist_v3.0-alpha_final_nr, HISTCR",
             "PRIMAP-hist_v3.0-alpha_final_nr, HISTTP",
             tuple(
-                ("Andrews",),
-                ("EDGAR",),
-                ("RCMIP",),
-                ("SSPs",),
+                sorted(
+                    [
+                        "Andrews",
+                        "EDGAR",
+                        "RCMIP",
+                        "SSPs",
+                    ]
+                )
             ),
             id="alpha_release",
         ),
@@ -117,10 +127,14 @@ def create_testing_dataset(
             "PRIMAP-hist_v3.0-beta_final_nr, HISTCR",
             "PRIMAP-hist_v3.0-beta_final_nr, HISTTP",
             tuple(
-                ("Andrews",),
-                ("EDGAR",),
-                ("RCMIP",),
-                ("SSPs",),
+                sorted(
+                    [
+                        "Andrews",
+                        "EDGAR",
+                        "RCMIP",
+                        "SSPs",
+                    ]
+                )
             ),
             id="beta_release",
         ),
@@ -140,106 +154,16 @@ def create_testing_dataset(
             "PRIMAP-hist_v3.0-beta_final_nr, HISTCR",
             "PRIMAP-hist_v3.0-beta_final_nr, HISTTP",
             tuple(
-                ("Andrews",),
-                ("EDGAR",),
-                ("RCMIP",),
-                ("SSPs",),
+                sorted(
+                    [
+                        "Andrews",
+                        "EDGAR",
+                        "RCMIP",
+                        "SSPs",
+                    ]
+                )
             ),
             id="alpha_vs_beta_release",
-        ),
-        pytest.param(
-            (
-                "SSPs",
-                "PRIMAP-hist_v3.0_final_nr, HISTTP",
-                "RCMIP v2.4, SSP126",
-                "RCMIP v2.5, SSP126",
-                "PRIMAP-hist_v3.0_final_nr, HISTCR",
-                "PRIMAP-hist_v3.1_final_nr, HISTCR",
-                "PRIMAP-hist_v3.1_final_nr, HISTTP",
-                "Andrews, History",
-            ),
-            "PRIMAP-hist_v3.0_final_nr, HISTCR",
-            "PRIMAP-hist_v3.0_final_nr, HISTTP",
-            "PRIMAP-hist_v3.1_final_nr, HISTCR",
-            "PRIMAP-hist_v3.1_final_nr, HISTTP",
-            tuple(
-                ("Andrews, History",),
-                ("RCMIP v2.4, SSP126", "RCMIP v2.5, SSP126"),
-                ("SSPs",),
-            ),
-            id="other_source_scenarios_inference_version_string",
-        ),
-        pytest.param(
-            (
-                "SSPs",
-                "PRIMAP-hist_v3.0_final_nr, HISTTP",
-                "PRIMAP-hist_v3.0_final_nr, HISTCR",
-                "PRIMAP-hist_v3.1_final_nr, HISTCR",
-                "EDGAR 2022, History",
-                "EDGAR 2023, History",
-                "PRIMAP-hist_v3.1_final_nr, HISTTP",
-                "Andrews, History",
-            ),
-            "PRIMAP-hist_v3.0_final_nr, HISTCR",
-            "PRIMAP-hist_v3.0_final_nr, HISTTP",
-            "PRIMAP-hist_v3.1_final_nr, HISTCR",
-            "PRIMAP-hist_v3.1_final_nr, HISTTP",
-            tuple(
-                ("Andrews, History",),
-                ("EDGAR 2022, History", "EDGAR 2023, History"),
-                ("SSPs",),
-            ),
-            id="other_source_scenarios_inference_year",
-        ),
-        pytest.param(
-            (
-                "SSPs",
-                "PRIMAP-hist_v3.0_final_nr, HISTTP",
-                "PRIMAP-hist_v3.0_final_nr, HISTCR",
-                "PRIMAP-hist_v3.1_final_nr, HISTCR",
-                "PRIMAP-hist_v3.1_final_nr, HISTTP",
-                "Andrews, History",
-                "EDGAR-HYDE 1.4, History",
-                "EDGAR-HYDE 1.5, History",
-            ),
-            "PRIMAP-hist_v3.0_final_nr, HISTCR",
-            "PRIMAP-hist_v3.0_final_nr, HISTTP",
-            "PRIMAP-hist_v3.1_final_nr, HISTCR",
-            "PRIMAP-hist_v3.1_final_nr, HISTTP",
-            tuple(
-                ("Andrews, History",),
-                ("EDGAR-HYDE 1.4, History", "EDGAR-HYDE 1.5, History"),
-                ("SSPs",),
-            ),
-            id="other_source_scenarios_inference_version_string_no_v",
-        ),
-        pytest.param(
-            (
-                "SSPs",
-                "PRIMAP-hist_v3.0_final_nr, HISTTP",
-                "RCMIP v2.4, SSP126",
-                "RCMIP v2.5, SSP126",
-                "PRIMAP-hist_v3.0_final_nr, HISTCR",
-                "PRIMAP-hist_v3.1_final_nr, HISTCR",
-                "EDGAR 2022, History",
-                "EDGAR 2023, History",
-                "PRIMAP-hist_v3.1_final_nr, HISTTP",
-                "Andrews, History",
-                "EDGAR-HYDE 1.4, History",
-                "EDGAR-HYDE 1.5, History",
-            ),
-            "PRIMAP-hist_v3.0_final_nr, HISTCR",
-            "PRIMAP-hist_v3.0_final_nr, HISTTP",
-            "PRIMAP-hist_v3.1_final_nr, HISTCR",
-            "PRIMAP-hist_v3.1_final_nr, HISTTP",
-            tuple(
-                ("Andrews, History",),
-                ("EDGAR 2022, History", "EDGAR 2023, History"),
-                ("EDGAR-HYDE 1.4, History", "EDGAR-HYDE 1.5, History"),
-                ("RCMIP v2.4, SSP126", "RCMIP v2.5, SSP126"),
-                ("SSPs",),
-            ),
-            id="other_source_scenarios_inference",
         ),
     ),
 )
@@ -260,3 +184,76 @@ def test_infer_source_scenarios(  # noqa: PLR0913
     assert res.primap_new_cr == exp_primap_new_cr
     assert res.primap_new_tp == exp_primap_new_tp
     assert res.other_source_scenarios == exp_other_source_scenarios
+
+
+@pytest.mark.parametrize(
+    "inp, exp",
+    (
+        pytest.param(
+            (
+                "SSPs",
+                "Andrews, History",
+                "EDGAR 2022, History",
+                "EDGAR 2023, History",
+            ),
+            (
+                ("Andrews, History",),
+                ("EDGAR 2022, History", "EDGAR 2023, History"),
+                ("SSPs",),
+            ),
+            id="year",
+        ),
+        pytest.param(
+            (
+                "SSPs",
+                "Andrews, History",
+                "RCMIP v2.4, SSP126",
+                "RCMIP v2.5, SSP126",
+            ),
+            (
+                ("Andrews, History",),
+                ("RCMIP v2.4, SSP126", "RCMIP v2.5, SSP126"),
+                ("SSPs",),
+            ),
+            id="version_string",
+        ),
+        pytest.param(
+            (
+                "SSPs",
+                "Andrews, History",
+                "EDGAR-HYDE 1.4, History",
+                "EDGAR-HYDE 1.5, History",
+            ),
+            (
+                ("Andrews, History",),
+                ("EDGAR-HYDE 1.4, History", "EDGAR-HYDE 1.5, History"),
+                ("SSPs",),
+            ),
+            id="version_string_without_v",
+        ),
+        pytest.param(
+            (
+                "SSPs",
+                "RCMIP v2.4, SSP126",
+                "RCMIP v2.5, SSP126",
+                "EDGAR 2022, History",
+                "EDGAR 2023, History",
+                "Andrews, History",
+                "EDGAR-HYDE 1.4, History",
+                "EDGAR-HYDE 1.5, History",
+            ),
+            (
+                ("Andrews, History",),
+                ("EDGAR 2022, History", "EDGAR 2023, History"),
+                ("EDGAR-HYDE 1.4, History", "EDGAR-HYDE 1.5, History"),
+                ("RCMIP v2.4, SSP126", "RCMIP v2.5, SSP126"),
+                ("SSPs",),
+            ),
+            id="full",
+        ),
+    ),
+)
+def test_other_source_scenario_grouping(inp, exp):
+    res = group_other_source_scenarios(inp)
+
+    assert res == exp
