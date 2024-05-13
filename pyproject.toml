@@ -23,6 +23,7 @@ xarray = "^2023.12.0"
 jupyter = "^1.0.0"
 pandas-stubs = "^2.1.4.231227"
 filelock = "^3.13.1"
+cattrs = "^23.2.3"
 
 [tool.poetry.extras]
 plots = ["matplotlib"]
