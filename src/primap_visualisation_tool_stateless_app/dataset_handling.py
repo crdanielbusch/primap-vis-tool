@@ -8,6 +8,7 @@ from collections import defaultdict
 import pycountry
 import xarray as xr
 from attrs import define
+from loguru import logger
 from packaging.version import InvalidVersion, Version
 
 
@@ -350,7 +351,10 @@ def attempt_to_sort_source_scenarios_in_group(inp: tuple[str, ...]) -> tuple[str
     try:
         versions_names = [[Version(v.split(" ")[1].strip(",")), v] for v in inp]
     except InvalidVersion:
-        # TOOD: log here
+        logger.warning(
+            "Source-scenarios will simply be sorted "
+            f"because we could not infer any versions for sorting {inp}"
+        )
         return tuple(sorted(inp))
 
     versions_names_sorted = sorted(versions_names, key=lambda x: x[0])

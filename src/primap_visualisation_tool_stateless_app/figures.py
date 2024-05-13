@@ -22,7 +22,7 @@ from primap_visualisation_tool_stateless_app.dataset_handling import (
 class PlottingConfig:
     """Plotting config"""
 
-    source_scenario_settings: dict[str, dict[str, str | int]]
+    source_scenario_settings: OrderedDict[str, dict[str, str | int]]
     """
     Plotting settings to use for each source-scenario
 
@@ -288,8 +288,11 @@ def create_overview_figure(  # type: ignore
         Created figure
     """
     if plotting_config is None:
-        if PLOTTING_CONFIG is not None:
-            plotting_config = PLOTTING_CONFIG
+        if PLOTTING_CONFIG is None:
+            msg = "plotting_config not supplied and PLOTTING_CONFIG is None"
+            raise AssertionError(msg)
+
+        plotting_config = PLOTTING_CONFIG
 
     iso_country = get_country_code_mapping(dataset)[country]
 
