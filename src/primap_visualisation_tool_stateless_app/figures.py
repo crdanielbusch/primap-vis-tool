@@ -529,7 +529,6 @@ def plot_stacked_area(  # noqa: PLR0913
     df_plot = df_plot.set_index("time")
 
     if sub_plot == "entity":
-        # TODO! There's probably a pandas function for this loop
         # TODO! Remove hard-coded category column name
         # TODO! Will fail for some combinations
         df_plot = pd.concat(
@@ -967,6 +966,10 @@ def create_entity_figure(  # type: ignore # noqa: PLR0913
     stacked = stacked.dropna(subset=["value"])
 
     stacked_dashed = stacked_dashed.dropna(subset=["value"])
+
+    # Some combinations produce empty dataframes, i.e. EARTH, 4, NF3
+    if stacked_dashed.empty:
+        return fig
 
     fig = plot_stacked_area(
         fig=fig,

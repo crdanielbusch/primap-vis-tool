@@ -313,6 +313,8 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Input("dropdown-entity", "value"),
         State("dropdown-source-scenario", "value"),
         State("dropdown-source-scenario", "options"),
+        State("dropdown-source-scenario-dashed", "value"),
+        State("dropdown-source-scenario-dashed", "options"),
         State("memory", "data"),
     )
     def update_source_scenario_dropdown(  # noqa: PLR0913
@@ -321,6 +323,8 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         entity: str,
         source_scenario: str,
         source_scenario_options: tuple[str, ...],
+        source_scenario_dashed: str,
+        source_scenario_options_dashed: tuple[str, ...],
         memory_data: dict[str, int],
         app_dataset: xr.Dataset | None = None,
     ) -> tuple[tuple[str, ...], str, dict[str, int]]:
@@ -332,8 +336,8 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return (
                 source_scenario_options,
                 source_scenario,
-                source_scenario_options,
-                source_scenario,
+                source_scenario_options_dashed,
+                source_scenario_dashed,
                 memory_data,
             )
 
@@ -356,8 +360,8 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return (
                 source_scenario_options,
                 source_scenario,
-                source_scenario_options,
-                source_scenario,
+                source_scenario_options_dashed,
+                source_scenario_dashed,
                 memory_data,
             )
 
@@ -366,11 +370,16 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         else:
             source_scenario_out = source_scenario_options_out[0]
 
+        if source_scenario_dashed in source_scenario_options_out:
+            source_scenario_out_dashed = source_scenario_dashed
+        else:
+            source_scenario_out_dashed = source_scenario_options_out[0]
+
         return (
             source_scenario_options_out,
             source_scenario_out,
             source_scenario_options_out,
-            source_scenario_out,
+            source_scenario_out_dashed,
             memory_data,
         )
 
@@ -401,7 +410,16 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         if app_dataset is None:
             app_dataset = get_application_dataset()
 
-        if any(v is None for v in (country, category, entity)):
+        if any(
+            v is None
+            for v in (
+                country,
+                category,
+                entity,
+                source_scenario,
+                source_scenario_dashed,
+            )
+        ):
             # User cleared one of the selections in the dropdown, do nothing
             return graph_figure_current
 
@@ -444,7 +462,16 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         # if ctx.triggered_id == "xyrange-entity" and xyrange_data :
         #     return app_state.update_entity_range(xyrange_data)
 
-        if any(v is None for v in (country, category, entity, source_scenario)):
+        if any(
+            v is None
+            for v in (
+                country,
+                category,
+                entity,
+                source_scenario,
+                source_scenario_dashed,
+            )
+        ):
             # User cleared one of the selections in the dropdown, do nothing
             return graph_figure_current
 
