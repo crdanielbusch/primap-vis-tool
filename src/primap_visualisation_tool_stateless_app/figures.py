@@ -577,7 +577,7 @@ def plot_stacked_area(  # type: ignore # noqa: PLR0913
                 )
             )
 
-            lower = upper  # type: ignore
+            lower = upper
 
         # plot all negative emissions
         upper = [0] * len(_df_neg)
