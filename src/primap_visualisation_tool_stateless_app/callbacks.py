@@ -327,7 +327,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         source_scenario_options_dashed: tuple[str, ...],
         memory_data: dict[str, int],
         app_dataset: xr.Dataset | None = None,
-    ) -> tuple[tuple[str, ...], str, dict[str, int]]:
+    ) -> tuple[tuple[str, ...], str, tuple[str, ...], str, dict[str, int]]:
         if app_dataset is None:
             app_dataset = get_application_dataset()
 

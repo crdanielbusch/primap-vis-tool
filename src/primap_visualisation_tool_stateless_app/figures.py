@@ -406,9 +406,9 @@ def get_category_split(  # noqa: PLR0913
                 .squeeze()
             )
 
-        return filtered.to_dataframe().reset_index()
+        return filtered.to_dataframe().reset_index()  # type: ignore
 
-    return filtered_pandas
+    return filtered_pandas  # type: ignore
 
 
 def get_entity_split(  # noqa: PLR0913
@@ -487,10 +487,10 @@ def get_entity_split(  # noqa: PLR0913
 
     stacked["time"] = stacked["time"].apply(pd.to_datetime)
 
-    return stacked
+    return stacked  # type: ignore
 
 
-def plot_stacked_area(  # noqa: PLR0913
+def plot_stacked_area(  # type: ignore # noqa: PLR0913
     fig: go.Figure,
     df_plot: pd.DataFrame,
     categories_to_plot: list[str],
@@ -557,11 +557,12 @@ def plot_stacked_area(  # noqa: PLR0913
     if dashed:
         # plot all positive emissions
         lower = [0] * len(_df_pos)
+
         for c in reversed(_df_pos.columns):
             if sum(_df_pos[c].fillna(0)) == 0:
                 continue
 
-            upper = _df_pos[c].fillna(0) + lower
+            upper = list(_df_pos[c].fillna(0) + lower)
             fig.add_trace(
                 go.Scatter(
                     y=upper,
@@ -570,13 +571,13 @@ def plot_stacked_area(  # noqa: PLR0913
                     showlegend=False,
                     line=dict(color="black", width=0.5, dash="dot"),
                     text=list(_df_pos[c]),
-                    customdata=list(_df_pos.index.year),
+                    customdata=list(_df_pos.index.year),  # type: ignore
                     hovertemplate="%{customdata}, %{text:.2e}",
                     name=f"{c} dashed pos",
                 )
             )
 
-            lower = upper
+            lower = upper  # type: ignore
 
         # plot all negative emissions
         upper = [0] * len(_df_neg)
@@ -584,7 +585,7 @@ def plot_stacked_area(  # noqa: PLR0913
             if sum(_df_neg[c]) == 0:
                 continue
 
-            lower = _df_neg[c].fillna(0) + upper
+            lower = list(_df_neg[c].fillna(0) + upper)
 
             fig.add_trace(
                 go.Scatter(
@@ -594,7 +595,7 @@ def plot_stacked_area(  # noqa: PLR0913
                     line=dict(color="black", width=0.5, dash="dot"),
                     showlegend=False,
                     text=list(_df_neg[c]),
-                    customdata=list(_df_neg.index.year),
+                    customdata=list(_df_neg.index.year),  # type: ignore
                     hovertemplate="%{customdata}, %{text:.2e}",
                     name=f"{c} dashed neg",
                 )
@@ -609,7 +610,7 @@ def plot_stacked_area(  # noqa: PLR0913
                 mode="lines",
                 line=dict(color="black", width=0.5, dash="dot"),
                 name="total dashed",
-                customdata=list(df_plot.index.year),
+                customdata=list(df_plot.index.year),  # type: ignore
                 hovertemplate="%{customdata}, %{y:.2e}",
             )
         )
@@ -622,7 +623,7 @@ def plot_stacked_area(  # noqa: PLR0913
         if sum(_df_pos[c].fillna(0)) == 0:
             continue
 
-        upper = _df_pos[c].fillna(0) + lower
+        upper = list(_df_pos[c].fillna(0) + lower)
         fig.add_trace(
             go.Scatter(
                 y=upper,
@@ -634,7 +635,7 @@ def plot_stacked_area(  # noqa: PLR0913
                     width=0,
                 ),
                 text=list(_df_pos[c]),
-                customdata=list(_df_pos.index.year),
+                customdata=list(_df_pos.index.year),  # type: ignore
                 hovertemplate="%{customdata}, %{text:.2e}",
                 name=f"{c} pos",
             )
@@ -661,7 +662,7 @@ def plot_stacked_area(  # noqa: PLR0913
         if sum(_df_neg[c]) == 0:
             continue
 
-        lower = _df_neg[c].fillna(0) + upper
+        lower = list(_df_neg[c].fillna(0) + upper)
         fig.add_trace(
             go.Scatter(
                 y=upper,
@@ -691,7 +692,7 @@ def plot_stacked_area(  # noqa: PLR0913
                 width=3,
             ),
             name="total",
-            customdata=list(df_plot.index.year),
+            customdata=list(df_plot.index.year),  # type: ignore
             hovertemplate="%{customdata}, %{y:.2e}",
         )
     )
@@ -884,55 +885,6 @@ def create_entity_figure(  # type: ignore # noqa: PLR0913
         iso_country=iso_country,
     )
 
-    # drop_parent = False
-    # if entity not in entities_to_plot :
-    #     # need the parent entity for GWP conversion
-    #     entities_to_plot = [*entities_to_plot, entity]
-    #     drop_parent = True
-    #
-    # with warnings.catch_warnings(action="ignore") :
-    #     filtered = dataset[entities_to_plot].pr.loc[
-    #         {
-    #             "category" : [category],
-    #             "area (ISO3)" : [iso_country],
-    #             "SourceScen" : [source_scenario],
-    #         }
-    #     ]
-    #
-    # filtered = apply_gwp(filtered, entity)
-    #
-    # # Drop the parent entity out before plotting (as otherwise the
-    # # area plot doesn't make sense)
-    # # TODO! Check if there is a nicer logic for that
-    # if drop_parent :
-    #     filtered = filtered.drop_vars(entity)
-    #
-    # with warnings.catch_warnings(action="ignore") :
-    #     stacked = filtered.pr.to_interchange_format().melt(
-    #         id_vars=index_cols, var_name="time", value_name="value"
-    #     )
-    #
-    # # if all values are NaN
-    # if stacked["value"].isna().all() :
-    #     # filter again but only for parent entity
-    #     with warnings.catch_warnings(action="ignore") :
-    #         filtered = dataset[entity].pr.loc[
-    #             {
-    #                 "category" : [category],
-    #                 "area (ISO3)" : [iso_country],
-    #                 "SourceScen" : [source_scenario],
-    #             }
-    #         ]
-    #
-    #     filtered_df = filtered.to_dataframe().reset_index()
-    #     stacked = filtered_df.rename(columns={entity : "value"})
-    #     stacked["entity"] = entity
-    # stacked["time"] = stacked["time"].apply(pd.to_datetime)
-    #
-    # # save xrange in case last values are NaN and cut off
-    # xrange = [min(stacked["time"]), max(stacked["time"])]
-    # stacked = stacked.dropna(subset=["value"])
-
     # TODO! Check different color schemes.
     # https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express
     # Set colors for areas per category
@@ -943,23 +895,6 @@ def create_entity_figure(  # type: ignore # noqa: PLR0913
         colors[key] = color
 
     fig = go.Figure()
-
-    # bring df in right format for plotting
-    # _df = stacked
-    # _df = _df.set_index("time")
-    # # TODO! There's probably a pandas function for this loop
-    # # TODO! Remove hard-coded category column name
-    # _df = pd.concat(
-    #     [_df[_df["entity"] == c]["value"].rename(c) for c in _df["entity"].unique()],
-    #     axis=1,
-    # )
-
-    # # TODO: reduce duplication with category plot in future PR
-    # # determine where positive and negative emissions
-    # _df_pos = _df.map(lambda x : max(x, 0))
-    # _df_neg = _df.map(lambda x : min(x, 0))
-    #
-    #
 
     # save xrange in case last values are NaN and cut off
     xrange = [min(stacked["time"]), max(stacked["time"])]
@@ -990,103 +925,6 @@ def create_entity_figure(  # type: ignore # noqa: PLR0913
         sub_plot="entity",
         dashed=True,
     )
-
-    # # plot all positive emissions
-    # lower = [0] * len(_df_pos)
-    # for c in reversed(_df_pos.columns) :
-    #     if sum(_df_pos[c].fillna(0)) == 0 :
-    #         continue
-    #
-    #     upper = _df_pos[c].fillna(0) + lower
-    #     fig.add_trace(
-    #         go.Scatter(
-    #             y=upper,
-    #             x=_df_pos.index,
-    #             mode="lines",
-    #             showlegend=False,
-    #             line=dict(
-    #                 color=colors[c],
-    #                 width=0,
-    #             ),
-    #             text=list(_df_pos[c]),
-    #             customdata=list(_df_pos.index.year),
-    #             hovertemplate="%{customdata}, %{text:.2e}",
-    #             name=f"{c} pos",
-    #         )
-    #     )
-    #     fig.add_trace(
-    #         go.Scatter(
-    #             y=lower,
-    #             x=_df_pos.index,
-    #             fill="tonexty",  # fill area between trace0 and trace1
-    #             fillcolor=colors[c],
-    #             mode="lines",
-    #             line=dict(
-    #                 width=0,
-    #             ),
-    #             hoverinfo="skip",
-    #             name=f"{c} pos",
-    #         )
-    #     )
-    #     lower = upper
-    #
-    # # plot all negative emissions
-    # upper = [0] * len(_df_neg)
-    # for c in _df_neg.columns :
-    #     if sum(_df_neg[c]) == 0 :
-    #         continue
-    #
-    #     lower = _df_neg[c].fillna(0) + upper
-    #     fig.add_trace(
-    #         go.Scatter(
-    #             y=upper,
-    #             x=_df_neg.index,
-    #             mode="lines",
-    #             line=dict(
-    #                 color=colors[c],
-    #                 width=0,
-    #             ),
-    #             showlegend=False,
-    #             name=f"{c} neg",
-    #             text=f"Category {c}",
-    #             hoverinfo="skip",
-    #         )
-    #     )
-    #
-    #     fig.add_trace(
-    #         go.Scatter(
-    #             y=lower,
-    #             x=_df_neg.index,
-    #             fill="tonexty",  # fill area between trace0 and trace1
-    #             mode="lines",
-    #             line=dict(
-    #                 color=colors[c],
-    #                 width=0,
-    #             ),
-    #             fillcolor=colors[c],
-    #             text=list(_df_neg[c]),
-    #             customdata=list(_df_neg.index.year),
-    #             hovertemplate="%{customdata}, %{text:.2e}",
-    #             name=f"{c} neg",
-    #         )
-    #     )
-    #     upper = lower
-    #
-    # # plot line for sum
-    # fig.add_trace(
-    #     go.Scatter(
-    #         y=_df.sum(axis=1),
-    #         x=_df.index,
-    #         mode="lines",
-    #         line=dict(
-    #             color="black",
-    #             width=3,
-    #         ),
-    #         name="total",
-    #         customdata=list(_df.index.year),
-    #         hovertemplate="%{customdata}, %{y:.2e}",
-    #     )
-    # )
 
     fig.update_layout(
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
