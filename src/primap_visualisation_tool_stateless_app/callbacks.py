@@ -305,6 +305,8 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     @app.callback(  # type: ignore
         Output("dropdown-source-scenario", "options"),
         Output("dropdown-source-scenario", "value"),
+        Output("dropdown-source-scenario-dashed", "options"),
+        Output("dropdown-source-scenario-dashed", "value"),
         Output("memory", "data"),
         Input("dropdown-country", "value"),
         Input("dropdown-category", "value"),
@@ -330,6 +332,8 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return (
                 source_scenario_options,
                 source_scenario,
+                source_scenario_options,
+                source_scenario,
                 memory_data,
             )
 
@@ -352,6 +356,8 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return (
                 source_scenario_options,
                 source_scenario,
+                source_scenario_options,
+                source_scenario,
                 memory_data,
             )
 
@@ -361,6 +367,8 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             source_scenario_out = source_scenario_options_out[0]
 
         return (
+            source_scenario_options_out,
+            source_scenario_out,
             source_scenario_options_out,
             source_scenario_out,
             memory_data,
@@ -373,6 +381,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         State("dropdown-category", "value"),
         State("dropdown-entity", "value"),
         Input("dropdown-source-scenario", "value"),
+        Input("dropdown-source-scenario-dashed", "value"),
         Input("memory", "data"),
         # Input("xyrange-category", "data"),
         # State("xyrange-entity", "data"),
@@ -383,6 +392,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         category: str,
         entity: str,
         source_scenario: str,
+        source_scenario_dashed: str,
         memory_data: dict[str, int],
         # xyrange_data: str | None,
         # xyrange_data_entity: str | None,
@@ -400,6 +410,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             category=category,
             entity=entity,
             source_scenario=source_scenario,
+            source_scenario_dashed=source_scenario_dashed,
             dataset=app_dataset,
         )
 
@@ -410,6 +421,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         State("dropdown-category", "value"),
         State("dropdown-entity", "value"),
         Input("dropdown-source-scenario", "value"),
+        Input("dropdown-source-scenario-dashed", "value"),
         Input("memory", "data"),
         # Input("xyrange-entity", "data"),
         # State("xyrange-category", "data"),
@@ -420,6 +432,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         category: str,
         entity: str,
         source_scenario: str,
+        source_scenario_dashed: str,
         memory_data: dict[str, int],
         app_dataset: xr.Dataset | None = None,
         # xyrange_data: str | None,
@@ -449,6 +462,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             category=category,
             entity=entity,
             source_scenario=source_scenario,
+            source_scenario_dashed=source_scenario_dashed,
             dataset=app_dataset,
         )
 
