@@ -345,13 +345,13 @@ def create_overview_figure(  # type: ignore
 
     return fig
 
-def get_category_split(categories_plot : list[str],
-                        iso_country : str,
-                        category : str,
-                        entity : str,
-                        source_scenario : str,
-                       dataset: xr.Dataset,) -> pd.DataFrame:
 
+def get_category_split(categories_plot: list[str],
+                       iso_country: str,
+                       category: str,
+                       entity: str,
+                       source_scenario: str,
+                       dataset: xr.Dataset, ) -> pd.DataFrame :
     with warnings.catch_warnings(action="ignore") :
         filtered = (
             dataset[entity]
@@ -385,163 +385,115 @@ def get_category_split(categories_plot : list[str],
         return filtered.to_dataframe().reset_index()
 
     return filtered_pandas
-def create_category_figure(  # type: ignore
-        country: str,
-        category: str,
-        entity: str,
-        source_scenario: str,
-        source_scenario_dashed: str,
-        dataset: xr.Dataset,
-) -> go.Figure :
-    """
-    Create the category figure.
-
-    Parameters
-    ----------
-    country
-        Country to show
-
-    category
-        Category to show
-
-    entity
-        Entity to show
-
-    source_scenario
-        Source scenario to show
-
-    dataset
-        Dataset from which to generate the figure
-
-    Returns
-    -------
-    Created category figure.
-
-    """
-    iso_country = get_country_code_mapping(dataset)[country]
-
-    category_options = tuple(dataset["category (IPCC2006_PRIMAP)"].to_numpy())
-
-    categories_plot = sorted(select_cat_children(category, category_options))
-
-    filtered_pandas = get_category_split(categories_plot=categories_plot,
-                                         iso_country=iso_country,
-                                         category=category,
-                                         entity=entity,
-                                         source_scenario=source_scenario,
-                                         dataset=dataset)
-
-    filtered_pandas_dashed = get_category_split(categories_plot=categories_plot,
-                                         iso_country=iso_country,
-                                         category=category,
-                                         entity=entity,
-                                         source_scenario=source_scenario_dashed,
-                                         dataset=dataset)
-
-    # with warnings.catch_warnings(action="ignore") :
-    #     filtered = (
-    #         dataset[entity]
-    #         .pr.loc[
-    #             {
-    #                 "category" : categories_plot,
-    #                 "area (ISO3)" : iso_country,
-    #                 "SourceScen" : source_scenario,
-    #             }
-    #         ]
-    #         .squeeze()
-    #     )
-    #
-    # filtered_pandas = filtered.to_dataframe().reset_index()
-
-    # with warnings.catch_warnings(action="ignore") :
-    #     filtered_dashed = (
-    #         dataset[entity]
-    #         .pr.loc[
-    #             {
-    #                 "category" : categories_plot,
-    #                 "area (ISO3)" : iso_country,
-    #                 "SourceScen" : source_scenario_dashed,
-    #             }
-    #         ]
-    #         .squeeze()
-    #     )
-    #
-    # filtered_pandas_dashed = filtered_dashed.to_dataframe().reset_index()
-
-    # if filtered_pandas[entity].isna().all() :
-    #     # filter again but only for parent category
-    #     with warnings.catch_warnings(action="ignore") :
-    #         filtered = (
-    #             dataset[entity]
-    #             .pr.loc[
-    #                 {
-    #                     "category" : category,
-    #                     "area (ISO3)" : iso_country,
-    #                     "SourceScen" : source_scenario,
-    #                 }
-    #             ]
-    #             .squeeze()
-    #         )
-    #
-    #     filtered_pandas = filtered.to_dataframe().reset_index()
-
-    # if filtered_pandas_dashed[entity].isna().all() :
-    #     # filter again but only for parent category
-    #     with warnings.catch_warnings(action="ignore") :
-    #         filtered_dashed = (
-    #             dataset[entity]
-    #             .pr.loc[
-    #                 {
-    #                     "category" : category,
-    #                     "area (ISO3)" : iso_country,
-    #                     "SourceScen" : source_scenario,
-    #                 }
-    #             ]
-    #             .squeeze()
-    #         )
-    #
-    #     filtered_pandas_dashed = filtered.to_dataframe().reset_index()
 
 
-
-    # Fix for figure not loading at start
-    # https://github.com/plotly/plotly.py/issues/3441
-    fig = go.Figure(layout=dict(template="plotly"))
-
-    # save xrange in case last values are NaN and cut off
-    xrange = [min(filtered_pandas["time"]), max(filtered_pandas["time"])]
-    # cut off trailing nan values (otherwise they will be plotted as zeros)
-    filtered_pandas = filtered_pandas.dropna(subset=[entity])
-    filtered_pandas_dashed = filtered_pandas_dashed.dropna(subset=[entity])
-
+def plot_stacked_area(fig: go.Figure,
+                            df_plot: pd.DataFrame,
+                            categories_plot,
+                            entity,
+                            colors,
+                            sub_plot,
+                            dashed: bool = False) -> go.Figure :
     # bring df in right format for plotting
-    _df = filtered_pandas
-    _df = _df.set_index("time")
-    # If we need better performance, there's probably a pandas function for this loop
-    # which may help (the loop may also not be that slow)
-    # TODO! Remove hard-coded category column name
-    _df = pd.concat(
-        [
-            _df[_df["category (IPCC2006_PRIMAP)"] == c][entity].rename(c)
-            for c in categories_plot
-        ],
-        axis=1,
-    )
+    df_plot = df_plot.set_index("time")
+
+    if sub_plot=='entity':
+        # TODO! There's probably a pandas function for this loop
+        # TODO! Remove hard-coded category column name
+        df_plot = pd.concat(
+            [df_plot[df_plot["entity"] == c]["value"].rename(c) for c in df_plot["entity"].unique()],
+            axis=1,
+        )
+    elif sub_plot=='category':
+        # If we need better performance, there's probably a pandas function for this loop
+        # which may help (the loop may also not be that slow)
+        # TODO! Remove hard-coded category column name
+        df_plot = pd.concat(
+            [
+                df_plot[df_plot["category (IPCC2006_PRIMAP)"] == c][entity].rename(c)
+                for c in categories_plot
+            ],
+            axis=1,
+        )
+
 
     # determine where positive and negative emissions
-    _df_pos = _df.map(lambda x : max(x, 0))
-    _df_neg = _df.map(lambda x : min(x, 0))
+    _df_pos = df_plot.map(lambda x : max(x, 0))
+    _df_neg = df_plot.map(lambda x : min(x, 0))
 
-    # TODO! Check different color schemes.
-    # https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express
-    # Set colors for areas per category
-    defaults = iter(px.colors.qualitative.Vivid)
-    colors = {}
-    for key in _df.columns :
-        color = next(defaults)
-        colors[key] = color
+    if dashed :
+        # plot all positive emissions
+        lower = [0] * len(_df_pos)
+        for c in reversed(_df_pos.columns) :
+            if sum(_df_pos[c].fillna(0)) == 0 :
+                continue
 
-    fig = go.Figure()
+            upper = _df_pos[c].fillna(0) + lower
+            fig.add_trace(
+                go.Scatter(
+                    y=upper,
+                    x=_df_pos.index,
+                    mode="lines",
+                    showlegend=False,
+                    line=dict(
+                        color='black',
+                        width=0.5,
+                        dash='dot'
+                    ),
+                    text=list(_df_pos[c]),
+                    customdata=list(_df_pos.index.year),
+                    hovertemplate="%{customdata}, %{text:.2e}",
+                    name=f"{c} dashed pos",
+                )
+            )
+
+            lower = upper
+
+        # plot all negative emissions
+        upper = [0] * len(_df_neg)
+        for c in _df_neg.columns :
+            if sum(_df_neg[c]) == 0 :
+                continue
+
+            lower = _df_neg[c].fillna(0) + upper
+
+            fig.add_trace(
+                go.Scatter(
+                    y=upper,
+                    x=_df_neg.index,
+                    mode="lines",
+                    line=dict(
+                        color='black',
+                        width=0.5,
+                        dash='dot'
+                    ),
+                    showlegend=False,
+                    text=list(_df_neg[c]),
+                    customdata=list(_df_neg.index.year),
+                    hovertemplate="%{customdata}, %{text:.2e}",
+                    name=f"{c} dashed neg",
+                )
+            )
+
+            upper = lower
+
+        fig.add_trace(
+            go.Scatter(
+                y=df_plot.sum(axis=1),
+                x=df_plot.index,
+                mode="lines",
+                line=dict(
+                    color="black",
+                    width=0.5,
+                    dash='dot'
+                ),
+                name="total dashed",
+                customdata=list(df_plot.index.year),
+                hovertemplate="%{customdata}, %{y:.2e}",
+            )
+        )
+
+        return fig
 
     # plot all positive emissions
     lower = [0] * len(_df_pos)
@@ -605,130 +557,121 @@ def create_category_figure(  # type: ignore
             )
         )
 
-        fig.add_trace(
-            go.Scatter(
-                y=lower,
-                x=_df_neg.index,
-                fill="tonexty",  # fill area between trace0 and trace1
-                mode="lines",
-                line=dict(
-                    color=colors[c],
-                    width=0,
-                ),
-                fillcolor=colors[c],
-                text=list(_df_neg[c]),
-                customdata=list(_df_neg.index.year),
-                hovertemplate="%{customdata}, %{text:.2e}",
-                name=f"{c} neg",
-            )
-        )
         upper = lower
-
-    # plot dashed lines with old version
-    # bring df in right format for plotting
-    _df_dashed = filtered_pandas_dashed
-    _df_dashed = _df_dashed.set_index("time")
-
-    # print(_df_dashed)
-    _df_dashed = pd.concat(
-        [
-            _df_dashed[_df_dashed["category (IPCC2006_PRIMAP)"] == c][entity].rename(c)
-            for c in categories_plot
-        ],
-        axis=1,
-    )
-
-    # determine where positive and negative emissions
-    _df_pos_dashed = _df_dashed.map(lambda x : max(x, 0))
-    _df_neg_dashed = _df_dashed.map(lambda x : min(x, 0))
-
-    # plot all positive emissions
-    lower = [0] * len(_df_pos_dashed)
-    for c in reversed(_df_pos_dashed.columns) :
-        if sum(_df_pos_dashed[c].fillna(0)) == 0 :
-            continue
-
-        upper = _df_pos_dashed[c].fillna(0) + lower
-        fig.add_trace(
-            go.Scatter(
-                y=upper,
-                x=_df_pos_dashed.index,
-                mode="lines",
-                showlegend=False,
-                line=dict(
-                    color='black',
-                    width=0.5,
-                    dash='dot'
-                ),
-                text=list(_df_pos_dashed[c]),
-                customdata=list(_df_pos_dashed.index.year),
-                hovertemplate="%{customdata}, %{text:.2e}",
-                name=f"{c} dashed pos",
-            )
-        )
-
-        lower = upper
-
-    # plot all negative emissions
-    upper = [0] * len(_df_neg_dashed)
-    for c in _df_neg_dashed.columns :
-        if sum(_df_neg_dashed[c]) == 0 :
-            continue
-
-        lower = _df_neg_dashed[c].fillna(0) + upper
-        fig.add_trace(
-            go.Scatter(
-                y=upper,
-                x=_df_neg_dashed.index,
-                mode="lines",
-                line=dict(
-                    color='black',
-                    width=0.5,
-                    dash='dot'
-                ),
-                showlegend=False,
-                text=list(_df_neg_dashed[c]),
-                customdata=list(_df_neg_dashed.index.year),
-                hovertemplate="%{customdata}, %{text:.2e}",
-                name=f"{c} dashed neg",
-            )
-        )
-
-        upper = lower
-
-    # plot line for sum dashed
-    fig.add_trace(
-        go.Scatter(
-            y=_df_dashed.sum(axis=1),
-            x=_df_dashed.index,
-            mode="lines",
-            line=dict(
-                color="black",
-                width=0.5,
-                dash='dot'
-            ),
-            name="total dashed",
-            customdata=list(_df.index.year),
-            hovertemplate="%{customdata}, %{y:.2e}",
-        )
-    )
 
     # plot line for sum
     fig.add_trace(
         go.Scatter(
-            y=_df.sum(axis=1),
-            x=_df.index,
+            y=df_plot.sum(axis=1),
+            x=df_plot.index,
             mode="lines",
             line=dict(
                 color="black",
                 width=3,
             ),
             name="total",
-            customdata=list(_df.index.year),
+            customdata=list(df_plot.index.year),
             hovertemplate="%{customdata}, %{y:.2e}",
         )
     )
 
+    return fig
+
+
+def create_category_figure(  # type: ignore
+        country: str,
+        category: str,
+        entity: str,
+        source_scenario: str,
+        source_scenario_dashed: str,
+        dataset: xr.Dataset,
+) -> go.Figure :
+    """
+    Create the category figure.
+
+    Parameters
+    ----------
+    country
+        Country to show
+
+    category
+        Category to show
+
+    entity
+        Entity to show
+
+    source_scenario
+        Source scenario to show
+
+    dataset
+        Dataset from which to generate the figure
+
+    Returns
+    -------
+    Created category figure.
+
+    """
+    iso_country = get_country_code_mapping(dataset)[country]
+
+    category_options = tuple(dataset["category (IPCC2006_PRIMAP)"].to_numpy())
+
+    categories_plot = sorted(select_cat_children(category, category_options))
+
+    # get the data frame for the selected source scenario
+    filtered_pandas = get_category_split(categories_plot=categories_plot,
+                                         iso_country=iso_country,
+                                         category=category,
+                                         entity=entity,
+                                         source_scenario=source_scenario,
+                                         dataset=dataset)
+
+    # get the data frame for the selected reference (dashed) source scenario
+    filtered_pandas_dashed = get_category_split(categories_plot=categories_plot,
+                                                iso_country=iso_country,
+                                                category=category,
+                                                entity=entity,
+                                                source_scenario=source_scenario_dashed,
+                                                dataset=dataset)
+
+    # Fix for figure not loading at start
+    # https://github.com/plotly/plotly.py/issues/3441
+    fig = go.Figure(layout=dict(template="plotly"))
+
+    # save xrange in case last values are NaN and cut off
+    xrange = [min(filtered_pandas["time"]), max(filtered_pandas["time"])]
+    # cut off nan values at end of time series (otherwise they will be plotted as zeros)
+    filtered_pandas = filtered_pandas.dropna(subset=[entity])
+    filtered_pandas_dashed = filtered_pandas_dashed.dropna(subset=[entity])
+
+    # TODO do we actually need this line?
+    fig = go.Figure()
+
+    # TODO! Check different color schemes.
+    # https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express
+    # Set colors for areas per category
+    defaults = iter(px.colors.qualitative.Vivid)
+    colors = {}
+    for key in categories_plot :
+        color = next(defaults)
+        colors[key] = color
+
+    # stacked area for categories
+    fig = plot_stacked_area(fig=fig,
+                                  df_plot=filtered_pandas,
+                                  categories_plot=categories_plot,
+                                  entity=entity,
+                                  colors=colors,
+                                  sub_plot='category',
+                                  dashed=False)
+
+    # stacked area for categories in reference (dashed) scenario
+    fig = plot_stacked_area(fig=fig,
+                                  df_plot=filtered_pandas_dashed,
+                                  categories_plot=categories_plot,
+                                  entity=entity,
+                                  colors=colors,
+                                  sub_plot='category',
+                                  dashed=True)
     fig.update_layout(
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         margin=dict(l=0, r=0, t=40, b=40),
@@ -740,6 +683,7 @@ def create_category_figure(  # type: ignore
         ),
     )
 
+    # TODO integrate fixed xyrange later again
     # In the initial callback xyrange_data will be None
     # if xyrange_data :
     #     xyrange_data_dict = json.loads(xyrange_data)
@@ -815,128 +759,140 @@ def create_entity_figure(  # type: ignore
     xrange = [min(stacked["time"]), max(stacked["time"])]
     stacked = stacked.dropna(subset=["value"])
 
-    # bring df in right format for plotting
-    _df = stacked
-    _df = _df.set_index("time")
-    # TODO! There's probably a pandas function for this loop
-    # TODO! Remove hard-coded category column name
-    _df = pd.concat(
-        [_df[_df["entity"] == c]["value"].rename(c) for c in _df["entity"].unique()],
-        axis=1,
-    )
-
-    # TODO: reduce duplication with category plot in future PR
-    # determine where positive and negative emissions
-    _df_pos = _df.map(lambda x : max(x, 0))
-    _df_neg = _df.map(lambda x : min(x, 0))
-
     # TODO! Check different color schemes.
     # https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express
     # Set colors for areas per category
     defaults = iter(px.colors.qualitative.Vivid)
     colors = {}
-    for key in _df.columns :
+    for key in stacked["entity"].unique() :
         color = next(defaults)
         colors[key] = color
 
     fig = go.Figure()
 
-    # plot all positive emissions
-    lower = [0] * len(_df_pos)
-    for c in reversed(_df_pos.columns) :
-        if sum(_df_pos[c].fillna(0)) == 0 :
-            continue
+    # bring df in right format for plotting
+    # _df = stacked
+    # _df = _df.set_index("time")
+    # # TODO! There's probably a pandas function for this loop
+    # # TODO! Remove hard-coded category column name
+    # _df = pd.concat(
+    #     [_df[_df["entity"] == c]["value"].rename(c) for c in _df["entity"].unique()],
+    #     axis=1,
+    # )
 
-        upper = _df_pos[c].fillna(0) + lower
-        fig.add_trace(
-            go.Scatter(
-                y=upper,
-                x=_df_pos.index,
-                mode="lines",
-                showlegend=False,
-                line=dict(
-                    color=colors[c],
-                    width=0,
-                ),
-                text=list(_df_pos[c]),
-                customdata=list(_df_pos.index.year),
-                hovertemplate="%{customdata}, %{text:.2e}",
-                name=f"{c} pos",
-            )
-        )
-        fig.add_trace(
-            go.Scatter(
-                y=lower,
-                x=_df_pos.index,
-                fill="tonexty",  # fill area between trace0 and trace1
-                fillcolor=colors[c],
-                mode="lines",
-                line=dict(
-                    width=0,
-                ),
-                hoverinfo="skip",
-                name=f"{c} pos",
-            )
-        )
-        lower = upper
+    # # TODO: reduce duplication with category plot in future PR
+    # # determine where positive and negative emissions
+    # _df_pos = _df.map(lambda x : max(x, 0))
+    # _df_neg = _df.map(lambda x : min(x, 0))
+    #
+    #
 
-    # plot all negative emissions
-    upper = [0] * len(_df_neg)
-    for c in _df_neg.columns :
-        if sum(_df_neg[c]) == 0 :
-            continue
 
-        lower = _df_neg[c].fillna(0) + upper
-        fig.add_trace(
-            go.Scatter(
-                y=upper,
-                x=_df_neg.index,
-                mode="lines",
-                line=dict(
-                    color=colors[c],
-                    width=0,
-                ),
-                showlegend=False,
-                name=f"{c} neg",
-                text=f"Category {c}",
-                hoverinfo="skip",
-            )
-        )
 
-        fig.add_trace(
-            go.Scatter(
-                y=lower,
-                x=_df_neg.index,
-                fill="tonexty",  # fill area between trace0 and trace1
-                mode="lines",
-                line=dict(
-                    color=colors[c],
-                    width=0,
-                ),
-                fillcolor=colors[c],
-                text=list(_df_neg[c]),
-                customdata=list(_df_neg.index.year),
-                hovertemplate="%{customdata}, %{text:.2e}",
-                name=f"{c} neg",
-            )
-        )
-        upper = lower
+    fig = plot_stacked_area(fig=fig,
+                            df_plot=stacked,
+                            categories_plot=entities_to_plot,
+                            entity=entity,
+                            colors=colors,
+                            sub_plot='entity',
+                            dashed=False)
 
-    # plot line for sum
-    fig.add_trace(
-        go.Scatter(
-            y=_df.sum(axis=1),
-            x=_df.index,
-            mode="lines",
-            line=dict(
-                color="black",
-                width=3,
-            ),
-            name="total",
-            customdata=list(_df.index.year),
-            hovertemplate="%{customdata}, %{y:.2e}",
-        )
-    )
+    # # plot all positive emissions
+    # lower = [0] * len(_df_pos)
+    # for c in reversed(_df_pos.columns) :
+    #     if sum(_df_pos[c].fillna(0)) == 0 :
+    #         continue
+    #
+    #     upper = _df_pos[c].fillna(0) + lower
+    #     fig.add_trace(
+    #         go.Scatter(
+    #             y=upper,
+    #             x=_df_pos.index,
+    #             mode="lines",
+    #             showlegend=False,
+    #             line=dict(
+    #                 color=colors[c],
+    #                 width=0,
+    #             ),
+    #             text=list(_df_pos[c]),
+    #             customdata=list(_df_pos.index.year),
+    #             hovertemplate="%{customdata}, %{text:.2e}",
+    #             name=f"{c} pos",
+    #         )
+    #     )
+    #     fig.add_trace(
+    #         go.Scatter(
+    #             y=lower,
+    #             x=_df_pos.index,
+    #             fill="tonexty",  # fill area between trace0 and trace1
+    #             fillcolor=colors[c],
+    #             mode="lines",
+    #             line=dict(
+    #                 width=0,
+    #             ),
+    #             hoverinfo="skip",
+    #             name=f"{c} pos",
+    #         )
+    #     )
+    #     lower = upper
+    #
+    # # plot all negative emissions
+    # upper = [0] * len(_df_neg)
+    # for c in _df_neg.columns :
+    #     if sum(_df_neg[c]) == 0 :
+    #         continue
+    #
+    #     lower = _df_neg[c].fillna(0) + upper
+    #     fig.add_trace(
+    #         go.Scatter(
+    #             y=upper,
+    #             x=_df_neg.index,
+    #             mode="lines",
+    #             line=dict(
+    #                 color=colors[c],
+    #                 width=0,
+    #             ),
+    #             showlegend=False,
+    #             name=f"{c} neg",
+    #             text=f"Category {c}",
+    #             hoverinfo="skip",
+    #         )
+    #     )
+    #
+    #     fig.add_trace(
+    #         go.Scatter(
+    #             y=lower,
+    #             x=_df_neg.index,
+    #             fill="tonexty",  # fill area between trace0 and trace1
+    #             mode="lines",
+    #             line=dict(
+    #                 color=colors[c],
+    #                 width=0,
+    #             ),
+    #             fillcolor=colors[c],
+    #             text=list(_df_neg[c]),
+    #             customdata=list(_df_neg.index.year),
+    #             hovertemplate="%{customdata}, %{text:.2e}",
+    #             name=f"{c} neg",
+    #         )
+    #     )
+    #     upper = lower
+    #
+    # # plot line for sum
+    # fig.add_trace(
+    #     go.Scatter(
+    #         y=_df.sum(axis=1),
+    #         x=_df.index,
+    #         mode="lines",
+    #         line=dict(
+    #             color="black",
+    #             width=3,
+    #         ),
+    #         name="total",
+    #         customdata=list(_df.index.year),
+    #         hovertemplate="%{customdata}, %{y:.2e}",
+    #     )
+    # )
 
     fig.update_layout(
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
