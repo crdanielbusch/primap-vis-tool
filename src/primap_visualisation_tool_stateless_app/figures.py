@@ -573,7 +573,7 @@ def plot_stacked_area(  # type: ignore # noqa: PLR0913
                     text=list(_df_pos[c]),
                     customdata=list(_df_pos.index.year),  # type: ignore
                     hovertemplate="%{customdata}, %{text:.2e}",
-                    name=f"{c} dashed pos",
+                    name=f"{c} dashed",
                 )
             )
 
@@ -597,7 +597,7 @@ def plot_stacked_area(  # type: ignore # noqa: PLR0913
                     text=list(_df_neg[c]),
                     customdata=list(_df_neg.index.year),  # type: ignore
                     hovertemplate="%{customdata}, %{text:.2e}",
-                    name=f"{c} dashed neg",
+                    name=f"{c} dashed",
                 )
             )
 
