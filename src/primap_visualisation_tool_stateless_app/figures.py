@@ -387,24 +387,80 @@ def get_category_split(categories_plot: list[str],
     return filtered_pandas
 
 
+def get_entity_split(entities_to_plot,
+                     entity,
+                     dataset,
+                     category,
+                     source_scenario,
+                     iso_country) :
+
+    drop_parent = False
+    if entity not in entities_to_plot :
+        # need the parent entity for GWP conversion
+        entities_to_plot = [*entities_to_plot, entity]
+        drop_parent = True
+
+    with warnings.catch_warnings(action="ignore") :
+        filtered = dataset[entities_to_plot].pr.loc[
+            {
+                "category" : [category],
+                "area (ISO3)" : [iso_country],
+                "SourceScen" : [source_scenario],
+            }
+        ]
+
+    filtered = apply_gwp(filtered, entity)
+
+    # Drop the parent entity out before plotting (as otherwise the
+    # area plot doesn't make sense)
+    # TODO! Check if there is a nicer logic for that
+    if drop_parent :
+        filtered = filtered.drop_vars(entity)
+
+    with warnings.catch_warnings(action="ignore") :
+        stacked = filtered.pr.to_interchange_format().melt(
+            id_vars=index_cols, var_name="time", value_name="value"
+        )
+
+    # if all values are NaN
+    if stacked["value"].isna().all() :
+        # filter again but only for parent entity
+        with warnings.catch_warnings(action="ignore") :
+            filtered = dataset[entity].pr.loc[
+                {
+                    "category" : [category],
+                    "area (ISO3)" : [iso_country],
+                    "SourceScen" : [source_scenario],
+                }
+            ]
+
+        filtered_df = filtered.to_dataframe().reset_index()
+        stacked = filtered_df.rename(columns={entity : "value"})
+        stacked["entity"] = entity
+
+    stacked["time"] = stacked["time"].apply(pd.to_datetime)
+
+    return stacked
+
+
 def plot_stacked_area(fig: go.Figure,
-                            df_plot: pd.DataFrame,
-                            categories_plot,
-                            entity,
-                            colors,
-                            sub_plot,
-                            dashed: bool = False) -> go.Figure :
+                      df_plot: pd.DataFrame,
+                      categories_plot,
+                      entity,
+                      colors,
+                      sub_plot,
+                      dashed: bool = False) -> go.Figure :
     # bring df in right format for plotting
     df_plot = df_plot.set_index("time")
 
-    if sub_plot=='entity':
+    if sub_plot == 'entity' :
         # TODO! There's probably a pandas function for this loop
         # TODO! Remove hard-coded category column name
         df_plot = pd.concat(
             [df_plot[df_plot["entity"] == c]["value"].rename(c) for c in df_plot["entity"].unique()],
             axis=1,
         )
-    elif sub_plot=='category':
+    elif sub_plot == 'category' :
         # If we need better performance, there's probably a pandas function for this loop
         # which may help (the loop may also not be that slow)
         # TODO! Remove hard-coded category column name
@@ -415,7 +471,6 @@ def plot_stacked_area(fig: go.Figure,
             ],
             axis=1,
         )
-
 
     # determine where positive and negative emissions
     _df_pos = df_plot.map(lambda x : max(x, 0))
@@ -657,21 +712,21 @@ def create_category_figure(  # type: ignore
 
     # stacked area for categories
     fig = plot_stacked_area(fig=fig,
-                                  df_plot=filtered_pandas,
-                                  categories_plot=categories_plot,
-                                  entity=entity,
-                                  colors=colors,
-                                  sub_plot='category',
-                                  dashed=False)
+                            df_plot=filtered_pandas,
+                            categories_plot=categories_plot,
+                            entity=entity,
+                            colors=colors,
+                            sub_plot='category',
+                            dashed=False)
 
     # stacked area for categories in reference (dashed) scenario
     fig = plot_stacked_area(fig=fig,
-                                  df_plot=filtered_pandas_dashed,
-                                  categories_plot=categories_plot,
-                                  entity=entity,
-                                  colors=colors,
-                                  sub_plot='category',
-                                  dashed=True)
+                            df_plot=filtered_pandas_dashed,
+                            categories_plot=categories_plot,
+                            entity=entity,
+                            colors=colors,
+                            sub_plot='category',
+                            dashed=True)
     fig.update_layout(
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         margin=dict(l=0, r=0, t=40, b=40),
@@ -710,54 +765,69 @@ def create_entity_figure(  # type: ignore
 
     entities_to_plot = sorted(SUBENTITIES[entity])
 
-    drop_parent = False
-    if entity not in entities_to_plot :
-        # need the parent entity for GWP conversion
-        entities_to_plot = [*entities_to_plot, entity]
-        drop_parent = True
+    stacked = get_entity_split(entities_to_plot=entities_to_plot,
+                               entity=entity,
+                               dataset=dataset,
+                               category=category,
+                               source_scenario=source_scenario,
+                               iso_country=iso_country)
 
-    with warnings.catch_warnings(action="ignore") :
-        filtered = dataset[entities_to_plot].pr.loc[
-            {
-                "category" : [category],
-                "area (ISO3)" : [iso_country],
-                "SourceScen" : [source_scenario],
-            }
-        ]
 
-    filtered = apply_gwp(filtered, entity)
+    stacked_dashed = get_entity_split(entities_to_plot=entities_to_plot,
+                                      entity=entity,
+                                      dataset=dataset,
+                                      category=category,
+                                      source_scenario=source_scenario_dashed,
+                                      iso_country=iso_country)
 
-    # Drop the parent entity out before plotting (as otherwise the
-    # area plot doesn't make sense)
-    # TODO! Check if there is a nicer logic for that
-    if drop_parent :
-        filtered = filtered.drop_vars(entity)
-
-    with warnings.catch_warnings(action="ignore") :
-        stacked = filtered.pr.to_interchange_format().melt(
-            id_vars=index_cols, var_name="time", value_name="value"
-        )
-
-    # if all values are NaN
-    if stacked["value"].isna().all() :
-        # filter again but only for parent entity
-        with warnings.catch_warnings(action="ignore") :
-            filtered = dataset[entity].pr.loc[
-                {
-                    "category" : [category],
-                    "area (ISO3)" : [iso_country],
-                    "SourceScen" : [source_scenario],
-                }
-            ]
-
-        filtered_df = filtered.to_dataframe().reset_index()
-        stacked = filtered_df.rename(columns={entity : "value"})
-        stacked["entity"] = entity
-    stacked["time"] = stacked["time"].apply(pd.to_datetime)
-
-    # save xrange in case last values are NaN and cut off
-    xrange = [min(stacked["time"]), max(stacked["time"])]
-    stacked = stacked.dropna(subset=["value"])
+    # drop_parent = False
+    # if entity not in entities_to_plot :
+    #     # need the parent entity for GWP conversion
+    #     entities_to_plot = [*entities_to_plot, entity]
+    #     drop_parent = True
+    #
+    # with warnings.catch_warnings(action="ignore") :
+    #     filtered = dataset[entities_to_plot].pr.loc[
+    #         {
+    #             "category" : [category],
+    #             "area (ISO3)" : [iso_country],
+    #             "SourceScen" : [source_scenario],
+    #         }
+    #     ]
+    #
+    # filtered = apply_gwp(filtered, entity)
+    #
+    # # Drop the parent entity out before plotting (as otherwise the
+    # # area plot doesn't make sense)
+    # # TODO! Check if there is a nicer logic for that
+    # if drop_parent :
+    #     filtered = filtered.drop_vars(entity)
+    #
+    # with warnings.catch_warnings(action="ignore") :
+    #     stacked = filtered.pr.to_interchange_format().melt(
+    #         id_vars=index_cols, var_name="time", value_name="value"
+    #     )
+    #
+    # # if all values are NaN
+    # if stacked["value"].isna().all() :
+    #     # filter again but only for parent entity
+    #     with warnings.catch_warnings(action="ignore") :
+    #         filtered = dataset[entity].pr.loc[
+    #             {
+    #                 "category" : [category],
+    #                 "area (ISO3)" : [iso_country],
+    #                 "SourceScen" : [source_scenario],
+    #             }
+    #         ]
+    #
+    #     filtered_df = filtered.to_dataframe().reset_index()
+    #     stacked = filtered_df.rename(columns={entity : "value"})
+    #     stacked["entity"] = entity
+    # stacked["time"] = stacked["time"].apply(pd.to_datetime)
+    #
+    # # save xrange in case last values are NaN and cut off
+    # xrange = [min(stacked["time"]), max(stacked["time"])]
+    # stacked = stacked.dropna(subset=["value"])
 
     # TODO! Check different color schemes.
     # https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express
@@ -787,7 +857,11 @@ def create_entity_figure(  # type: ignore
     #
     #
 
+    # save xrange in case last values are NaN and cut off
+    xrange = [min(stacked["time"]), max(stacked["time"])]
+    stacked = stacked.dropna(subset=["value"])
 
+    stacked_dashed = stacked_dashed.dropna(subset=["value"])
 
     fig = plot_stacked_area(fig=fig,
                             df_plot=stacked,
@@ -796,6 +870,14 @@ def create_entity_figure(  # type: ignore
                             colors=colors,
                             sub_plot='entity',
                             dashed=False)
+
+    fig = plot_stacked_area(fig=fig,
+                            df_plot=stacked_dashed,
+                            categories_plot=entities_to_plot,
+                            entity=entity,
+                            colors=colors,
+                            sub_plot='entity',
+                            dashed=True)
 
     # # plot all positive emissions
     # lower = [0] * len(_df_pos)
