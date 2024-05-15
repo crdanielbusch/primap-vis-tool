@@ -530,7 +530,6 @@ def plot_stacked_area(  # type: ignore # noqa: PLR0913
 
     if sub_plot == "entity":
         # TODO! Remove hard-coded category column name
-        # TODO! Will fail for some combinations
         df_plot = pd.concat(
             [
                 df_plot[df_plot["entity"] == c]["value"].rename(c)
