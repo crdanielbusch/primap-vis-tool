@@ -569,7 +569,7 @@ def plot_stacked_area(  # type: ignore # noqa: PLR0913
                     x=_df_pos.index,
                     mode="lines",
                     showlegend=False,
-                    line=dict(color="black", width=0.5, dash="dot"),
+                    line=dict(color="rgb(128,128,128)", width=0.5, dash="dash"),
                     text=list(_df_pos[c]),
                     customdata=list(_df_pos.index.year),  # type: ignore
                     hovertemplate="%{customdata}, %{text:.2e}",
@@ -592,7 +592,7 @@ def plot_stacked_area(  # type: ignore # noqa: PLR0913
                     y=upper,
                     x=_df_neg.index,
                     mode="lines",
-                    line=dict(color="black", width=0.5, dash="dot"),
+                    line=dict(color="rgb(128,128,128)", width=0.5, dash="dash"),
                     showlegend=False,
                     text=list(_df_neg[c]),
                     customdata=list(_df_neg.index.year),  # type: ignore
@@ -608,7 +608,7 @@ def plot_stacked_area(  # type: ignore # noqa: PLR0913
                 y=df_plot.sum(axis=1),
                 x=df_plot.index,
                 mode="lines",
-                line=dict(color="black", width=0.5, dash="dot"),
+                line=dict(color="black", width=0.5, dash="dash"),
                 name="total dashed",
                 customdata=list(df_plot.index.year),  # type: ignore
                 hovertemplate="%{customdata}, %{y:.2e}",
@@ -676,6 +676,24 @@ def plot_stacked_area(  # type: ignore # noqa: PLR0913
                 name=f"{c} neg",
                 text=f"Category {c}",
                 hoverinfo="skip",
+            )
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                y=lower,
+                x=_df_neg.index,
+                fill="tonexty",  # fill area between trace0 and trace1
+                mode="lines",
+                line=dict(
+                    color=colors[c],
+                    width=0,
+                ),
+                fillcolor=colors[c],
+                text=list(_df_neg[c]),
+                customdata=list(_df_neg.index.year),
+                hovertemplate="%{customdata}, %{text:.2e}",
+                name=f"{c} neg",
             )
         )
 
