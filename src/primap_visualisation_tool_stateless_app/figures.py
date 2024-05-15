@@ -690,7 +690,7 @@ def plot_stacked_area(  # type: ignore # noqa: PLR0913
                 ),
                 fillcolor=colors[c],
                 text=list(_df_neg[c]),
-                customdata=list(_df_neg.index.year),
+                customdata=list(_df_neg.index.year),  # type: ignore
                 hovertemplate="%{customdata}, %{text:.2e}",
                 name=f"{c} neg",
             )
