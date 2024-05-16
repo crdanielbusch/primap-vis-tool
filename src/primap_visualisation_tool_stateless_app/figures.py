@@ -321,28 +321,6 @@ def create_overview_figure(  # type: ignore
         entity=entity,
     )
 
-    # with warnings.catch_warnings(action="ignore"):
-    #     filtered = (
-    #         dataset[entity]
-    #         .pr.loc[
-    #             {
-    #                 "category": category,
-    #                 "area (ISO3)": iso_country,
-    #             }
-    #         ]
-    #         .squeeze()
-    #     )
-    #
-    # filtered_pandas = filtered.to_dataframe().reset_index()
-    #
-    # null_source_scenario_options = filtered_pandas.groupby(by="SourceScen")[entity].apply(
-    #     lambda x: x.isna().all()
-    # )
-    #
-    # null_source_scenario_options = null_source_scenario_options[list(null_source_scenario_options)].index
-    #
-    # original_source_scenario_options = tuple(dataset["SourceScen"].to_numpy())
-    #
     new_source_scenario_options = list(source_scenarios_with_data.keys())
 
     source_scenario_sorted = []
