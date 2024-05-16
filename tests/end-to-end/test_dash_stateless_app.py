@@ -204,6 +204,7 @@ def test_008_initial_figures(dash_duo, tmp_path):
         (
             "graph-category-split",
             [
+                ("total dashed", None, None, None),
                 ("total", None, None, None),
                 ("1 pos", None, None, None),
                 ("2 pos", None, None, None),
@@ -215,6 +216,7 @@ def test_008_initial_figures(dash_duo, tmp_path):
         (
             "graph-entity-split",
             [
+                ("total dashed", None, None, None),
                 ("total", None, None, None),
                 ("CO2 pos", None, None, None),
             ],

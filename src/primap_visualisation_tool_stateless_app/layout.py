@@ -106,6 +106,15 @@ def create_layout(  # type: ignore  # noqa: PLR0913
             value=source_scenario,
             id="dropdown-source-scenario",
         ),
+        html.B(
+            children="Source Scenario dashed",
+            style={"textAlign": "left", "fontSize": 14},
+        ),
+        dcc.Dropdown(
+            source_scenario_options,
+            value=source_scenario,
+            id="dropdown-source-scenario-dashed",
+        ),
     ]
 
     notes = [
