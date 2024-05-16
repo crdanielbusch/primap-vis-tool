@@ -1,11 +1,13 @@
 """
 Dataset handling
 """
+
 from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Iterable
 
+import pandas as pd
 import pycountry
 import xarray as xr
 from attrs import define
@@ -214,6 +216,40 @@ def get_source_scenario_start(
         return preferred_starting_source_scenario
 
     return source_scenario_options[0]
+
+
+def get_not_all_nan_source_scenario_dfs(
+    inp: xr.Dataset, entity: str
+) -> dict[str, pd.DataFrame]:
+    """
+    Get source-scenario :obj:`pd.DataFrame`s for source-scenario combinations which are not all nan
+
+    Parameters
+    ----------
+    inp
+        Input dataset
+
+    entity
+        Entity of interest in the dataset.
+
+    Returns
+    -------
+        A dictionary, where each key is the source-scenario
+        and each value is a :obj:`pd.DataFrame` for the source-scenario.
+        Only source-scenarios with non-nan values are included in the output.
+    """
+    inp_df = inp[entity].pint.dequantify().squeeze().to_dataframe().reset_index()
+
+    res = {}
+    for source_scenario, source_scen_df in inp_df.groupby("SourceScen"):
+        if source_scen_df[entity].isna().all():
+            continue
+
+        # Reset index to make sure that the source scenario dataframes
+        # have simple indexes rather than numbers that don't make sense.
+        res[source_scenario] = source_scen_df.reset_index(drop=True)
+
+    return res
 
 
 @define

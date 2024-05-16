@@ -1,9 +1,9 @@
 """
 Callback definitions
 """
+
 from __future__ import annotations
 
-import warnings
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -23,6 +23,7 @@ from primap_visualisation_tool_stateless_app.dataset_handling import (
     get_country_code_mapping,
     get_country_options,
     get_entity_options,
+    get_not_all_nan_source_scenario_dfs,
 )
 from primap_visualisation_tool_stateless_app.dataset_holder import (
     get_application_dataset,
@@ -133,35 +134,17 @@ def update_source_scenario_options(
 
     iso_country = country_code_mapping[country]
 
-    with warnings.catch_warnings(action="ignore"):
-        filtered = (
-            dataset[entity]
-            .pr.loc[
-                {
-                    "category": category,
-                    "area (ISO3)": iso_country,
-                }
-            ]
-            .squeeze()
-        )
+    source_scenarios_with_data = get_not_all_nan_source_scenario_dfs(
+        inp=dataset.pr.loc[
+            {
+                "category": category,
+                "area (ISO3)": iso_country,
+            }
+        ],
+        entity=entity,
+    )
 
-    filtered_pandas = filtered.to_dataframe().reset_index()
-
-    null_source_scenario_options = filtered_pandas.groupby(by="SourceScen")[
-        entity
-    ].apply(lambda x: x.isna().all())
-
-    null_source_scenario_options = null_source_scenario_options[
-        list(null_source_scenario_options)
-    ].index
-
-    original_source_scenario_options = tuple(dataset["SourceScen"].to_numpy())
-
-    new_source_scenario_options = [
-        i
-        for i in original_source_scenario_options
-        if i not in null_source_scenario_options
-    ]
+    new_source_scenario_options = list(source_scenarios_with_data.keys())
 
     if not new_source_scenario_options:
         return None
