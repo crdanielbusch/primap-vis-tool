@@ -848,6 +848,8 @@ def plot_stacked_area_dashes(  # type: ignore
         )
     )
 
+    return fig
+
 
 def create_category_figure(  # type: ignore # noqa: PLR0913
     country: str,
