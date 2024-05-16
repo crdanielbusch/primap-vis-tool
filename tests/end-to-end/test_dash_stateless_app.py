@@ -21,6 +21,7 @@ import primap_visualisation_tool_stateless_app
 import primap_visualisation_tool_stateless_app.callbacks
 import primap_visualisation_tool_stateless_app.create_app
 import primap_visualisation_tool_stateless_app.dataset_holder
+import primap_visualisation_tool_stateless_app.figures
 import primap_visualisation_tool_stateless_app.notes
 import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
 
@@ -158,20 +159,47 @@ def test_008_initial_figures(dash_duo, tmp_path):
     # hence we go for this very basic solution.
     time.sleep(2.0)
 
+    # If we don't provide plotting config, the defaults are used
+    source_scenario_definition = (
+        primap_visualisation_tool_stateless_app.dataset_handling.infer_source_scenarios(
+            test_ds
+        )
+    )
+    plotting_config = (
+        primap_visualisation_tool_stateless_app.figures.create_default_plotting_config(
+            source_scenarios=source_scenario_definition
+        )
+    )
+
+    expected_graph_overview_source_scenarios = [
+        "PRIMAP-hist_v2.5_final_nr, HISTCR",
+        "PRIMAP-hist_v2.5_final_nr, HISTTP",
+        "PRIMAP-hist_v2.4.2_final_nr, HISTCR",
+        "PRIMAP-hist_v2.4.2_final_nr, HISTTP",
+        "CRF 2023, 230926",
+        "CRF 2022, 230510",
+        "EDGAR 7.0, HISTORY",
+        "FAOSTAT 2022, HISTORY",
+        "UNFCCC NAI, 231015",
+    ]
+    expected_graph_overview_items = []
+    for k, v in plotting_config.source_scenario_settings.items():
+        if k not in expected_graph_overview_source_scenarios:
+            continue
+
+        exp_line = [k]
+        for info in ["color", "dash", "width"]:
+            if info in v:
+                exp_line.append(v[info])
+            else:
+                exp_line.append(None)
+
+        expected_graph_overview_items.append(tuple(exp_line))
+
     figures_expected_items = (
         (
             "graph-overview",
-            [
-                ("PRIMAP-hist_v2.5_final_nr, HISTCR", "rgb(0, 0, 0)", "solid", 3),
-                ("PRIMAP-hist_v2.5_final_nr, HISTTP", "rgb(166, 166, 166)", "solid", 3),
-                ("PRIMAP-hist_v2.4.2_final_nr, HISTCR", "rgb(0, 0, 0)", "dot", 3),
-                ("PRIMAP-hist_v2.4.2_final_nr, HISTTP", "rgb(166, 166, 166)", "dot", 3),
-                ("CRF 2022, 230510", "rgb(60, 179, 113)", "solid", None),
-                ("CRF 2023, 230926", "rgb(238, 130, 238)", "solid", None),
-                ("EDGAR 7.0, HISTORY", "rgb(255, 165, 0)", "solid", None),
-                ("FAOSTAT 2022, HISTORY", "rgb(100, 0, 255)", "solid", None),
-                ("UNFCCC NAI, 231015", "rgb(255, 0, 0)", "solid", None),
-            ],
+            expected_graph_overview_items,
         ),
         (
             "graph-category-split",

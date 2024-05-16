@@ -7,6 +7,13 @@ primap\_visualisation\_tool\_stateless\_app.dataset\_handling
 
 
 
+SourceScenarioDefinition
+========================
+
+.. autoclass:: SourceScenarioDefinition
+   :members:
+
+
 get\_country\_start
 ===================
 
@@ -59,3 +66,21 @@ get\_source\_scenario\_start
 ============================
 
 .. autofunction:: get_source_scenario_start
+
+
+infer\_source\_scenarios
+========================
+
+.. autofunction:: infer_source_scenarios
+
+
+group\_other\_source\_scenarios
+===============================
+
+.. autofunction:: group_other_source_scenarios
+
+
+attempt\_to\_sort\_source\_scenarios\_in\_group
+===============================================
+
+.. autofunction:: attempt_to_sort_source_scenarios_in_group

@@ -3,8 +3,14 @@ Dataset handling
 """
 from __future__ import annotations
 
+from collections import defaultdict
+from collections.abc import Iterable
+
 import pycountry
 import xarray as xr
+from attrs import define
+from loguru import logger
+from packaging.version import InvalidVersion, Version
 
 
 def get_country_start(
@@ -208,3 +214,154 @@ def get_source_scenario_start(
         return preferred_starting_source_scenario
 
     return source_scenario_options[0]
+
+
+@define
+class SourceScenarioDefinition:
+    """Definition of source-scenarios provided in the app's dataset"""
+
+    primap_old_cr: str
+    """Old PRIMAP CR variant"""
+
+    primap_old_tp: str
+    """Old PRIMAP TP variant"""
+
+    primap_new_cr: str
+    """New PRIMAP CR variant"""
+
+    primap_new_tp: str
+    """New PRIMAP TP variant"""
+
+    other_source_scenarios: tuple[str, ...]
+    """Other source scenarios"""
+
+
+def infer_source_scenarios(inp: xr.Dataset) -> SourceScenarioDefinition:
+    """
+    Infer source scenarios from an :obj:`xr.Dataset`
+
+    Parameters
+    ----------
+    inp
+        :obj:`xr.Dataset` from which to infer the source scenarios
+
+    Returns
+    -------
+        Inferred source scenario definition
+    """
+    source_scenarios = inp["SourceScen"].values.tolist()  # noqa: PD011
+
+    other_source_scenarios = tuple(
+        v for v in source_scenarios if not v.startswith("PRIMAP-hist")
+    )
+    primap_variants = set(source_scenarios).difference(set(other_source_scenarios))
+
+    primap_sources = set([v.split(",")[0] for v in primap_variants])
+    exp_n_primap_sources = 2
+    if len(primap_sources) != exp_n_primap_sources:
+        msg = (
+            f"Expected to find {exp_n_primap_sources} PRIMAP sources, "
+            f"but found {primap_sources}, based on "
+            f"PRIMAP variants of {primap_variants}"
+        )
+        raise AssertionError(msg)
+
+    primap_versions = sorted(
+        [[Version(v.split("_")[1]), v] for v in primap_sources], key=lambda x: x[0]
+    )
+
+    primap_older = primap_versions[0][1]
+    primap_newer = primap_versions[1][1]
+
+    primap_old_cr = f"{primap_older}, HISTCR"
+    primap_old_tp = f"{primap_older}, HISTTP"
+    primap_new_cr = f"{primap_newer}, HISTCR"
+    primap_new_tp = f"{primap_newer}, HISTTP"
+
+    missing_expected_primap_scenarios = [
+        v
+        for v in (
+            primap_old_cr,
+            primap_old_tp,
+            primap_new_cr,
+            primap_new_tp,
+        )
+        if v not in source_scenarios
+    ]
+
+    if missing_expected_primap_scenarios:
+        msg = f"Missing expected PRIMAP scenarios {missing_expected_primap_scenarios}. {source_scenarios=}"
+        raise AssertionError(msg)
+
+    return SourceScenarioDefinition(
+        primap_old_cr=primap_old_cr,
+        primap_old_tp=primap_old_tp,
+        primap_new_cr=primap_new_cr,
+        primap_new_tp=primap_new_tp,
+        other_source_scenarios=tuple(sorted(other_source_scenarios)),
+    )
+
+
+def group_other_source_scenarios(inp: tuple[str, ...]) -> tuple[tuple[str, ...], ...]:
+    """
+    Group other source-scenarios
+
+    This is basically guess work, so won't be perfect, but is a helpful starting point.
+
+    Parameters
+    ----------
+    inp
+        Input source-scenarios to group
+
+    Returns
+    -------
+        Grouped source-scenarios.
+        Each element is a group, sorted in order from oldest to newest version.
+    """
+    stem_groups = defaultdict(list)
+    for source_scen in inp:
+        stem = source_scen.split(" ")[0]
+        stem_groups[stem].append(source_scen)
+
+    res: list[tuple[str, ...]] = []
+    for stem_group in sorted(stem_groups.keys()):
+        stem_group_vals = stem_groups[stem_group]
+        if len(stem_group_vals) == 1:
+            res.append((stem_group_vals[0],))
+
+        else:
+            res.append(attempt_to_sort_source_scenarios_in_group(stem_group_vals))
+
+    return tuple(res)
+
+
+def attempt_to_sort_source_scenarios_in_group(inp: Iterable[str]) -> tuple[str, ...]:
+    """
+    Attempt to sort the source-scenarios in a group
+
+    Parameters
+    ----------
+    inp
+        Source-scenarios to sort
+
+    Returns
+    -------
+        Sorted source-scenarios.
+        If no obvious pattern can be found, the source-scenarios are simply sorted and returned.
+    """
+    try:
+        versions_names: list[tuple[Version, str]] = [
+            (Version(v.split(" ")[1].strip(",")), v) for v in inp
+        ]
+    except InvalidVersion:
+        logger.warning(
+            "Source-scenarios will simply be sorted "
+            f"because we could not infer any versions for sorting {inp}"
+        )
+        return tuple(sorted(inp))
+
+    versions_names_sorted = sorted(versions_names, key=lambda x: x[0])
+
+    res = tuple([v[1] for v in versions_names_sorted])
+
+    return res
