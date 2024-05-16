@@ -376,7 +376,7 @@ def create_overview_figure(  # type: ignore
         last_idx = df_source_scenario[entity].last_valid_index()
 
         # check if time series has data gaps
-        if any(df_source_scenario[entity].loc[first_idx:last_idx].isna()):
+        if any(df_source_scenario[entity].loc[first_idx:last_idx].isna()):  # type: ignore
             mode = "lines+markers"
         else:
             mode = "lines"
@@ -652,67 +652,12 @@ def plot_stacked_area(  # type: ignore # noqa: PLR0913
     _df_neg = df_plot.map(lambda x: min(x, 0))
 
     if dashed:
-        # plot all positive emissions
-        lower = [0] * len(_df_pos)
-
-        for c in reversed(_df_pos.columns):
-            if sum(_df_pos[c].fillna(0)) == 0:
-                continue
-
-            upper = list(_df_pos[c].fillna(0) + lower)
-            fig.add_trace(
-                go.Scatter(
-                    y=upper,
-                    x=_df_pos.index,
-                    mode="lines",
-                    showlegend=False,
-                    line=dict(color="rgb(128,128,128)", width=0.5, dash="dash"),
-                    text=list(_df_pos[c]),
-                    customdata=list(_df_pos.index.year),  # type: ignore
-                    hovertemplate="%{customdata}, %{text:.2e}",
-                    name=f"{c} dashed",
-                )
-            )
-
-            lower = upper
-
-        # plot all negative emissions
-        upper = [0] * len(_df_neg)
-        for c in _df_neg.columns:
-            if sum(_df_neg[c]) == 0:
-                continue
-
-            lower = list(_df_neg[c].fillna(0) + upper)
-
-            fig.add_trace(
-                go.Scatter(
-                    y=upper,
-                    x=_df_neg.index,
-                    mode="lines",
-                    line=dict(color="rgb(128,128,128)", width=0.5, dash="dash"),
-                    showlegend=False,
-                    text=list(_df_neg[c]),
-                    customdata=list(_df_neg.index.year),  # type: ignore
-                    hovertemplate="%{customdata}, %{text:.2e}",
-                    name=f"{c} dashed",
-                )
-            )
-
-            upper = lower
-
-        fig.add_trace(
-            go.Scatter(
-                y=df_plot.sum(axis=1),
-                x=df_plot.index,
-                mode="lines",
-                line=dict(color="black", width=0.5, dash="dash"),
-                name="total dashed",
-                customdata=list(df_plot.index.year),  # type: ignore
-                hovertemplate="%{customdata}, %{y:.2e}",
-            )
+        return plot_stacked_area_dashes(
+            fig=fig,
+            positive_lines=_df_pos,
+            negative_lines=_df_neg,
+            df_plot=df_plot,
         )
-
-        return fig
 
     # plot all positive emissions
     lower = [0] * len(_df_pos)
@@ -813,6 +758,95 @@ def plot_stacked_area(  # type: ignore # noqa: PLR0913
     )
 
     return fig
+
+
+def plot_stacked_area_dashes(  # type: ignore
+    fig: go.Figure,
+    positive_lines: pd.DataFrame,
+    negative_lines: pd.DataFrame,
+    df_plot: pd.DataFrame,
+) -> go.Figure:
+    """
+    Plot dashed lines on our stacked area plot
+
+    Parameters
+    ----------
+    fig
+        Figure on which to plot
+
+    positive_lines
+        Positive lines to plot
+
+    negative_lines
+        Negative lines to plot
+
+    df_plot
+        Full :obj:`pd.DataFrame` being plotted, used for plotting the total
+
+    Returns
+    -------
+        Figure on which we have plotted
+    """
+    # plot all positive emissions
+    lower = [0] * len(positive_lines)
+
+    for c in reversed(positive_lines.columns):
+        if sum(positive_lines[c].fillna(0)) == 0:
+            continue
+
+        upper = list(positive_lines[c].fillna(0) + lower)
+        fig.add_trace(
+            go.Scatter(
+                y=upper,
+                x=positive_lines.index,
+                mode="lines",
+                showlegend=False,
+                line=dict(color="rgb(128,128,128)", width=0.5, dash="dash"),
+                text=list(positive_lines[c]),
+                customdata=list(positive_lines.index.year),  # type: ignore
+                hovertemplate="%{customdata}, %{text:.2e}",
+                name=f"{c} dashed",
+            )
+        )
+
+        lower = upper
+
+    # plot all negative emissions
+    upper = [0] * len(negative_lines)
+    for c in negative_lines.columns:
+        if sum(negative_lines[c]) == 0:
+            continue
+
+        lower = list(negative_lines[c].fillna(0) + upper)
+
+        fig.add_trace(
+            go.Scatter(
+                y=upper,
+                x=negative_lines.index,
+                mode="lines",
+                line=dict(color="rgb(128,128,128)", width=0.5, dash="dash"),
+                showlegend=False,
+                text=list(negative_lines[c]),
+                customdata=list(negative_lines.index.year),  # type: ignore
+                hovertemplate="%{customdata}, %{text:.2e}",
+                name=f"{c} dashed",
+            )
+        )
+
+        upper = lower
+
+    # Plot total
+    fig.add_trace(
+        go.Scatter(
+            y=df_plot.sum(axis=1),
+            x=df_plot.index,
+            mode="lines",
+            line=dict(color="black", width=0.5, dash="dash"),
+            name="total dashed",
+            customdata=list(df_plot.index.year),  # type: ignore
+            hovertemplate="%{customdata}, %{y:.2e}",
+        )
+    )
 
 
 def create_category_figure(  # type: ignore # noqa: PLR0913

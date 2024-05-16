@@ -125,7 +125,7 @@ def update_source_scenario_options(
     category: str,
     entity: str,
     dataset: xr.Dataset,
-) -> tuple[str] | None:
+) -> tuple[str, ...] | None:
     """
     Update the source scenario dropdown options according to country, category and entity
 
