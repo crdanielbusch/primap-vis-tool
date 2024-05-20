@@ -13,6 +13,9 @@
 /data-old
 /notebooks
 
+# Test data plotting config
+tests/test-data/test_ds_plotting-config.yaml
+
 # Jupyter cache
 .jupyter_cache
 

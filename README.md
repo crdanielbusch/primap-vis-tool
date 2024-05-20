@@ -9,8 +9,6 @@ https://myst-parser.readthedocs.io/en/latest/syntax/organising_content.html#inse
 
 This app visualises GHG-emissions over time based on sectors, countries and entities. It is based on the Primap dataset.
 
-
-
 [![CI](https://github.com/crdanielbusch/primap-visualisation-tool/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/crdanielbusch/primap-visualisation-tool/actions/workflows/ci.yaml)
 [![Coverage](https://codecov.io/gh/crdanielbusch/primap-visualisation-tool/branch/main/graph/badge.svg)](https://codecov.io/gh/crdanielbusch/primap-visualisation-tool)
 [![Docs](https://readthedocs.org/projects/primap-visualisation-tool/badge/?version=latest)](https://primap-visualisation-tool.readthedocs.io)
@@ -28,7 +26,7 @@ This app visualises GHG-emissions over time based on sectors, countries and enti
 
 <!--- sec-end-description -->
 
-Full documentation can be found at:
+Full documentation can (soon, once we have uploaded it [TODO set up RtD?]) be found at:
 [primap-visualisation-tool.readthedocs.io](https://primap-visualisation-tool.readthedocs.io/en/latest/).
 We recommend reading the docs there because the internal documentation links
 don't render correctly on GitHub's viewer.
@@ -37,7 +35,13 @@ don't render correctly on GitHub's viewer.
 
 <!--- sec-begin-installation -->
 
-Primap visualisation tool can be installed with conda or pip:
+The PRIMAP visualisation tool can be installed from source with:
+
+```bash
+poetry install --all-extras
+```
+
+Primap visualisation tool can (soon, once we have set it up [TODO make available on RtD?]) be installed with conda or pip:
 
 ```bash
 pip install primap-visualisation-tool
@@ -55,33 +59,64 @@ pip install primap-visualisation-tool[plots]
 # solution yet (issue here: https://github.com/conda/conda/issues/7502)
 ```
 
+<!--- sec-end-installation -->
+
 ## Run the app
 
-The data file required to run the app is not included here. It can be retrieved from
-[here](https://gin.hemio.de/jguetschow/PRIMAP-hist_visualization_tool/src/master/data/combined/combined_data_v2.5_final_v2.4.2_final.nc).
+<!--- sec-begin-run -->
 
-The file should be saved in the `data` directory.
-
-To run the app, run the following command in the root directory
+The first time you run the app, we suggest simply running it from the root directory with
 
 ```bash
-poetry run python src/primap_visualisation_tool/app.py
+poetry run python src/primap_visualisation_tool_stateless_app/main.py --dataset <path-to-dataset>
 ```
 
-The same command is executed with
+If you don't have a dataset available already, simply use `tests/test-data/test_ds.nc`, e.g.
 
 ```bash
-make run-app
+poetry run python src/primap_visualisation_tool_stateless_app/main.py --dataset tests/test-data/test_ds.nc
 ```
 
-Use `-p` to specifiy the port number and `-f`to select a file in the `data`directory.
+### Plotting configuration
+
+The first time you run the app, it will create a plotting configuration file for you.
+The file will be saved in the same directory as your dataset
+and will be named `<dataset-name>_plotting-config.yaml`.
+For example, with the test file `tests/test-data/test_ds.nc`,
+the created file is `tests/test-data/test_ds_plotting-config.yaml`.
+
+The plotting configuration file allows you to change the configuration of the plots made by the tool.
+Each key in the `source_scenario_settings` section is the name of a source-scenario in the data file.
+Each value is itself a dictionary.
+As the user, for each source-scenario, you can set its "color", "dash" and "width".
+
+The next time you run the app, the configuration file will be used for configuration.
+If you wish, you can make a copy of the configuration file and save it elsewhere.
+Then, tell the app to use the configuration file with the `--plotting-config-yaml` option, e.g.
 
 ```bash
-poetry run python src/primap_visualisation_tool/app.py -p <my-port-number> -f <my-file-name>
+poetry run python src/primap_visualisation_tool_stateless_app/main.py --dataset <path-to-dataset> --plotting-config-yaml <path-to-plotting-config-yaml>
 ```
 
+### Notes database and other options
 
-<!--- sec-end-installation -->
+The app's other options are quite self-explanatory.
+A help message can be shown with:
+
+```bash
+poetry run python src/primap_visualisation_tool_stateless_app/main.py --help
+```
+
+The key other option for most users is `--notes-db`.
+This option allows you to specify the file in which to save the notes database.
+If it is not supplied,
+a file in the same directory as your dataset, named `<dataset-name>.db` will be used.
+For example, with the test file `tests/test-data/test_ds.nc`,
+the default notes database file is `tests/test-data/test_ds.db`.
+For post-processing, this notes file can be read into a :obj:`pd.DataFrame`
+using {py:func}`primap_visualisation_tool_stateless_app.notes.db.read_country_notes_db_as_pd`.
+
+<!--- sec-end-run -->
 
 ### For developers
 
