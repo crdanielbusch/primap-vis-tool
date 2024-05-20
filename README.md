@@ -141,3 +141,25 @@ For the rest of our developer docs, please see [](development-reference).
 [issue_tracker]: https://github.com/crdanielbusch/primap-visualisation-tool/issues
 
 <!--- sec-end-installation-dev -->
+
+### Code layout/structure
+
+Dash doesn't play nicely with global state.
+[TODO: find issues etc. where we have discussed this]
+Hence, we try to avoid using global state wherever possible.
+This isn't perfect because we don't have a true front-end, back-end split,
+but the current set up is close enough for the tests to mostly behave.
+
+The app itself lives in `src/primap_visualisation_tool_stateless_app`.
+The command-line interface to run the app lives in `src/primap_visualisation_tool_stateless_app/main.py`.
+The other files handle the other components of the app, including:
+
+- callbacks
+- creation of app instances
+- handling the PRIMAP dataset (e.g. filtering, re-shaping)
+- holding the dataset
+  - dash doesn't like global state, so we do this in a way which is more like
+    having a back-end, although it is not exactly a back-end so more thought
+    would be needed for a truely stateless app with a separate back- and front-end
+- creating/updating figures
+- setting up the app's layout
