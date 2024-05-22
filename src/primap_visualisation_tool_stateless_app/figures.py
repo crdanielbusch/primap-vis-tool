@@ -16,6 +16,7 @@ from loguru import logger
 from primap_visualisation_tool_stateless_app.dataset_handling import (
     SourceScenarioDefinition,
     get_country_code_mapping,
+    get_not_all_nan_source_scenario_dfs,
     group_other_source_scenarios,
     infer_source_scenarios,
 )
@@ -310,37 +311,17 @@ def create_overview_figure(  # type: ignore
 
     iso_country = get_country_code_mapping(dataset)[country]
 
-    with warnings.catch_warnings(action="ignore"):
-        filtered = (
-            dataset[entity]
-            .pr.loc[
-                {
-                    "category": category,
-                    "area (ISO3)": iso_country,
-                }
-            ]
-            .squeeze()
-        )
+    source_scenarios_with_data = get_not_all_nan_source_scenario_dfs(
+        inp=dataset.pr.loc[
+            {
+                "category": category,
+                "area (ISO3)": iso_country,
+            }
+        ],
+        entity=entity,
+    )
 
-    filtered_pandas = filtered.to_dataframe().reset_index()
-
-    null_source_scenario_options = filtered_pandas.groupby(by="SourceScen")[
-        entity
-    ].apply(lambda x: x.isna().all())
-
-    null_source_scenario_options = null_source_scenario_options[
-        list(null_source_scenario_options)
-    ].index
-
-    original_source_scenario_options = tuple(dataset["SourceScen"].to_numpy())
-
-    new_source_scenario_options = [
-        i
-        for i in original_source_scenario_options
-        if i not in null_source_scenario_options
-    ]
-
-    fig = go.Figure()
+    new_source_scenario_options = list(source_scenarios_with_data.keys())
 
     source_scenario_sorted = []
     if plotting_config is not None:
@@ -354,6 +335,8 @@ def create_overview_figure(  # type: ignore
         if k not in source_scenario_sorted:
             source_scenario_sorted.append(k)
 
+    fig = go.Figure()
+
     for source_scenario in source_scenario_sorted:
         # check if layout is defined
         if (
@@ -365,16 +348,13 @@ def create_overview_figure(  # type: ignore
             # Provide no settings to dash
             line_layout = {}
 
-        df_source_scenario = filtered_pandas.loc[
-            filtered_pandas["SourceScen"] == source_scenario
-        ]
+        df_source_scenario = source_scenarios_with_data[source_scenario]
 
-        df_source_scenario = df_source_scenario.reset_index()
-        # find start and end of time series for SourceScenario
         first_idx = df_source_scenario[entity].first_valid_index()
         last_idx = df_source_scenario[entity].last_valid_index()
+
         # check if time series has data gaps
-        if any(df_source_scenario[entity].loc[first_idx:last_idx].isna()):
+        if any(df_source_scenario[entity].loc[first_idx:last_idx].isna()):  # type: ignore
             mode = "lines+markers"
         else:
             mode = "lines"
@@ -437,14 +417,19 @@ def get_category_split(  # noqa: PLR0913
     ----------
     categories_to_plot
         The categories to show in the plot.
+
     iso_country
         Country to show
+
     category
         Category to show
+
     entity
         The selected entity in the entity dropdown
+
     source_scenario
         Source scenario to show
+
     dataset
         Dataset from which to generate the figure
 
@@ -452,37 +437,37 @@ def get_category_split(  # noqa: PLR0913
     -------
         Filtered data set for category figure.
     """
-    with warnings.catch_warnings(action="ignore"):
-        filtered = (
+    filtered_pandas = (
+        dataset[entity]
+        .pr.loc[
+            {
+                "category": categories_to_plot,
+                "area (ISO3)": iso_country,
+                "SourceScen": source_scenario,
+            }
+        ]
+        .pint.dequantify()
+        .squeeze()
+        .to_dataframe()
+        .reset_index()
+    )
+
+    if filtered_pandas[entity].isna().all():
+        # filter again but only for parent category
+        filtered_pandas = (
             dataset[entity]
             .pr.loc[
                 {
-                    "category": categories_to_plot,
+                    "category": category,
                     "area (ISO3)": iso_country,
                     "SourceScen": source_scenario,
                 }
             ]
+            .pint.dequantify()
             .squeeze()
+            .to_dataframe()
+            .reset_index()
         )
-
-    filtered_pandas = filtered.to_dataframe().reset_index()
-
-    if filtered_pandas[entity].isna().all():
-        # filter again but only for parent category
-        with warnings.catch_warnings(action="ignore"):
-            filtered = (
-                dataset[entity]
-                .pr.loc[
-                    {
-                        "category": category,
-                        "area (ISO3)": iso_country,
-                        "SourceScen": source_scenario,
-                    }
-                ]
-                .squeeze()
-            )
-
-        return filtered.to_dataframe().reset_index()  # type: ignore
 
     return filtered_pandas  # type: ignore
 
@@ -502,14 +487,19 @@ def get_entity_split(  # noqa: PLR0913
     ----------
     entities_to_plot
         The entities to show in the plot
+
     entity
         The selected entity in the entity dropdown
+
     dataset
         Dataset from which to generate the figure
+
     category
         Category to show
+
     source_scenario
         Source scenario to show
+
     iso_country
         Country to show
 
@@ -540,24 +530,29 @@ def get_entity_split(  # noqa: PLR0913
     if drop_parent:
         filtered = filtered.drop_vars(entity)
 
-    with warnings.catch_warnings(action="ignore"):
-        stacked = filtered.pr.to_interchange_format().melt(
-            id_vars=index_cols, var_name="time", value_name="value"
-        )
+    stacked = (
+        filtered.pint.dequantify()
+        .pr.to_interchange_format()
+        .melt(id_vars=index_cols, var_name="time", value_name="value")
+    )
 
     # if all values are NaN
     if stacked["value"].isna().all():
         # filter again but only for parent entity
-        with warnings.catch_warnings(action="ignore"):
-            filtered = dataset[entity].pr.loc[
+        filtered_df = (
+            dataset[entity]
+            .pr.loc[
                 {
                     "category": [category],
                     "area (ISO3)": [iso_country],
                     "SourceScen": [source_scenario],
                 }
             ]
+            .pint.dequantify()
+            .to_dataframe()
+            .reset_index()
+        )
 
-        filtered_df = filtered.to_dataframe().reset_index()
         stacked = filtered_df.rename(columns={entity: "value"})
         stacked["entity"] = entity
 
@@ -582,30 +577,34 @@ def plot_stacked_area(  # type: ignore # noqa: PLR0913
     ----------
     fig
         The figure that should contain the stacked area plot
+
     df_plot
         The data frame to plot
+
     categories_to_plot
         The categories to plot. Only needed for category figure
+
     entity
         The entity to plot
+
     colors
         The colors for the areas in the plot
+
     sub_plot
         Either category or entity plot
+
     dashed
         If True, function will return dashed lines instead of filled areas
 
     Returns
     -------
         The figure with the stacked area plot
-    -------
-
     """
     # bring df in right format for plotting
     df_plot = df_plot.set_index("time")
 
     if sub_plot == "entity":
-        # TODO! Remove hard-coded category column name
+        # TODO! Remove hard-coded entity column name
         df_plot = pd.concat(
             [
                 df_plot[df_plot["entity"] == c]["value"].rename(c)
@@ -613,6 +612,7 @@ def plot_stacked_area(  # type: ignore # noqa: PLR0913
             ],
             axis=1,
         )
+
     elif sub_plot == "category":
         # If we need better performance, there's probably a pandas function for this loop
         # which may help (the loop may also not be that slow)
@@ -630,67 +630,12 @@ def plot_stacked_area(  # type: ignore # noqa: PLR0913
     _df_neg = df_plot.map(lambda x: min(x, 0))
 
     if dashed:
-        # plot all positive emissions
-        lower = [0] * len(_df_pos)
-
-        for c in reversed(_df_pos.columns):
-            if sum(_df_pos[c].fillna(0)) == 0:
-                continue
-
-            upper = list(_df_pos[c].fillna(0) + lower)
-            fig.add_trace(
-                go.Scatter(
-                    y=upper,
-                    x=_df_pos.index,
-                    mode="lines",
-                    showlegend=False,
-                    line=dict(color="rgb(128,128,128)", width=0.5, dash="dash"),
-                    text=list(_df_pos[c]),
-                    customdata=list(_df_pos.index.year),  # type: ignore
-                    hovertemplate="%{customdata}, %{text:.2e}",
-                    name=f"{c} dashed",
-                )
-            )
-
-            lower = upper
-
-        # plot all negative emissions
-        upper = [0] * len(_df_neg)
-        for c in _df_neg.columns:
-            if sum(_df_neg[c]) == 0:
-                continue
-
-            lower = list(_df_neg[c].fillna(0) + upper)
-
-            fig.add_trace(
-                go.Scatter(
-                    y=upper,
-                    x=_df_neg.index,
-                    mode="lines",
-                    line=dict(color="rgb(128,128,128)", width=0.5, dash="dash"),
-                    showlegend=False,
-                    text=list(_df_neg[c]),
-                    customdata=list(_df_neg.index.year),  # type: ignore
-                    hovertemplate="%{customdata}, %{text:.2e}",
-                    name=f"{c} dashed",
-                )
-            )
-
-            upper = lower
-
-        fig.add_trace(
-            go.Scatter(
-                y=df_plot.sum(axis=1),
-                x=df_plot.index,
-                mode="lines",
-                line=dict(color="black", width=0.5, dash="dash"),
-                name="total dashed",
-                customdata=list(df_plot.index.year),  # type: ignore
-                hovertemplate="%{customdata}, %{y:.2e}",
-            )
+        return plot_stacked_area_dashes(
+            fig=fig,
+            positive_lines=_df_pos,
+            negative_lines=_df_neg,
+            df_plot=df_plot,
         )
-
-        return fig
 
     # plot all positive emissions
     lower = [0] * len(_df_pos)
@@ -793,6 +738,97 @@ def plot_stacked_area(  # type: ignore # noqa: PLR0913
     return fig
 
 
+def plot_stacked_area_dashes(  # type: ignore
+    fig: go.Figure,
+    positive_lines: pd.DataFrame,
+    negative_lines: pd.DataFrame,
+    df_plot: pd.DataFrame,
+) -> go.Figure:
+    """
+    Plot dashed lines on our stacked area plot
+
+    Parameters
+    ----------
+    fig
+        Figure on which to plot
+
+    positive_lines
+        Positive lines to plot
+
+    negative_lines
+        Negative lines to plot
+
+    df_plot
+        Full :obj:`pd.DataFrame` being plotted, used for plotting the total
+
+    Returns
+    -------
+        Figure on which we have plotted
+    """
+    # plot all positive emissions
+    lower = [0] * len(positive_lines)
+
+    for c in reversed(positive_lines.columns):
+        if sum(positive_lines[c].fillna(0)) == 0:
+            continue
+
+        upper = list(positive_lines[c].fillna(0) + lower)
+        fig.add_trace(
+            go.Scatter(
+                y=upper,
+                x=positive_lines.index,
+                mode="lines",
+                showlegend=False,
+                line=dict(color="rgb(128,128,128)", width=0.5, dash="dash"),
+                text=list(positive_lines[c]),
+                customdata=list(positive_lines.index.year),  # type: ignore
+                hovertemplate="%{customdata}, %{text:.2e}",
+                name=f"{c} dashed",
+            )
+        )
+
+        lower = upper
+
+    # plot all negative emissions
+    upper = [0] * len(negative_lines)
+    for c in negative_lines.columns:
+        if sum(negative_lines[c]) == 0:
+            continue
+
+        lower = list(negative_lines[c].fillna(0) + upper)
+
+        fig.add_trace(
+            go.Scatter(
+                y=upper,
+                x=negative_lines.index,
+                mode="lines",
+                line=dict(color="rgb(128,128,128)", width=0.5, dash="dash"),
+                showlegend=False,
+                text=list(negative_lines[c]),
+                customdata=list(negative_lines.index.year),  # type: ignore
+                hovertemplate="%{customdata}, %{text:.2e}",
+                name=f"{c} dashed",
+            )
+        )
+
+        upper = lower
+
+    # Plot total
+    fig.add_trace(
+        go.Scatter(
+            y=df_plot.sum(axis=1),
+            x=df_plot.index,
+            mode="lines",
+            line=dict(color="black", width=0.5, dash="dash"),
+            name="total dashed",
+            customdata=list(df_plot.index.year),  # type: ignore
+            hovertemplate="%{customdata}, %{y:.2e}",
+        )
+    )
+
+    return fig
+
+
 def create_category_figure(  # type: ignore # noqa: PLR0913
     country: str,
     category: str,
@@ -823,8 +859,7 @@ def create_category_figure(  # type: ignore # noqa: PLR0913
 
     Returns
     -------
-    Created category figure.
-
+        Created category figure.
     """
     iso_country = get_country_code_mapping(dataset)[country]
 
@@ -861,9 +896,6 @@ def create_category_figure(  # type: ignore # noqa: PLR0913
     # cut off nan values at end of time series (otherwise they will be plotted as zeros)
     filtered_pandas = filtered_pandas.dropna(subset=[entity])
     filtered_pandas_dashed = filtered_pandas_dashed.dropna(subset=[entity])
-
-    # TODO do we actually need this line?
-    fig = go.Figure()
 
     # TODO! Check different color schemes.
     # https://plotly.com/python/discrete-color/#color-sequences-in-plotly-express
@@ -952,8 +984,7 @@ def create_entity_figure(  # type: ignore # noqa: PLR0913
 
     Returns
     -------
-    Created entity figure.
-
+        Created entity figure.
     """
     iso_country = get_country_code_mapping(dataset)[country]
 

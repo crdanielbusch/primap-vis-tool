@@ -1,6 +1,7 @@
 """
 End to end testing of an app that doesn't use global state
 """
+
 import re
 import time
 from pathlib import Path
@@ -58,6 +59,7 @@ def setup_app(
     app = primap_visualisation_tool_stateless_app.create_app.create_app()
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
+    time.sleep(3.0)
 
     return dash_duo
 
@@ -141,6 +143,8 @@ def test_007_country_buttons(dash_duo, tmp_path):
 
     # Country dropdown should be back to where it started
     dash_duo.wait_for_contains_text("#dropdown-country", "EARTH")
+
+    time.sleep(1.0)
 
 
 def test_008_initial_figures(dash_duo, tmp_path):
@@ -275,6 +279,8 @@ def test_009_category_buttons(dash_duo, tmp_path):
 
     # Category dropdown should update back to where it started
     dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL")
+
+    time.sleep(1.0)
 
 
 def test_010_entity_buttons(dash_duo):
@@ -621,6 +627,7 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
 
     # Go to a different country via the buttons
     dash_duo.multiple_click("#next_country", 15, delay=0.01)
+    time.sleep(1.0)
     assert get_dropdown_value(dropdown_country) != country_with_notes
 
     # Go back to the first country via the dropdown menu
