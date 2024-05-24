@@ -48,6 +48,9 @@ def create_app() -> Dash:  # type: ignore
         source_scenario=get_source_scenario_start(dataset),
         source_scenario_options=get_source_scenario_options(dataset),
     )
-    app.layout = dbc.Container(layout)
+    app.layout = dbc.Container(
+        layout,
+        style={"max-width": "none", "width": "100%"},
+    )
 
     return app
