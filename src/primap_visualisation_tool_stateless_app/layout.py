@@ -32,7 +32,12 @@ def create_layout(  # type: ignore  # noqa: PLR0913
     """
     Create the layout for our app
     """
-    stores = [dcc.Store(id="country-dropdown-store", storage_type="memory")]
+    stores = [
+        dcc.Store(id="country-dropdown-store", storage_type="memory"),
+        dcc.Store(id="xyrange-overview", storage_type="memory"),
+        dcc.Store(id="xyrange-category", storage_type="memory"),
+        dcc.Store(id="xyrange-entity", storage_type="memory"),
+    ]
     dropdowns_and_buttons = [
         html.B(
             children="Country",
