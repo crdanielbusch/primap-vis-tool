@@ -1,3 +1,7 @@
+"""
+Share view settings across figures.
+"""
+
 import json
 from typing import Any
 
@@ -67,6 +71,8 @@ def update_xy_range(xyrange: str, figure: dict) -> Any:
     ----------
     xyrange_data
         X- and y-axis range to which the figure is to be updated.
+    figure
+        The figure to be updated.
 
     Returns
     -------

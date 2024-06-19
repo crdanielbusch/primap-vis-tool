@@ -242,7 +242,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         # Input("memory", "data"),
         Input("xyrange-overview", "data"),
     )
-    def update_overview_figure(
+    def update_overview_figure(  # noqa: PLR0913
         graph_figure_current: go.Figure,
         country: str,
         category: str,
@@ -480,10 +480,12 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         #     source_scenario
         # )
 
-        # in case user adjusts category figure layout
-        # and then changes country, category or entity
-        # if not xyrange_data :
-        #     xyrange_data = xyrange_data_category
+        # In case user adjusts entity figure layout
+        # and then changes country, category or entity,
+        # take xyrange from category figure
+        # To reproduce this case: launch the app, click zoom out in category, click next country
+        if xyrange_entity != xyrange_category:
+            xyrange_entity = xyrange_category
 
         return create_entity_figure(
             country=country,
