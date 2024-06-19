@@ -2,6 +2,7 @@
 Figure handling and creation
 """
 
+import json
 import warnings
 from collections import OrderedDict
 
@@ -267,6 +268,7 @@ def create_overview_figure(  # type: ignore
     category: str,
     entity: str,
     dataset: xr.Dataset,
+    xyrange: dict,
     plotting_config: PlottingConfig | None = None,
 ) -> go.Figure:
     """
@@ -387,17 +389,17 @@ def create_overview_figure(  # type: ignore
     )
 
     # In the initial callback this property will be None
-    # if xyrange_data :
-    #     xyrange_data_dict = json.loads(xyrange_data)
-    #     fig.update_layout(
-    #         xaxis=dict(
-    #             range=xyrange_data_dict["xaxis"],
-    #             autorange=False,
-    #         ),
-    #         yaxis=dict(
-    #             autorange=True,
-    #         ),
-    #     )
+    if xyrange:
+        xyrange_data_dict = json.loads(xyrange)
+        fig.update_layout(
+            xaxis=dict(
+                range=xyrange_data_dict["xaxis"],
+                autorange=False,
+            ),
+            yaxis=dict(
+                autorange=True,
+            ),
+        )
 
     return fig
 
@@ -836,6 +838,7 @@ def create_category_figure(  # type: ignore # noqa: PLR0913
     source_scenario: str,
     source_scenario_dashed: str,
     dataset: xr.Dataset,
+    xyrange: dict,
 ) -> go.Figure:
     """
     Create the category figure.
@@ -938,15 +941,14 @@ def create_category_figure(  # type: ignore # noqa: PLR0913
         ),
     )
 
-    # TODO integrate fixed xyrange later again
     # In the initial callback xyrange_data will be None
-    # if xyrange_data :
-    #     xyrange_data_dict = json.loads(xyrange_data)
-    #     fig.update_layout(
-    #         xaxis=dict(
-    #             range=xyrange_data_dict["xaxis"],
-    #         ),
-    #     )
+    if xyrange:
+        xyrange_data_dict = json.loads(xyrange)
+        fig.update_layout(
+            xaxis=dict(
+                range=xyrange_data_dict["xaxis"],
+            ),
+        )
 
     return fig
 
@@ -958,6 +960,7 @@ def create_entity_figure(  # type: ignore # noqa: PLR0913
     source_scenario: str,
     source_scenario_dashed: str,
     dataset: xr.Dataset,
+    xyrange: dict,
 ) -> go.Figure:
     """
     Create the entity figure.
@@ -1061,17 +1064,18 @@ def create_entity_figure(  # type: ignore # noqa: PLR0913
         ),
     )
 
+    # TODO: What's this?
     # fig.update_traces(
     #     hovertemplate="%{y:.2e} ",
     # )
 
     # In the initial callback xyrange_data will be None
-    # if xyrange_data:
-    #     xyrange_data_dict = json.loads(xyrange_data)
-    #     fig.update_layout(
-    #         xaxis=dict(
-    #             range=xyrange_data_dict["xaxis"],
-    #         ),
-    #     )
+    if xyrange:
+        xyrange_data_dict = json.loads(xyrange)
+        fig.update_layout(
+            xaxis=dict(
+                range=xyrange_data_dict["xaxis"],
+            ),
+        )
 
     return fig

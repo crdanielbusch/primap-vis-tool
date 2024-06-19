@@ -4,7 +4,6 @@ Callback definitions
 
 from __future__ import annotations
 
-import json
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -41,6 +40,10 @@ from primap_visualisation_tool_stateless_app.notes import (
     get_note_save_confirmation_string,
     notes_db_cursor,
     save_country_notes_in_notes_db,
+)
+from primap_visualisation_tool_stateless_app.view import (
+    get_xyrange_from_figure,
+    update_xy_range,
 )
 
 
@@ -232,20 +235,20 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
     @app.callback(  # type: ignore
         Output("graph-overview", "figure"),
+        State("graph-overview", "figure"),
         Input("dropdown-country", "value"),
         Input("dropdown-category", "value"),
         Input("dropdown-entity", "value"),
-        State("graph-overview", "figure"),
         # Input("memory", "data"),
-        # Input("xyrange-overview", "data"),
+        Input("xyrange-overview", "data"),
     )
     def update_overview_figure(
+        graph_figure_current: go.Figure,
         country: str,
         category: str,
         entity: str,
-        graph_figure_current: go.Figure,
         # memory_data: dict[str, int],
-        # xyrange_data: str | None,
+        xyrange_overview: str | None,
         app_dataset: xr.Dataset | None = None,
     ) -> go.Figure:
         """
@@ -281,11 +284,17 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # User cleared one of the selections in the dropdown, do nothing
             return graph_figure_current
 
-        # if ctx.triggered_id == "xyrange-overview" and xyrange_data:
-        #    return app_state.update_overview_range(xyrange_data)
+        if ctx.triggered_id == "xyrange-overview" and xyrange_overview:
+            return update_xy_range(
+                xyrange=xyrange_overview, figure=graph_figure_current
+            )
 
         return create_overview_figure(
-            country=country, category=category, entity=entity, dataset=app_dataset
+            country=country,
+            category=category,
+            entity=entity,
+            dataset=app_dataset,
+            xyrange=xyrange_overview,
         )
 
     @app.callback(  # type: ignore
@@ -378,8 +387,8 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Input("dropdown-source-scenario", "value"),
         Input("dropdown-source-scenario-dashed", "value"),
         Input("memory", "data"),
-        # Input("xyrange-category", "data"),
-        # State("xyrange-entity", "data"),
+        Input("xyrange-category", "data"),
+        State("xyrange-entity", "data"),
     )
     def update_category_figure(  # noqa: PLR0913
         graph_figure_current: go.Figure,
@@ -389,12 +398,17 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         source_scenario: str,
         source_scenario_dashed: str,
         memory_data: dict[str, int],
-        # xyrange_data: str | None,
-        # xyrange_data_entity: str | None,
+        xyrange_category: str | None,
+        xyrange_entity: str | None,
         app_dataset: xr.Dataset | None = None,
     ) -> go.Figure:
         if app_dataset is None:
             app_dataset = get_application_dataset()
+
+        if ctx.triggered_id == "xyrange-category" and xyrange_category:
+            return update_xy_range(
+                xyrange=xyrange_category, figure=graph_figure_current
+            )
 
         if any(
             v is None
@@ -416,95 +430,8 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             source_scenario=source_scenario,
             source_scenario_dashed=source_scenario_dashed,
             dataset=app_dataset,
+            xyrange=xyrange_category,
         )
-
-    def update_x_range(fig: Any, xyrange: dict[str, list[str | float | bool]]) -> Any:
-        """
-        Update the x-axis limits in the plot.
-
-        Parameters
-        ----------
-        fig
-            The figure that should be updated.
-        xrange
-            The minimum and maximum value for the x- and y-axis.
-
-        Returns
-        -------
-            The same figure with update x-axis
-        """
-        fig["layout"].update(
-            xaxis=dict(
-                range=[
-                    xyrange["xaxis"][0],
-                    xyrange["xaxis"][1],
-                ],
-                autorange=False,
-            ),
-        )
-
-        return fig
-
-    def update_y_range(fig: Any, xyrange: dict[str, list[str | float]]) -> Any:
-        """
-        Update the y-axis limits in the plot.
-
-        Parameters
-        ----------
-        fig
-            The figure that should be updated.
-        xyrange
-            The minimum and maximum value for the x- and y-axis.
-
-
-        Returns
-        -------
-            The same figure with updated y-axis.
-        """
-        fig["layout"].update(
-            yaxis=dict(
-                range=[
-                    xyrange["yaxis"][0],
-                    xyrange["yaxis"][1],
-                ],
-                autorange=False,
-            ),
-        )
-
-        return fig
-
-    def update_entity_range(xyrange: str, figure: dict) -> Any:
-        """
-        Update xy-range of entity figure according to stored xy-range.
-
-        Parameters
-        ----------
-        xyrange_data
-            X- and y-axis range to which the figure is to be updated.
-
-        Returns
-        -------
-            Updated figure.
-        """
-        layout_data = json.loads(xyrange)
-
-        fig = figure
-
-        # autorange indicates user clicked on Autoscale or Reset axes
-        if "autorange" in layout_data.keys():
-            fig["layout"].update(  # type: ignore
-                yaxis=dict(
-                    autorange=True,
-                ),
-                xaxis=dict(
-                    autorange=True,
-                ),
-            )
-        else:
-            fig = update_x_range(fig, layout_data)
-            fig = update_y_range(fig, layout_data)
-
-        return fig
 
     @app.callback(  # type: ignore
         Output("graph-entity-split", "figure"),
@@ -534,9 +461,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             app_dataset = get_application_dataset()
 
         if ctx.triggered_id == "xyrange-entity" and xyrange_entity:
-            return update_entity_range(
-                xyrange=xyrange_entity, figure=graph_figure_current
-            )
+            return update_xy_range(xyrange=xyrange_entity, figure=graph_figure_current)
 
         if any(
             v is None
@@ -567,6 +492,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             source_scenario=source_scenario,
             source_scenario_dashed=source_scenario_dashed,
             dataset=app_dataset,
+            xyrange=xyrange_entity,
         )
 
     @app.callback(
@@ -665,39 +591,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             notes_value,
             country_store,
         )
-
-    def get_xyrange_from_figure(
-        x_source_figure: dict[str, Any] | None = None,
-        y_source_figure: dict[str, Any] | None = None,
-        autorange: bool = False,
-    ) -> str:
-        """
-        Get x- and y-axis limits from a figure and set autorange.
-
-        Parameters
-        ----------
-        x_source_figure
-            Figure from which to extract x-axis limits.
-        y_source_figure
-            Figure from which to ectract y-axis limits.
-        autorange
-            Ignore x- and y-axis limits in the current plot and set to autorange.
-
-        Returns
-        -------
-            Information about x- and y-axis limits.
-
-        """
-        xy_range = {}
-
-        if x_source_figure:
-            xy_range["xaxis"] = x_source_figure["layout"]["xaxis"]["range"]
-        if y_source_figure:
-            xy_range["yaxis"] = y_source_figure["layout"]["yaxis"]["range"]
-        if autorange:
-            xy_range["autorange"] = True
-
-        return json.dumps(xy_range)
 
     @app.callback(  # type: ignore
         Output("xyrange-overview", "data"),
