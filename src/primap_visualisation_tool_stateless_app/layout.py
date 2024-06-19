@@ -32,7 +32,10 @@ def create_layout(  # type: ignore  # noqa: PLR0913
     """
     Create the layout for our app
     """
-    stores = [dcc.Store(id="country-dropdown-store", storage_type="memory")]
+    stores = [
+        dcc.Store(id="country-dropdown-store", storage_type="memory"),
+        dcc.Store(id="xyrange", storage_type="memory"),
+    ]
     dropdowns_and_buttons = [
         html.B(
             children="Country",
@@ -148,19 +151,19 @@ def create_layout(  # type: ignore  # noqa: PLR0913
 
     overview_figure = [
         html.B(children="Overview", style={"textAlign": "center"}),
-        dcc.Graph(id="graph-overview"),
+        dcc.Graph(id=dict(name="graph-overview", type="graph")),
     ]
 
     category_figure = [
         html.Br(),
         html.B(children="Category split", style={"textAlign": "center"}),
-        dcc.Graph(id="graph-category-split"),
+        dcc.Graph(id=dict(name="graph-category-split", type="graph")),
     ]
 
     entity_figure = [
         html.Br(),
         html.B(children="Entity split", style={"textAlign": "center"}),
-        dcc.Graph(id="graph-entity-split"),
+        dcc.Graph(id=dict(name="graph-entity-split", type="graph")),
     ]
 
     return [
