@@ -86,7 +86,7 @@ def test_003_dropdown_country(dash_duo, tmp_path):
     tmp_db = tmp_path / "003_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH", timeout=20)
+    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH", timeout=2)
 
 
 def test_004_dropdown_country_earth_not_present(dash_duo):
@@ -96,7 +96,7 @@ def test_004_dropdown_country_earth_not_present(dash_duo):
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
-    dash_duo.wait_for_contains_text("#dropdown-country", "Australia", timeout=20)
+    dash_duo.wait_for_contains_text("#dropdown-country", "Australia", timeout=2)
 
 
 def test_005_dropdown_category(dash_duo):
@@ -106,7 +106,7 @@ def test_005_dropdown_category(dash_duo):
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
-    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL", timeout=20)
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL", timeout=2)
 
 
 def test_006_dropdown_entity(dash_duo):
@@ -116,7 +116,7 @@ def test_006_dropdown_entity(dash_duo):
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
-    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=20)
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=2)
 
 
 def test_007_country_buttons(dash_duo, tmp_path):
@@ -128,21 +128,21 @@ def test_007_country_buttons(dash_duo, tmp_path):
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("next_country", timeout=2)
 
-    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH", timeout=20)
+    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH", timeout=2)
 
     # Click next
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
 
     # Country dropdown should update
-    dash_duo.wait_for_contains_text("#dropdown-country", "EU27BX", timeout=20)
+    dash_duo.wait_for_contains_text("#dropdown-country", "EU27BX", timeout=2)
 
     # Click previous
     button_country_prev = dash_duo.driver.find_element(By.ID, "prev_country")
     button_country_prev.click()
 
     # Country dropdown should be back to where it started
-    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH", timeout=20)
+    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH", timeout=2)
 
     time.sleep(1.0)
 
@@ -228,7 +228,7 @@ def test_008_initial_figures(dash_duo, tmp_path):
     )
     for figure_id, expected_legend_items in figures_expected_items:
         figure = dash_duo.driver.find_element(By.ID, figure_id)
-        wait = WebDriverWait(dash_duo.driver, timeout=20)
+        wait = WebDriverWait(dash_duo.driver, timeout=2)
         wait.until(lambda d: figure.find_elements(By.CLASS_NAME, "legend"))
         legend = figure.find_element(By.CLASS_NAME, "legend")
         traces = legend.find_elements(By.CLASS_NAME, "traces")
@@ -264,21 +264,21 @@ def test_009_category_buttons(dash_duo, tmp_path):
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
 
-    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL", timeout=20)
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL", timeout=2)
 
     # Click next
     button_category_next = dash_duo.driver.find_element(By.ID, "next_category")
     button_category_next.click()
 
     # Category dropdown should update
-    dash_duo.wait_for_contains_text("#dropdown-category", "M.AG", timeout=20)
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.AG", timeout=2)
 
     # Click previous
     button_category_prev = dash_duo.driver.find_element(By.ID, "prev_category")
     button_category_prev.click()
 
     # Category dropdown should update back to where it started
-    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL", timeout=20)
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL", timeout=2)
 
     time.sleep(1.0)
 
@@ -290,21 +290,21 @@ def test_010_entity_buttons(dash_duo):
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
-    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=20)
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=2)
 
     # Click previous
     button_entity_prev = dash_duo.driver.find_element(By.ID, "prev_entity")
     button_entity_prev.click()
 
     # Entity dropdown should update
-    dash_duo.wait_for_contains_text("#dropdown-entity", "CH4", timeout=20)
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CH4", timeout=2)
 
     # Click next
     button_entity_next = dash_duo.driver.find_element(By.ID, "next_entity")
     button_entity_next.click()
 
     # Entity dropdown should update back to where it started
-    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=20)
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=2)
 
 
 def test_011_dropdown_source_scenario(dash_duo):
@@ -315,7 +315,7 @@ def test_011_dropdown_source_scenario(dash_duo):
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
     dash_duo.wait_for_contains_text(
-        "#dropdown-source-scenario", "PRIMAP-hist_v2.5_final_nr, HISTCR", timeout=20
+        "#dropdown-source-scenario", "PRIMAP-hist_v2.5_final_nr, HISTCR", timeout=2
     )
 
 
@@ -347,7 +347,7 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
     action.perform()
 
     dash_duo.wait_for_contains_text(
-        "#dropdown-source-scenario", "UNFCCC NAI, 231015", timeout=20
+        "#dropdown-source-scenario", "UNFCCC NAI, 231015", timeout=2
     )
 
     # Click next country
@@ -355,7 +355,7 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
     button_country_next.click()
 
     dash_duo.wait_for_contains_text(
-        "#dropdown-source-scenario", "PRIMAP-hist_v2.4.2_final_nr, HISTCR", timeout=20
+        "#dropdown-source-scenario", "PRIMAP-hist_v2.4.2_final_nr, HISTCR", timeout=2
     )
 
 
