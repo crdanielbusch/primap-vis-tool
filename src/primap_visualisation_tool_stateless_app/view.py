@@ -63,7 +63,7 @@ def update_y_range(fig: Any, xyrange: dict[str, list[str | float]]) -> Any:
     return fig
 
 
-def update_xy_range(xyrange: str, figure: dict) -> Any:
+def update_xy_range(xyrange: str, figure: dict[Any, Any]) -> Any:
     """
     Update xy-range of entity figure according to stored xy-range.
 

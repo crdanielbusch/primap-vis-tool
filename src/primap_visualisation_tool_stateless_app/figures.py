@@ -263,12 +263,12 @@ def apply_gwp(
     return inp
 
 
-def create_overview_figure(  # type: ignore
+def create_overview_figure(  # type: ignore # noqa: PLR0913
     country: str,
     category: str,
     entity: str,
     dataset: xr.Dataset,
-    xyrange: dict,
+    xyrange: str | None,
     plotting_config: PlottingConfig | None = None,
 ) -> go.Figure:
     """
@@ -838,7 +838,7 @@ def create_category_figure(  # type: ignore # noqa: PLR0913
     source_scenario: str,
     source_scenario_dashed: str,
     dataset: xr.Dataset,
-    xyrange: dict,
+    xyrange: str | None,
 ) -> go.Figure:
     """
     Create the category figure.
@@ -960,7 +960,7 @@ def create_entity_figure(  # type: ignore # noqa: PLR0913
     source_scenario: str,
     source_scenario_dashed: str,
     dataset: xr.Dataset,
-    xyrange: dict,
+    xyrange: str | None,
 ) -> go.Figure:
     """
     Create the entity figure.
