@@ -239,7 +239,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         # Input("memory", "data"),
         Input("xyrange", "data"),
     )
-    def update_overview_figure(
+    def update_overview_figure(  # noqa: PLR0913
         country: str,
         category: str,
         entity: str,
@@ -287,7 +287,11 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return graph_figure_current
 
         return create_overview_figure(
-            country=country, category=category, entity=entity, dataset=app_dataset
+            country=country,
+            category=category,
+            entity=entity,
+            dataset=app_dataset,
+            xyrange=xyrange,
         )
 
     @app.callback(  # type: ignore
@@ -419,6 +423,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             source_scenario=source_scenario,
             source_scenario_dashed=source_scenario_dashed,
             dataset=app_dataset,
+            xyrange=xyrange,
         )
 
     @app.callback(  # type: ignore
@@ -462,15 +467,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # User cleared one of the selections in the dropdown, do nothing
             return graph_figure_current
 
-        # app_state.source_scenario_index = app_state.source_scenario_options.index(
-        #     source_scenario
-        # )
-
-        # in case user adjusts category figure layout
-        # and then changes country, category or entity
-        # if not xyrange_data :
-        #     xyrange_data = xyrange_data_category
-
         return create_entity_figure(
             country=country,
             category=category,
@@ -478,6 +474,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             source_scenario=source_scenario,
             source_scenario_dashed=source_scenario_dashed,
             dataset=app_dataset,
+            xyrange=xyrange,
         )
 
     @app.callback(
