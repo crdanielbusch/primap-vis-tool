@@ -17,7 +17,7 @@ from dash import (  # type: ignore
     State,
     ctx,
 )
-from dash.dependencies import ALL
+from dash.dependencies import ALL  # type: ignore
 
 import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
 from primap_visualisation_tool_stateless_app.dataset_handling import (
@@ -474,7 +474,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             dataset=app_dataset,
         )
 
-    @app.callback(
+    @app.callback(  # type: ignore
         Output("xyrange", "data"),
         Output({"type": "graph", "name": ALL}, "relayoutData"),
         Input({"type": "graph", "name": ALL}, "relayoutData"),
@@ -483,7 +483,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     def update_shared_xy_range(
         all_relayout_data: Any,
         all_figures: Any,
-    ) -> str:
+    ) -> tuple[dict[str, str], Any | list[Any]]:
         # I don't like this unique data thing, it feels like the
         # wrong way to check what has changed.
         unique_data = None
