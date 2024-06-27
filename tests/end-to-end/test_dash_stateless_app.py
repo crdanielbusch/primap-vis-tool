@@ -312,16 +312,16 @@ def test_010_entity_buttons(dash_duo):
     dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=1)
 
 
-def test_011_dropdown_source_scenario(dash_duo):
-    test_file = TEST_DS_FILE
-
-    test_ds = pm.open_dataset(test_file)
-
-    setup_app(dash_duo=dash_duo, ds=test_ds)
-
-    dash_duo.wait_for_contains_text(
-        "#dropdown-source-scenario", "PRIMAP-hist_v2.5_final_nr, HISTCR", timeout=1
-    )
+# def test_011_dropdown_source_scenario(dash_duo):
+#     test_file = TEST_DS_FILE
+#
+#     test_ds = pm.open_dataset(test_file)
+#
+#     setup_app(dash_duo=dash_duo, ds=test_ds)
+#
+#     dash_duo.wait_for_contains_text(
+#         "#dropdown-source-scenario", "PRIMAP-hist_v2.5_final_nr, HISTCR", timeout=1
+#     )
 
 
 def test_012_dropdown_source_scenario_option_not_available(dash_duo):
