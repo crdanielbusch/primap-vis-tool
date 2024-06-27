@@ -155,8 +155,13 @@ def test_008_initial_figures(dash_duo, tmp_path):
     tmp_db = tmp_path / "008_notes_database.db"
 
     setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("graph-overview", timeout=1)
-    dash_duo.wait_for_element_by_id("graph-entity-split", timeout=1)
+
+    graph_overview_id = r"{\"name\":\"graph-overview\",\"type\":\"graph\"}"
+    graph_entity_split_id = r"{\"name\":\"graph-entity-split\",\"type\":\"graph\"}"
+    graph_category_split_id = r"{\"name\":\"graph-category-split\",\"type\":\"graph\"}"
+
+    dash_duo.wait_for_element_by_id(graph_overview_id, timeout=2)
+    dash_duo.wait_for_element_by_id(graph_entity_split_id, timeout=2)
     # Add a sleep to give the page time to load.
     # Working out if the page is actually loaded looks incredibly difficult
     # (e.g. https://stackoverflow.com/a/11002061),
@@ -202,11 +207,11 @@ def test_008_initial_figures(dash_duo, tmp_path):
 
     figures_expected_items = (
         (
-            "graph-overview",
+            graph_overview_id,
             expected_graph_overview_items,
         ),
         (
-            "graph-category-split",
+            graph_category_split_id,
             [
                 ("total dashed", None, None, None),
                 ("total", None, None, None),
@@ -218,7 +223,7 @@ def test_008_initial_figures(dash_duo, tmp_path):
             ],
         ),
         (
-            "graph-entity-split",
+            graph_entity_split_id,
             [
                 ("total dashed", None, None, None),
                 ("total", None, None, None),
