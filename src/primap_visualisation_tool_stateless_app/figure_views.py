@@ -22,6 +22,6 @@ def update_xy_range(xyrange: dict[str, Any], figure: Any) -> Any:
             figure["layout"].update(**update_value)
 
         else:
-            figure.update_layout(**update_value)  # type: ignore
+            figure.update_layout(**update_value)
 
     return figure
