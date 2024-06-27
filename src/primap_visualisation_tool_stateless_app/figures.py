@@ -20,7 +20,6 @@ from primap_visualisation_tool_stateless_app.dataset_handling import (
     group_other_source_scenarios,
     infer_source_scenarios,
 )
-from primap_visualisation_tool_stateless_app.figure_views import update_xy_range
 
 
 @define
@@ -263,12 +262,11 @@ def apply_gwp(
     return inp
 
 
-def create_overview_figure(  # type: ignore # noqa: PLR0913
+def create_overview_figure(  # type: ignore
     country: str,
     category: str,
     entity: str,
     dataset: xr.Dataset,
-    xyrange: dict[str, list[str] | str],
     plotting_config: PlottingConfig | None = None,
 ) -> go.Figure:
     """
@@ -388,9 +386,6 @@ def create_overview_figure(  # type: ignore # noqa: PLR0913
         hovermode="x",
         yaxis_title=str(dataset[entity].data.units),
     )
-
-    if xyrange:
-        fig = update_xy_range(xyrange=xyrange, figure=fig)
 
     return fig
 
@@ -829,7 +824,6 @@ def create_category_figure(  # type: ignore # noqa: PLR0913
     source_scenario: str,
     source_scenario_dashed: str,
     dataset: xr.Dataset,
-    xyrange: dict[str, list[str] | str],
 ) -> go.Figure:
     """
     Create the category figure.
@@ -935,8 +929,6 @@ def create_category_figure(  # type: ignore # noqa: PLR0913
         ),
         yaxis_title=str(dataset[entity].data.units),
     )
-    if xyrange:
-        fig = update_xy_range(xyrange=xyrange, figure=fig)
 
     return fig
 
@@ -948,7 +940,6 @@ def create_entity_figure(  # type: ignore # noqa: PLR0913
     source_scenario: str,
     source_scenario_dashed: str,
     dataset: xr.Dataset,
-    xyrange: dict[str, list[str] | str],
 ) -> go.Figure:
     """
     Create the entity figure.
@@ -1056,8 +1047,5 @@ def create_entity_figure(  # type: ignore # noqa: PLR0913
     # fig.update_traces(
     #     hovertemplate="%{y:.2e} ",
     # )
-
-    if xyrange:
-        fig = update_xy_range(xyrange=xyrange, figure=fig)
 
     return fig

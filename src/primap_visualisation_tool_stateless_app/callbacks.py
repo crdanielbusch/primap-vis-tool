@@ -291,7 +291,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             category=category,
             entity=entity,
             dataset=app_dataset,
-            xyrange=xyrange,
         )
 
     @app.callback(  # type: ignore
@@ -423,7 +422,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             source_scenario=source_scenario,
             source_scenario_dashed=source_scenario_dashed,
             dataset=app_dataset,
-            xyrange=xyrange,
         )
 
     @app.callback(  # type: ignore
@@ -474,7 +472,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             source_scenario=source_scenario,
             source_scenario_dashed=source_scenario_dashed,
             dataset=app_dataset,
-            xyrange=xyrange,
         )
 
     @app.callback(
