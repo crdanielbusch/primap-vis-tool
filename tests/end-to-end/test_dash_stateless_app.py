@@ -70,7 +70,7 @@ def test_001_dash_example(dash_duo):
     app = dash.Dash(__name__)
     app.layout = html.Div(id="nully-wrapper", children=0)
     dash_duo.start_server(app)
-    dash_duo.wait_for_text_to_equal("#nully-wrapper", "0", timeout=4)
+    dash_duo.wait_for_text_to_equal("#nully-wrapper", "0", timeout=1)
     assert dash_duo.find_element("#nully-wrapper").text == "0"
 
 
@@ -86,7 +86,7 @@ def test_003_dropdown_country(dash_duo, tmp_path):
     tmp_db = tmp_path / "003_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH")
+    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH", timeout=1)
 
 
 def test_004_dropdown_country_earth_not_present(dash_duo):
@@ -96,7 +96,7 @@ def test_004_dropdown_country_earth_not_present(dash_duo):
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
-    dash_duo.wait_for_contains_text("#dropdown-country", "Australia")
+    dash_duo.wait_for_contains_text("#dropdown-country", "Australia", timeout=1)
 
 
 def test_005_dropdown_category(dash_duo):
@@ -106,7 +106,7 @@ def test_005_dropdown_category(dash_duo):
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
-    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL")
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL", timeout=1)
 
 
 def test_006_dropdown_entity(dash_duo):
@@ -116,7 +116,7 @@ def test_006_dropdown_entity(dash_duo):
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
-    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2")
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=1)
 
 
 def test_007_country_buttons(dash_duo, tmp_path):
@@ -126,23 +126,23 @@ def test_007_country_buttons(dash_duo, tmp_path):
     tmp_db = tmp_path / "007_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("next_country", timeout=2)
+    dash_duo.wait_for_element_by_id("next_country", timeout=1)
 
-    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH")
+    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH", timeout=1)
 
     # Click next
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
 
     # Country dropdown should update
-    dash_duo.wait_for_contains_text("#dropdown-country", "EU27BX")
+    dash_duo.wait_for_contains_text("#dropdown-country", "EU27BX", timeout=1)
 
     # Click previous
     button_country_prev = dash_duo.driver.find_element(By.ID, "prev_country")
     button_country_prev.click()
 
     # Country dropdown should be back to where it started
-    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH")
+    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH", timeout=1)
 
     time.sleep(1.0)
 
@@ -155,8 +155,8 @@ def test_008_initial_figures(dash_duo, tmp_path):
     tmp_db = tmp_path / "008_notes_database.db"
 
     setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("graph-overview", timeout=10)
-    dash_duo.wait_for_element_by_id("graph-entity-split", timeout=10)
+    dash_duo.wait_for_element_by_id("graph-overview", timeout=1)
+    dash_duo.wait_for_element_by_id("graph-entity-split", timeout=1)
     # Add a sleep to give the page time to load.
     # Working out if the page is actually loaded looks incredibly difficult
     # (e.g. https://stackoverflow.com/a/11002061),
@@ -264,21 +264,21 @@ def test_009_category_buttons(dash_duo, tmp_path):
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
 
-    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL")
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL", timeout=1)
 
     # Click next
     button_category_next = dash_duo.driver.find_element(By.ID, "next_category")
     button_category_next.click()
 
     # Category dropdown should update
-    dash_duo.wait_for_contains_text("#dropdown-category", "M.AG")
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.AG", timeout=1)
 
     # Click previous
     button_category_prev = dash_duo.driver.find_element(By.ID, "prev_category")
     button_category_prev.click()
 
     # Category dropdown should update back to where it started
-    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL")
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL", timeout=1)
 
     time.sleep(1.0)
 
@@ -290,21 +290,21 @@ def test_010_entity_buttons(dash_duo):
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
-    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2")
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=1)
 
     # Click previous
     button_entity_prev = dash_duo.driver.find_element(By.ID, "prev_entity")
     button_entity_prev.click()
 
     # Entity dropdown should update
-    dash_duo.wait_for_contains_text("#dropdown-entity", "CH4")
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CH4", timeout=1)
 
     # Click next
     button_entity_next = dash_duo.driver.find_element(By.ID, "next_entity")
     button_entity_next.click()
 
     # Entity dropdown should update back to where it started
-    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2")
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=1)
 
 
 def test_011_dropdown_source_scenario(dash_duo):
@@ -315,8 +315,7 @@ def test_011_dropdown_source_scenario(dash_duo):
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
     dash_duo.wait_for_contains_text(
-        "#dropdown-source-scenario",
-        "PRIMAP-hist_v2.5_final_nr, HISTCR",
+        "#dropdown-source-scenario", "PRIMAP-hist_v2.5_final_nr, HISTCR", timeout=1
     )
 
 
@@ -348,8 +347,7 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
     action.perform()
 
     dash_duo.wait_for_contains_text(
-        "#dropdown-source-scenario",
-        "UNFCCC NAI, 231015",
+        "#dropdown-source-scenario", "UNFCCC NAI, 231015", timeout=1
     )
 
     # Click next country
@@ -357,8 +355,7 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
     button_country_next.click()
 
     dash_duo.wait_for_contains_text(
-        "#dropdown-source-scenario",
-        "PRIMAP-hist_v2.4.2_final_nr, HISTCR",
+        "#dropdown-source-scenario", "PRIMAP-hist_v2.4.2_final_nr, HISTCR", timeout=1
     )
 
 
@@ -381,7 +378,7 @@ def test_013_notes_save_no_input(dash_duo, tmp_path):
     tmp_db = tmp_path / "012_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("save-button", timeout=2)
+    dash_duo.wait_for_element_by_id("save-button", timeout=1)
 
     # Click without anything in the field
     save_button = dash_duo.driver.find_element(By.ID, "save-button")
@@ -399,7 +396,7 @@ def test_014_notes_save_basic(dash_duo, tmp_path):
     tmp_db = tmp_path / "013_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("save-button", timeout=2)
+    dash_duo.wait_for_element_by_id("save-button", timeout=1)
 
     # Add some input
     input_for_first_country = "All looks great!"
@@ -414,7 +411,7 @@ def test_014_notes_save_basic(dash_duo, tmp_path):
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
     current_country = get_dropdown_value(dropdown_country)
     dash_duo.wait_for_contains_text(
-        "#note-saved-div", f"Notes for {current_country} saved", timeout=2
+        "#note-saved-div", f"Notes for {current_country} saved", timeout=1
     )
     # Output should now be in the database
     db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
@@ -438,7 +435,7 @@ def test_015_notes_save_and_step(dash_duo, tmp_path):
     tmp_db = tmp_path / "014_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("save-button", timeout=2)
+    dash_duo.wait_for_element_by_id("save-button", timeout=1)
 
     # Add some input
     note_to_save = "All looks great!"
@@ -453,7 +450,7 @@ def test_015_notes_save_and_step(dash_duo, tmp_path):
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
     current_country = get_dropdown_value(dropdown_country)
     dash_duo.wait_for_contains_text(
-        "#note-saved-div", f"Notes for {current_country} saved", timeout=2
+        "#note-saved-div", f"Notes for {current_country} saved", timeout=1
     )
 
     # Click forward one country
@@ -461,7 +458,7 @@ def test_015_notes_save_and_step(dash_duo, tmp_path):
     button_country_next.click()
 
     # We saved before clicking, hence inputs should be cleared and a confirmation shown
-    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
+    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=1)
     assert not input_for_notes.text
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
     assert note_saved_div.text == f"Notes for {current_country} already saved"
@@ -478,7 +475,7 @@ def test_015_notes_save_and_step(dash_duo, tmp_path):
     button_country_previous.click()
 
     # The previous note should be reloaded
-    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
+    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=1)
     current_country = get_dropdown_value(dropdown_country)
     assert note_saved_div.text == f"Loaded existing notes for {current_country}"
 
@@ -508,7 +505,7 @@ def test_016_notes_step_without_user_save(dash_duo, tmp_path):
     # hence a warming should appear,
     # the note should be saved automatically
     # and the inputs should be cleared.
-    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
+    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=1)
     assert not input_for_notes.text
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
     assert re.match(
@@ -529,7 +526,7 @@ def test_016_notes_step_without_user_save(dash_duo, tmp_path):
     button_country_previous.click()
 
     # The previous note should be reloaded
-    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
+    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=1)
     current_country = get_dropdown_value(dropdown_country)
     assert note_saved_div.text == f"Loaded existing notes for {current_country}"
 
@@ -541,14 +538,14 @@ def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     tmp_db = tmp_path / "016_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("save-button", timeout=2)
+    dash_duo.wait_for_element_by_id("save-button", timeout=1)
 
     # Click forward without any input
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
 
     # Should get no input or messages
-    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
+    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=1)
     input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
     assert not input_for_notes.text
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
@@ -571,7 +568,7 @@ def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
 
     # We saved before clicking, hence inputs should be cleared
     # and a confirmation shown.
-    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
+    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=1)
     assert not input_for_notes.text
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
     assert note_saved_div.text == f"Notes for {country_with_notes} already saved"
@@ -588,9 +585,9 @@ def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     button_country_previous.click()
 
     # The previous note should be reloaded
-    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
+    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=1)
     assert input_for_notes.text == note_to_save
-    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
+    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=1)
     assert note_saved_div.text == f"Loaded existing notes for {country_with_notes}"
 
 
@@ -601,7 +598,7 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     tmp_db = tmp_path / "017_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("save-button", timeout=2)
+    dash_duo.wait_for_element_by_id("save-button", timeout=1)
 
     # Go to a country
     dropdown_country_input = dash_duo.find_element("#dropdown-country input")
@@ -616,13 +613,13 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     note_to_save = f"Note for {country_with_notes}"
     input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
     input_for_notes.send_keys(note_to_save)
-    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
+    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=1)
 
     save_button = dash_duo.driver.find_element(By.ID, "save-button")
     save_button.click()
 
     dash_duo.wait_for_contains_text(
-        "#note-saved-div", f"Notes for {country_with_notes} saved at", timeout=2
+        "#note-saved-div", f"Notes for {country_with_notes} saved at", timeout=1
     )
 
     # Go to a different country via the buttons
@@ -635,9 +632,9 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     dropdown_country_input.send_keys(Keys.ENTER)
 
     # Check that notes were loaded
-    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
+    dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=1)
     dash_duo.wait_for_contains_text(
-        "#note-saved-div", f"Loaded existing notes for {country_with_notes}", timeout=2
+        "#note-saved-div", f"Loaded existing notes for {country_with_notes}", timeout=1
     )
 
 
@@ -648,7 +645,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     tmp_db = tmp_path / "018_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("save-button", timeout=2)
+    dash_duo.wait_for_element_by_id("save-button", timeout=1)
 
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
     first_country = get_dropdown_value(dropdown_country)
@@ -658,14 +655,14 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
     input_for_notes.send_keys(input_for_first_country)
     dash_duo.wait_for_text_to_equal(
-        "#input-for-notes", input_for_first_country, timeout=2
+        "#input-for-notes", input_for_first_country, timeout=1
     )
 
     # Save
     save_button = dash_duo.driver.find_element(By.ID, "save-button")
     save_button.click()
     dash_duo.wait_for_contains_text(
-        "#note-saved-div", f"Notes for {first_country} saved at", timeout=2
+        "#note-saved-div", f"Notes for {first_country} saved at", timeout=1
     )
 
     # Click forward a country
@@ -673,7 +670,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     button_country_next.click()
 
     # Make sure input field has finished updating
-    dash_duo.wait_for_text_to_equal("#input-for-notes", "")
+    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=1)
 
     second_country = get_dropdown_value(dropdown_country)
     assert second_country != first_country
@@ -682,7 +679,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     input_for_second_country = "Not so good"
     input_for_notes.send_keys(input_for_second_country)
     dash_duo.wait_for_text_to_equal(
-        "#input-for-notes", input_for_second_country, timeout=2
+        "#input-for-notes", input_for_second_country, timeout=1
     )
 
     # Save
@@ -690,7 +687,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
 
     # Make sure database has finished before checking
     dash_duo.wait_for_contains_text(
-        "#note-saved-div", f"Notes for {second_country} saved", timeout=2
+        "#note-saved-div", f"Notes for {second_country} saved", timeout=1
     )
 
     # Both outputs should now be in the database
@@ -711,7 +708,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
 
     # Previous input should reappear
     dash_duo.wait_for_text_to_equal(
-        "#input-for-notes", input_for_first_country, timeout=2
+        "#input-for-notes", input_for_first_country, timeout=1
     )
     assert input_for_notes.text == input_for_first_country
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
@@ -724,10 +721,10 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     button_country_previous.click()
 
     # Input field should be empty again
-    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
+    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=1)
     assert not input_for_notes.text
     dash_duo.wait_for_text_to_equal(
-        "#note-saved-div", f"Notes for {first_country} already saved", timeout=2
+        "#note-saved-div", f"Notes for {first_country} already saved", timeout=1
     )
 
     # Click forward two countries
@@ -735,7 +732,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
 
     # Previous input should reappear
     dash_duo.wait_for_text_to_equal(
-        "#input-for-notes", input_for_second_country, timeout=2
+        "#input-for-notes", input_for_second_country, timeout=1
     )
     assert input_for_notes.text == input_for_second_country
     # Depending on how fast you click, the note about EARTH already
@@ -753,7 +750,7 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     tmp_db = tmp_path / "019_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("save-button", timeout=2)
+    dash_duo.wait_for_element_by_id("save-button", timeout=1)
 
     # Go to a country
     dropdown_country_input = dash_duo.find_element("#dropdown-country input")
@@ -769,7 +766,7 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
     input_for_notes.send_keys(input_for_first_country)
     dash_duo.wait_for_text_to_equal(
-        "#input-for-notes", input_for_first_country, timeout=2
+        "#input-for-notes", input_for_first_country, timeout=1
     )
 
     # Save
@@ -779,7 +776,7 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     # Click forward a country
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
-    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
+    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=1)
     second_country = get_dropdown_value(dropdown_country)
     assert second_country != first_country
 
@@ -787,7 +784,7 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     input_for_second_country = "Not so good"
     input_for_notes.send_keys(input_for_second_country)
     dash_duo.wait_for_text_to_equal(
-        "#input-for-notes", input_for_second_country, timeout=2
+        "#input-for-notes", input_for_second_country, timeout=1
     )
 
     # Click back to the previous country without saving
@@ -796,7 +793,7 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
 
     # Check note loaded into notes input field
     dash_duo.wait_for_text_to_equal(
-        "#input-for-notes", input_for_first_country, timeout=2
+        "#input-for-notes", input_for_first_country, timeout=1
     )
     # Check information provided to the user
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
