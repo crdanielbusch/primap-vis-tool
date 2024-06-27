@@ -626,9 +626,10 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     dash_duo.wait_for_contains_text(
         "#note-saved-div", f"Notes for {country_with_notes} saved at", timeout=1
     )
-
+    # Without the sleep statement here, button is sometimes not clickable
+    time.sleep(1.0)
     # Go to a different country via the buttons
-    dash_duo.multiple_click("#next_country", 15, delay=0.01)
+    dash_duo.multiple_click("#next_country", 15, delay=0.5)
     time.sleep(1.0)
     assert get_dropdown_value(dropdown_country) != country_with_notes
 
