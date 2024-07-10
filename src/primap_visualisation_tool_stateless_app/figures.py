@@ -268,7 +268,7 @@ def create_overview_figure(  # type: ignore # noqa: PLR0913
     category: str,
     entity: str,
     dataset: xr.Dataset,
-    xyrange: dict[str, list[str] | str],
+    xyrange: dict[str, list[str] | str] | None = None,
     plotting_config: PlottingConfig | None = None,
 ) -> go.Figure:
     """
@@ -287,6 +287,10 @@ def create_overview_figure(  # type: ignore # noqa: PLR0913
 
     dataset
         Dataset from which to generate the figure
+
+    xyrange
+        x-, y-range to apply to the figure.
+        If not supplied, no range is set.
 
     plotting_config
         Plotting configuration to use
@@ -829,7 +833,7 @@ def create_category_figure(  # type: ignore # noqa: PLR0913
     source_scenario: str,
     source_scenario_dashed: str,
     dataset: xr.Dataset,
-    xyrange: dict[str, list[str] | str],
+    xyrange: dict[str, list[str] | str] | None = None,
 ) -> go.Figure:
     """
     Create the category figure.
@@ -852,7 +856,8 @@ def create_category_figure(  # type: ignore # noqa: PLR0913
         Dataset from which to generate the figure
 
     xyrange
-        Information about the x- and y-range to apply to the figure
+        x-, y-range to apply to the figure.
+        If not supplied, no range is set.
 
     Returns
     -------
@@ -948,7 +953,7 @@ def create_entity_figure(  # type: ignore # noqa: PLR0913
     source_scenario: str,
     source_scenario_dashed: str,
     dataset: xr.Dataset,
-    xyrange: dict[str, list[str] | str],
+    xyrange: dict[str, list[str] | str] | None = None,
 ) -> go.Figure:
     """
     Create the entity figure.
@@ -972,6 +977,10 @@ def create_entity_figure(  # type: ignore # noqa: PLR0913
 
     dataset
         Dataset from which to generate the figure
+
+    xyrange
+        x-, y-range to apply to the figure.
+        If not supplied, no range is set.
 
     Returns
     -------
