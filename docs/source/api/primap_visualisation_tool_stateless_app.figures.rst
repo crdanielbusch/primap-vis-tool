@@ -56,6 +56,30 @@ create\_overview\_figure
 .. autofunction:: create_overview_figure
 
 
+get\_category\_split
+====================
+
+.. autofunction:: get_category_split
+
+
+get\_entity\_split
+==================
+
+.. autofunction:: get_entity_split
+
+
+plot\_stacked\_area
+===================
+
+.. autofunction:: plot_stacked_area
+
+
+plot\_stacked\_area\_dashes
+===========================
+
+.. autofunction:: plot_stacked_area_dashes
+
+
 create\_category\_figure
 ========================
 

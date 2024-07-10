@@ -222,7 +222,7 @@ def get_not_all_nan_source_scenario_dfs(
     inp: xr.Dataset, entity: str
 ) -> dict[str, pd.DataFrame]:
     """
-    Get source-scenario :obj:`pd.DataFrame`s for source-scenario combinations which are not all nan
+    Get source-scenario :obj:`pd.DataFrame`'s for source-scenario combinations which are not all nan
 
     Parameters
     ----------

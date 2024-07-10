@@ -68,6 +68,12 @@ get\_source\_scenario\_start
 .. autofunction:: get_source_scenario_start
 
 
+get\_not\_all\_nan\_source\_scenario\_dfs
+=========================================
+
+.. autofunction:: get_not_all_nan_source_scenario_dfs
+
+
 infer\_source\_scenarios
 ========================
 
