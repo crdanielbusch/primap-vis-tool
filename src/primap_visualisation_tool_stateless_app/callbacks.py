@@ -30,6 +30,7 @@ from primap_visualisation_tool_stateless_app.dataset_handling import (
 from primap_visualisation_tool_stateless_app.dataset_holder import (
     get_application_dataset,
 )
+from primap_visualisation_tool_stateless_app.figure_views import update_xy_range
 from primap_visualisation_tool_stateless_app.figures import (
     create_category_figure,
     create_entity_figure,
@@ -234,12 +235,14 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Input("dropdown-country", "value"),
         Input("dropdown-category", "value"),
         Input("dropdown-entity", "value"),
+        Input("xyrange", "data"),
         State(dict(name="graph-overview", type="graph"), "figure"),
     )
-    def update_overview_figure(
+    def update_overview_figure(  # noqa: PLR0913
         country: str,
         category: str,
         entity: str,
+        xyrange: dict[str, int],
         figure_current: go.Figure,
         app_dataset: xr.Dataset | None = None,
     ) -> go.Figure:
@@ -257,6 +260,9 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         entity
             The currently selected entity in the dropdown menu
 
+        xyrange
+            The x- and y-range to apply to the figure
+
         figure_current
             Current state of the figure
 
@@ -269,6 +275,9 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         """
         if app_dataset is None:
             app_dataset = get_application_dataset()
+
+        if ctx.triggered_id == "xyrange" and xyrange:
+            return update_xy_range(xyrange=xyrange, figure=figure_current)
 
         if any(v is None for v in (country, category, entity)):
             # User cleared one of the selections in the dropdown, do nothing
@@ -364,20 +373,22 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
     @app.callback(  # type: ignore
         Output(dict(name="graph-category-split", type="graph"), "figure"),
-        State("dropdown-country", "value"),
-        State("dropdown-category", "value"),
-        State("dropdown-entity", "value"),
-        State(dict(name="graph-category-split", type="graph"), "figure"),
+        Input("dropdown-country", "value"),
+        Input("dropdown-category", "value"),
+        Input("dropdown-entity", "value"),
         Input("dropdown-source-scenario", "value"),
         Input("dropdown-source-scenario-dashed", "value"),
+        Input("xyrange", "data"),
+        State(dict(name="graph-category-split", type="graph"), "figure"),
     )
     def update_category_figure(  # noqa: PLR0913
         country: str,
         category: str,
         entity: str,
-        figure_current: go.Figure,
         source_scenario: str,
         source_scenario_dashed: str,
+        xyrange: dict[str, int],
+        figure_current: go.Figure,
         app_dataset: xr.Dataset | None = None,
     ) -> go.Figure:
         """
@@ -394,14 +405,17 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         entity
             The currently selected entity in the dropdown menu
 
-        figure_current
-            Current state of the figure
-
         source_scenario
             Source-scenario to plot with a solid line
 
         source_scenario_dashed
             Source-scenario to plot with a dashed line
+
+        xyrange
+            The x- and y-range to apply to the figure
+
+        figure_current
+            Current state of the figure
 
         app_dataset
             The app dataset to use. If not provided, we use get_app_dataset()
@@ -412,6 +426,9 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         """
         if app_dataset is None:
             app_dataset = get_application_dataset()
+
+        if ctx.triggered_id == "xyrange" and xyrange:
+            return update_xy_range(xyrange=xyrange, figure=figure_current)
 
         if any(
             v is None
@@ -437,20 +454,22 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
     @app.callback(  # type: ignore
         Output(dict(name="graph-entity-split", type="graph"), "figure"),
-        State("dropdown-country", "value"),
-        State("dropdown-category", "value"),
-        State("dropdown-entity", "value"),
-        State(dict(name="graph-entity-split", type="graph"), "figure"),
+        Input("dropdown-country", "value"),
+        Input("dropdown-category", "value"),
+        Input("dropdown-entity", "value"),
         Input("dropdown-source-scenario", "value"),
         Input("dropdown-source-scenario-dashed", "value"),
+        Input("xyrange", "data"),
+        State(dict(name="graph-entity-split", type="graph"), "figure"),
     )
     def update_entity_graph(  # noqa: PLR0913
         country: str,
         category: str,
         entity: str,
-        figure_current: go.Figure,
         source_scenario: str,
         source_scenario_dashed: str,
+        xyrange: dict[str, int],
+        figure_current: go.Figure,
         app_dataset: xr.Dataset | None = None,
     ) -> go.Figure:
         """
@@ -467,14 +486,17 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         entity
             The currently selected entity in the dropdown menu
 
-        figure_current
-            Current state of the figure
-
         source_scenario
             Source-scenario to plot with a solid line
 
         source_scenario_dashed
             Source-scenario to plot with a dashed line
+
+        xyrange
+            The x- and y-range to apply to the figure
+
+        figure_current
+            Current state of the figure
 
         app_dataset
             The app dataset to use. If not provided, we use get_app_dataset()
@@ -485,6 +507,9 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         """
         if app_dataset is None:
             app_dataset = get_application_dataset()
+
+        if ctx.triggered_id == "xyrange" and xyrange:
+            return update_xy_range(xyrange=xyrange, figure=figure_current)
 
         if any(
             v is None
