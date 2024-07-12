@@ -389,6 +389,7 @@ def create_overview_figure(  # type: ignore # noqa: PLR0913
         ),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
+        autosize=True,
         hovermode="x",
         yaxis_title=str(dataset[entity].data.units),
     )
@@ -931,7 +932,8 @@ def create_category_figure(  # type: ignore # noqa: PLR0913
     )
     fig.update_layout(
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-        margin=dict(l=0, r=0, t=40, b=40),
+        margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
+        autosize=True,
         hovermode="x",
         # in some cases the last values will be nan and must be dropped
         # the xrange, however, should remain
@@ -1052,7 +1054,8 @@ def create_entity_figure(  # type: ignore # noqa: PLR0913
 
     fig.update_layout(
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-        margin=dict(l=0, r=0, t=40, b=40),  # distance to next element
+        margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
+        autosize=True,
         hovermode="x",
         # in some cases the last values will be NaN and must be dropped
         # the xrange, however, should remain

@@ -50,7 +50,12 @@ def create_app() -> Dash:  # type: ignore
     )
     app.layout = dbc.Container(
         layout,
-        style={"max-width": "none", "width": "100%"},
+        style={
+            "max-width": "none",
+            "width": "100%",
+            "height": "80vh",
+            "max-height": "80vh",
+        },
     )
 
     return app

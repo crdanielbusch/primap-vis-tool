@@ -171,25 +171,34 @@ def create_layout(  # type: ignore  # noqa: PLR0913
         dbc.Row(
             [
                 dbc.Col(
-                    dbc.Stack([*stores, *dropdowns_and_buttons])
+                    dbc.Stack([*stores, *dropdowns_and_buttons]),
+                    style={"height": "100%"},
                 ),  # first column with dropdown menus
-                dbc.Col(dbc.Stack(notes)),
+                dbc.Col(
+                    dbc.Stack(notes),
+                    style={"height": "100%"},
+                ),
                 dbc.Col(
                     overview_figure,
                     width=8,
+                    style={"height": "100%"},
                 ),
-            ]
+            ],
+            className="h-75",
         ),
         dbc.Row(
             [
                 dbc.Col(
                     category_figure,
                     width=6,
+                    style={"height": "100%"},
                 ),
                 dbc.Col(
                     entity_figure,
                     width=6,
+                    style={"height": "100%"},
                 ),
-            ]
+            ],
+            className="h-75",
         ),
     ]

@@ -955,3 +955,160 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
 
     # Give time to sort out and shut down
     time.sleep(2)
+
+
+def get_xtick_values(graph):
+    return [
+        v.text
+        for v in graph.find_elements_by_class_name("xaxislayer-above")[
+            0
+        ].find_elements_by_class_name("xtick")
+    ]
+
+
+def get_ytick_values(graph):
+    return [
+        v.text
+        for v in graph.find_elements_by_class_name("yaxislayer-above")[
+            0
+        ].find_elements_by_class_name("ytick")
+    ]
+
+
+def assert_ticks_changed_but_remain_consistent_across_graphs(
+    graphs, xticks_prev, yticks_prev, check_yticks_change=True
+):
+    """
+    Would be better to check axis limits, but I can't work out how to do that
+
+    This is plan b
+    """
+    for i, graph in enumerate(graphs):
+        assert xticks_prev != get_xtick_values(graph)
+        if check_yticks_change:
+            assert yticks_prev != get_ytick_values(graph)
+        else:
+            assert yticks_prev == get_ytick_values(graph)
+
+        if i == 0:
+            exp_xticks = get_xtick_values(graph)
+            exp_yticks = get_ytick_values(graph)
+        else:
+            # This appears to be sensitive to window size,
+            # which is quite annoying.
+            # Not sure how to fix.
+            assert exp_xticks == get_xtick_values(graph)
+            assert exp_yticks == get_ytick_values(graph)
+
+
+def test_021_linked_zoom(dash_duo, tmp_path):
+    test_file = TEST_DS_FILE
+
+    test_ds = pm.open_dataset(test_file)
+
+    tmp_db = tmp_path / "008_notes_database.db"
+
+    setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
+
+    # Make sure that expected elements are on the page before continuing
+    graph_overview = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    graph_entity_split = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-entity-split", timeout=5
+    )
+    graph_category_split = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-category-split", timeout=5
+    )
+
+    graphs = [graph_overview, graph_category_split, graph_entity_split]
+    # Can't see a better way to do this, maybe someone else finds it.
+    xticks_prev = get_xtick_values(graph_overview)
+    yticks_prev = get_ytick_values(graph_overview)
+
+    # Zoom in on overview graph
+    dash_duo.zoom_in_graph_by_ratio(graph_overview, zoom_box_fraction=0.2)
+    time.sleep(1.0)
+
+    # Limits should update, but not y-axis because of how range slider works
+    assert_ticks_changed_but_remain_consistent_across_graphs(
+        graphs=graphs,
+        xticks_prev=xticks_prev,
+        yticks_prev=yticks_prev,
+        check_yticks_change=False,
+    )
+
+    xticks_prev = get_xtick_values(graph_overview)
+    yticks_prev = get_ytick_values(graph_overview)
+
+    # Reset via overview graph
+    ActionChains(dash_duo.driver).double_click(graph_overview).perform()
+    time.sleep(1.0)
+
+    # Limits should update, but not y-axis because of how range slider works
+    assert_ticks_changed_but_remain_consistent_across_graphs(
+        graphs=graphs,
+        xticks_prev=xticks_prev,
+        yticks_prev=yticks_prev,
+        check_yticks_change=False,
+    )
+
+    xticks_prev = get_xtick_values(graph_overview)
+    yticks_prev = get_ytick_values(graph_overview)
+
+    # Zoom in via entity graph
+    dash_duo.zoom_in_graph_by_ratio(graph_entity_split, zoom_box_fraction=0.2)
+    time.sleep(1.0)
+
+    # Limits of all graphs should update
+    assert_ticks_changed_but_remain_consistent_across_graphs(
+        graphs=graphs,
+        xticks_prev=xticks_prev,
+        yticks_prev=yticks_prev,
+        check_yticks_change=True,
+    )
+
+    xticks_prev = get_xtick_values(graph_overview)
+    yticks_prev = get_ytick_values(graph_overview)
+
+    # Reset via entity graph
+    ActionChains(dash_duo.driver).double_click(graph_entity_split).perform()
+    time.sleep(1.0)
+
+    # Limits of all graphs should update
+    assert_ticks_changed_but_remain_consistent_across_graphs(
+        graphs=graphs,
+        xticks_prev=xticks_prev,
+        yticks_prev=yticks_prev,
+        check_yticks_change=True,
+    )
+
+    xticks_prev = get_xtick_values(graph_overview)
+    yticks_prev = get_ytick_values(graph_overview)
+
+    # Zoom in via category graph
+    dash_duo.zoom_in_graph_by_ratio(graph_category_split, zoom_box_fraction=0.1)
+    time.sleep(1.0)
+
+    # Limits of all graphs should update
+    assert_ticks_changed_but_remain_consistent_across_graphs(
+        graphs=graphs,
+        xticks_prev=xticks_prev,
+        yticks_prev=yticks_prev,
+        check_yticks_change=True,
+    )
+
+    xticks_prev = get_xtick_values(graph_overview)
+    yticks_prev = get_ytick_values(graph_overview)
+
+    # Reset via category graph
+    ActionChains(dash_duo.driver).double_click(graph_category_split).perform()
+    time.sleep(1.0)
+
+    # Limits of all graphs should update
+    assert_ticks_changed_but_remain_consistent_across_graphs(
+        graphs=graphs,
+        xticks_prev=xticks_prev,
+        yticks_prev=yticks_prev,
+        check_yticks_change=True,
+    )
