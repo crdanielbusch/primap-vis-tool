@@ -1031,6 +1031,8 @@ def test_021_linked_zoom(dash_duo, tmp_path):
     # that correspond to the app's state, then just check them directly.
     # However, I can't work out how to do that right now, so I'm using this hack instead.
     dash_duo.driver.set_window_size(1440, 1000)
+    # Give time to respond to new size
+    time.sleep(1)
 
     graphs = [graph_overview, graph_category_split, graph_entity_split]
 
