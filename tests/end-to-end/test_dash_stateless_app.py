@@ -135,8 +135,8 @@ def setup_app(
     app = primap_visualisation_tool_stateless_app.create_app.create_app()
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
-    time.sleep(3.0)
 
+    # Returning the app too may be necessary at some point
     return dash_duo
 
 
@@ -1002,18 +1002,13 @@ def assert_ticks_changed_but_remain_consistent_across_graphs(
 
 
 def test_021_linked_zoom(dash_duo, tmp_path):
-    # Re-size the window.
-    # We put this here as a demonstration of how to do this.
-    # It isn't actually needed, but it's a good trick to know.
-    dash_duo.driver.set_window_size(1382, 744)
-
     test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
     tmp_db = tmp_path / "008_notes_database.db"
 
-    setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
+    dash_duo = setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
 
     # Make sure that expected elements are on the page before continuing
     graph_overview = get_element_workaround(
@@ -1026,7 +1021,15 @@ def test_021_linked_zoom(dash_duo, tmp_path):
         dash_duo=dash_duo, expected_id_component="graph-category-split", timeout=5
     )
 
+    # Re-size the window.
+    # This ensures consistent behaviour of the ticks.
+    # A much nicer way to handle this would be to get the actual Python objects
+    # that correspond to the app's state, then just check them directly.
+    # However, I can't work out how to do that right now, so I'm using this hack instead.
+    dash_duo.driver.set_window_size(1440, 1000)
+
     graphs = [graph_overview, graph_category_split, graph_entity_split]
+
     # Can't see a better way to do this, maybe someone else finds it.
     xticks_prev = get_xtick_values(graph_overview)
     yticks_prev = get_ytick_values(graph_overview)
