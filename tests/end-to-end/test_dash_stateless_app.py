@@ -887,6 +887,8 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     tmp_db = tmp_path / "019_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
+    # Give time to set up
+    time.sleep(2)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
 
     # Go to a country
@@ -1009,6 +1011,8 @@ def test_021_linked_zoom(dash_duo, tmp_path):
     tmp_db = tmp_path / "008_notes_database.db"
 
     dash_duo = setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
+    # Give time to set up
+    time.sleep(2)
 
     # Make sure that expected elements are on the page before continuing
     graph_overview = get_element_workaround(
