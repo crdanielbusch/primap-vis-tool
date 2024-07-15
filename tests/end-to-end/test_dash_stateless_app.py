@@ -1002,6 +1002,11 @@ def assert_ticks_changed_but_remain_consistent_across_graphs(
 
 
 def test_021_linked_zoom(dash_duo, tmp_path):
+    # Re-size the window.
+    # We put this here as a demonstration of how to do this.
+    # It isn't actually needed, but it's a good trick to know.
+    dash_duo.driver.set_window_size(1382, 744)
+
     test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
