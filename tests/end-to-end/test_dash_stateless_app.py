@@ -731,6 +731,10 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
 
+    # Re-size the window to ensure buttons don't overlap.
+    # Will be fixed once we update the layout.
+    dash_duo.driver.set_window_size(1440, 1000)
+
     # Go to a country
     dropdown_country_input = dash_duo.find_element("#dropdown-country input")
     country_with_notes = "Egypt"
@@ -1030,43 +1034,13 @@ def test_021_linked_zoom(dash_duo, tmp_path):
     # A much nicer way to handle this would be to get the actual Python objects
     # that correspond to the app's state, then just check them directly.
     # However, I can't work out how to do that right now, so I'm using this hack instead.
-    dash_duo.driver.set_window_size(1440, 1000)
+    dash_duo.driver.set_window_size(1412, 1000)
     # Give time to respond to new size
     time.sleep(1)
 
     graphs = [graph_overview, graph_category_split, graph_entity_split]
 
     # Can't see a better way to do this, maybe someone else finds it.
-    xticks_prev = get_xtick_values(graph_overview)
-    yticks_prev = get_ytick_values(graph_overview)
-
-    # Zoom in on overview graph
-    dash_duo.zoom_in_graph_by_ratio(graph_overview, zoom_box_fraction=0.2)
-    time.sleep(1.0)
-
-    # Limits should update, but not y-axis because of how range slider works
-    assert_ticks_changed_but_remain_consistent_across_graphs(
-        graphs=graphs,
-        xticks_prev=xticks_prev,
-        yticks_prev=yticks_prev,
-        check_yticks_change=False,
-    )
-
-    xticks_prev = get_xtick_values(graph_overview)
-    yticks_prev = get_ytick_values(graph_overview)
-
-    # Reset via overview graph
-    ActionChains(dash_duo.driver).double_click(graph_overview).perform()
-    time.sleep(1.0)
-
-    # Limits should update, but not y-axis because of how range slider works
-    assert_ticks_changed_but_remain_consistent_across_graphs(
-        graphs=graphs,
-        xticks_prev=xticks_prev,
-        yticks_prev=yticks_prev,
-        check_yticks_change=False,
-    )
-
     xticks_prev = get_xtick_values(graph_overview)
     yticks_prev = get_ytick_values(graph_overview)
 
@@ -1120,6 +1094,37 @@ def test_021_linked_zoom(dash_duo, tmp_path):
     time.sleep(1.0)
 
     # Limits of all graphs should update
+    assert_ticks_changed_but_remain_consistent_across_graphs(
+        graphs=graphs,
+        xticks_prev=xticks_prev,
+        yticks_prev=yticks_prev,
+        check_yticks_change=True,
+    )
+
+    # Check overview graph last because its zoom only affects the x-axis
+    # if you use it first, which makes the y-axis values unpredictable.
+    # TODO: check why this happens.
+    # It is odd that zoom behaviour changes depending on order.
+    xticks_prev = get_xtick_values(graph_overview)
+    yticks_prev = get_ytick_values(graph_overview)
+
+    # Zoom in on overview graph
+    dash_duo.zoom_in_graph_by_ratio(graph_overview, zoom_box_fraction=0.2)
+
+    assert_ticks_changed_but_remain_consistent_across_graphs(
+        graphs=graphs,
+        xticks_prev=xticks_prev,
+        yticks_prev=yticks_prev,
+        check_yticks_change=True,
+    )
+
+    xticks_prev = get_xtick_values(graph_overview)
+    yticks_prev = get_ytick_values(graph_overview)
+
+    # Reset via overview graph
+    ActionChains(dash_duo.driver).double_click(graph_overview).perform()
+    time.sleep(1.0)
+
     assert_ticks_changed_but_remain_consistent_across_graphs(
         graphs=graphs,
         xticks_prev=xticks_prev,
