@@ -236,7 +236,7 @@ def test_007_country_buttons(dash_duo, tmp_path):
     dash_duo.wait_for_contains_text("#dropdown-country", "EARTH", timeout=4)
 
     # Give time to sort out and shut down
-    time.sleep(2)
+    time.sleep(3)
 
 
 def test_008_initial_figures(dash_duo, tmp_path):
@@ -259,7 +259,7 @@ def test_008_initial_figures(dash_duo, tmp_path):
     # Working out if the page is actually loaded looks incredibly difficult
     # (e.g. https://stackoverflow.com/a/11002061),
     # hence we go for this very basic solution.
-    time.sleep(2.0)
+    time.sleep(3.0)
 
     # If we don't provide plotting config, the defaults are used
     source_scenario_definition = (
