@@ -20,6 +20,7 @@ from primap_visualisation_tool_stateless_app.dataset_handling import (
     group_other_source_scenarios,
     infer_source_scenarios,
 )
+from primap_visualisation_tool_stateless_app.figure_views import update_xy_range
 
 
 @define
@@ -262,11 +263,12 @@ def apply_gwp(
     return inp
 
 
-def create_overview_figure(  # type: ignore
+def create_overview_figure(  # type: ignore # noqa: PLR0913
     country: str,
     category: str,
     entity: str,
     dataset: xr.Dataset,
+    xyrange: dict[str, list[str] | str] | None = None,
     plotting_config: PlottingConfig | None = None,
 ) -> go.Figure:
     """
@@ -285,6 +287,10 @@ def create_overview_figure(  # type: ignore
 
     dataset
         Dataset from which to generate the figure
+
+    xyrange
+        x-, y-range to apply to the figure.
+        If not supplied, no range is set.
 
     plotting_config
         Plotting configuration to use
@@ -382,22 +388,14 @@ def create_overview_figure(  # type: ignore
             autorange=True,
         ),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-        margin=dict(l=0, r=0, t=0, b=0),  # distance to next element
+        margin=dict(l=0, r=0, t=0, b=20),  # distance to next element
+        autosize=True,
         hovermode="x",
+        yaxis_title=str(dataset[entity].data.units),
     )
 
-    # In the initial callback this property will be None
-    # if xyrange_data :
-    #     xyrange_data_dict = json.loads(xyrange_data)
-    #     fig.update_layout(
-    #         xaxis=dict(
-    #             range=xyrange_data_dict["xaxis"],
-    #             autorange=False,
-    #         ),
-    #         yaxis=dict(
-    #             autorange=True,
-    #         ),
-    #     )
+    if xyrange:
+        fig = update_xy_range(xyrange=xyrange, figure=fig)
 
     return fig
 
@@ -836,6 +834,7 @@ def create_category_figure(  # type: ignore # noqa: PLR0913
     source_scenario: str,
     source_scenario_dashed: str,
     dataset: xr.Dataset,
+    xyrange: dict[str, list[str] | str] | None = None,
 ) -> go.Figure:
     """
     Create the category figure.
@@ -856,6 +855,10 @@ def create_category_figure(  # type: ignore # noqa: PLR0913
 
     dataset
         Dataset from which to generate the figure
+
+    xyrange
+        x-, y-range to apply to the figure.
+        If not supplied, no range is set.
 
     Returns
     -------
@@ -929,24 +932,18 @@ def create_category_figure(  # type: ignore # noqa: PLR0913
     )
     fig.update_layout(
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-        margin=dict(l=0, r=0, t=40, b=40),
+        margin=dict(l=10, r=10, t=40, b=40),  # distance to next element
+        autosize=True,
         hovermode="x",
         # in some cases the last values will be nan and must be dropped
         # the xrange, however, should remain
         xaxis=dict(
             range=xrange,
         ),
+        yaxis_title=str(dataset[entity].data.units),
     )
-
-    # TODO integrate fixed xyrange later again
-    # In the initial callback xyrange_data will be None
-    # if xyrange_data :
-    #     xyrange_data_dict = json.loads(xyrange_data)
-    #     fig.update_layout(
-    #         xaxis=dict(
-    #             range=xyrange_data_dict["xaxis"],
-    #         ),
-    #     )
+    if xyrange:
+        fig = update_xy_range(xyrange=xyrange, figure=fig)
 
     return fig
 
@@ -958,6 +955,7 @@ def create_entity_figure(  # type: ignore # noqa: PLR0913
     source_scenario: str,
     source_scenario_dashed: str,
     dataset: xr.Dataset,
+    xyrange: dict[str, list[str] | str] | None = None,
 ) -> go.Figure:
     """
     Create the entity figure.
@@ -981,6 +979,10 @@ def create_entity_figure(  # type: ignore # noqa: PLR0913
 
     dataset
         Dataset from which to generate the figure
+
+    xyrange
+        x-, y-range to apply to the figure.
+        If not supplied, no range is set.
 
     Returns
     -------
@@ -1052,26 +1054,22 @@ def create_entity_figure(  # type: ignore # noqa: PLR0913
 
     fig.update_layout(
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-        margin=dict(l=0, r=0, t=40, b=40),  # distance to next element
+        margin=dict(l=10, r=10, t=40, b=40),  # distance to next element
+        autosize=True,
         hovermode="x",
         # in some cases the last values will be NaN and must be dropped
         # the xrange, however, should remain
         xaxis=dict(
             range=xrange,
         ),
+        yaxis_title=str(dataset[entity].data.units),
     )
 
     # fig.update_traces(
     #     hovertemplate="%{y:.2e} ",
     # )
 
-    # In the initial callback xyrange_data will be None
-    # if xyrange_data:
-    #     xyrange_data_dict = json.loads(xyrange_data)
-    #     fig.update_layout(
-    #         xaxis=dict(
-    #             range=xyrange_data_dict["xaxis"],
-    #         ),
-    #     )
+    if xyrange:
+        fig = update_xy_range(xyrange=xyrange, figure=fig)
 
     return fig

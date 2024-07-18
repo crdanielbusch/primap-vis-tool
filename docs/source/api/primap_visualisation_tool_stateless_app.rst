@@ -13,6 +13,7 @@ API Reference
   primap_visualisation_tool_stateless_app.create_app
   primap_visualisation_tool_stateless_app.dataset_handling
   primap_visualisation_tool_stateless_app.dataset_holder
+  primap_visualisation_tool_stateless_app.figure_views
   primap_visualisation_tool_stateless_app.figures
   primap_visualisation_tool_stateless_app.layout
   primap_visualisation_tool_stateless_app.main

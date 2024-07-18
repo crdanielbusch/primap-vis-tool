@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 import plotly.graph_objects as go  # type: ignore
 import xarray as xr
@@ -16,6 +17,7 @@ from dash import (  # type: ignore
     State,
     ctx,
 )
+from dash.dependencies import ALL  # type: ignore
 
 import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
 from primap_visualisation_tool_stateless_app.dataset_handling import (
@@ -28,6 +30,7 @@ from primap_visualisation_tool_stateless_app.dataset_handling import (
 from primap_visualisation_tool_stateless_app.dataset_holder import (
     get_application_dataset,
 )
+from primap_visualisation_tool_stateless_app.figure_views import update_xy_range
 from primap_visualisation_tool_stateless_app.figures import (
     create_category_figure,
     create_entity_figure,
@@ -228,25 +231,23 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         )
 
     @app.callback(  # type: ignore
-        Output("graph-overview", "figure"),
+        Output(dict(name="graph-overview", type="graph"), "figure"),
         Input("dropdown-country", "value"),
         Input("dropdown-category", "value"),
         Input("dropdown-entity", "value"),
-        State("graph-overview", "figure"),
-        # Input("memory", "data"),
-        # Input("xyrange-overview", "data"),
+        Input("xyrange", "data"),
+        State(dict(name="graph-overview", type="graph"), "figure"),
     )
-    def update_overview_figure(
+    def update_overview_figure(  # noqa: PLR0913
         country: str,
         category: str,
         entity: str,
-        graph_figure_current: go.Figure,
-        # memory_data: dict[str, int],
-        # xyrange_data: str | None,
+        xyrange: dict[str, int],
+        figure_current: go.Figure,
         app_dataset: xr.Dataset | None = None,
     ) -> go.Figure:
         """
-        Update the overview graph.
+        Update the overview figure.
 
         Parameters
         ----------
@@ -259,10 +260,11 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         entity
             The currently selected entity in the dropdown menu
 
-        memory_data
-            A variable stored in the browser that changes whenever country, category or entity changes.
-            It is needed to execute the callbacks sequentially.
-            The actual values are irrelevant for the app.
+        xyrange
+            The x- and y-range to apply to the figure
+
+        figure_current
+            Current state of the figure
 
         app_dataset
             The app dataset to use. If not provided, we use get_app_dataset()
@@ -274,15 +276,18 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         if app_dataset is None:
             app_dataset = get_application_dataset()
 
+        if ctx.triggered_id == "xyrange" and xyrange:
+            return update_xy_range(xyrange=xyrange, figure=figure_current)
+
         if any(v is None for v in (country, category, entity)):
             # User cleared one of the selections in the dropdown, do nothing
-            return graph_figure_current
-
-        # if ctx.triggered_id == "xyrange-overview" and xyrange_data:
-        #    return app_state.update_overview_range(xyrange_data)
+            return figure_current
 
         return create_overview_figure(
-            country=country, category=category, entity=entity, dataset=app_dataset
+            country=country,
+            category=category,
+            entity=entity,
+            dataset=app_dataset,
         )
 
     @app.callback(  # type: ignore
@@ -367,31 +372,63 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         )
 
     @app.callback(  # type: ignore
-        Output("graph-category-split", "figure"),
-        State("graph-category-split", "figure"),
-        State("dropdown-country", "value"),
-        State("dropdown-category", "value"),
-        State("dropdown-entity", "value"),
+        Output(dict(name="graph-category-split", type="graph"), "figure"),
+        Input("dropdown-country", "value"),
+        Input("dropdown-category", "value"),
+        Input("dropdown-entity", "value"),
         Input("dropdown-source-scenario", "value"),
         Input("dropdown-source-scenario-dashed", "value"),
-        Input("memory", "data"),
-        # Input("xyrange-category", "data"),
-        # State("xyrange-entity", "data"),
+        Input("xyrange", "data"),
+        State(dict(name="graph-category-split", type="graph"), "figure"),
     )
     def update_category_figure(  # noqa: PLR0913
-        graph_figure_current: go.Figure,
         country: str,
         category: str,
         entity: str,
         source_scenario: str,
         source_scenario_dashed: str,
-        memory_data: dict[str, int],
-        # xyrange_data: str | None,
-        # xyrange_data_entity: str | None,
+        xyrange: dict[str, int],
+        figure_current: go.Figure,
         app_dataset: xr.Dataset | None = None,
     ) -> go.Figure:
+        """
+        Update the category figure.
+
+        Parameters
+        ----------
+        country
+            The currently selected country in the dropdown menu
+
+        category
+            The currently selected category in the dropdown menu
+
+        entity
+            The currently selected entity in the dropdown menu
+
+        source_scenario
+            Source-scenario to plot with a solid line
+
+        source_scenario_dashed
+            Source-scenario to plot with a dashed line
+
+        xyrange
+            The x- and y-range to apply to the figure
+
+        figure_current
+            Current state of the figure
+
+        app_dataset
+            The app dataset to use. If not provided, we use get_app_dataset()
+
+        Returns
+        -------
+            category figure.
+        """
         if app_dataset is None:
             app_dataset = get_application_dataset()
+
+        if ctx.triggered_id == "xyrange" and xyrange:
+            return update_xy_range(xyrange=xyrange, figure=figure_current)
 
         if any(
             v is None
@@ -404,7 +441,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             )
         ):
             # User cleared one of the selections in the dropdown, do nothing
-            return graph_figure_current
+            return figure_current
 
         return create_category_figure(
             country=country,
@@ -416,34 +453,63 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         )
 
     @app.callback(  # type: ignore
-        Output("graph-entity-split", "figure"),
-        State("graph-entity-split", "figure"),
-        State("dropdown-country", "value"),
-        State("dropdown-category", "value"),
-        State("dropdown-entity", "value"),
+        Output(dict(name="graph-entity-split", type="graph"), "figure"),
+        Input("dropdown-country", "value"),
+        Input("dropdown-category", "value"),
+        Input("dropdown-entity", "value"),
         Input("dropdown-source-scenario", "value"),
         Input("dropdown-source-scenario-dashed", "value"),
-        Input("memory", "data"),
-        # Input("xyrange-entity", "data"),
-        # State("xyrange-category", "data"),
+        Input("xyrange", "data"),
+        State(dict(name="graph-entity-split", type="graph"), "figure"),
     )
     def update_entity_graph(  # noqa: PLR0913
-        graph_figure_current: go.Figure,
         country: str,
         category: str,
         entity: str,
         source_scenario: str,
         source_scenario_dashed: str,
-        memory_data: dict[str, int],
+        xyrange: dict[str, int],
+        figure_current: go.Figure,
         app_dataset: xr.Dataset | None = None,
-        # xyrange_data: str | None,
-        # xyrange_data_category: str | None,
     ) -> go.Figure:
+        """
+        Update the entity figure.
+
+        Parameters
+        ----------
+        country
+            The currently selected country in the dropdown menu
+
+        category
+            The currently selected category in the dropdown menu
+
+        entity
+            The currently selected entity in the dropdown menu
+
+        source_scenario
+            Source-scenario to plot with a solid line
+
+        source_scenario_dashed
+            Source-scenario to plot with a dashed line
+
+        xyrange
+            The x- and y-range to apply to the figure
+
+        figure_current
+            Current state of the figure
+
+        app_dataset
+            The app dataset to use. If not provided, we use get_app_dataset()
+
+        Returns
+        -------
+            entity figure.
+        """
         if app_dataset is None:
             app_dataset = get_application_dataset()
 
-        # if ctx.triggered_id == "xyrange-entity" and xyrange_data :
-        #     return app_state.update_entity_range(xyrange_data)
+        if ctx.triggered_id == "xyrange" and xyrange:
+            return update_xy_range(xyrange=xyrange, figure=figure_current)
 
         if any(
             v is None
@@ -456,16 +522,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             )
         ):
             # User cleared one of the selections in the dropdown, do nothing
-            return graph_figure_current
-
-        # app_state.source_scenario_index = app_state.source_scenario_options.index(
-        #     source_scenario
-        # )
-
-        # in case user adjusts category figure layout
-        # and then changes country, category or entity
-        # if not xyrange_data :
-        #     xyrange_data = xyrange_data_category
+            return figure_current
 
         return create_entity_figure(
             country=country,
@@ -475,6 +532,40 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             source_scenario_dashed=source_scenario_dashed,
             dataset=app_dataset,
         )
+
+    @app.callback(  # type: ignore
+        Output("xyrange", "data"),
+        Output({"type": "graph", "name": ALL}, "relayoutData"),
+        Input({"type": "graph", "name": ALL}, "relayoutData"),
+        State({"type": "graph", "name": ALL}, "figure"),
+    )
+    def update_shared_xy_range(
+        all_relayout_data: list[None | dict[str, str | bool]],
+        all_figures: list[dict[str, Any]],
+    ) -> tuple[dict[str, str], list[Any] | Any]:
+        # I don't like this unique data thing, it feels like the
+        # wrong way to check what has changed.
+        unique_data = None
+        for relayout_data, figure in zip(all_relayout_data, all_figures):
+            if all_relayout_data.count(relayout_data) == 1:
+                unique_data = relayout_data
+                figure_of_interest = figure
+
+        res = {}
+        if unique_data:
+            if figure_of_interest["layout"]["xaxis"].get("autorange"):
+                res["xaxis"] = "autorange"
+            else:
+                res["xaxis"] = figure_of_interest["layout"]["xaxis"]["range"]
+
+            if figure_of_interest["layout"]["yaxis"].get("autorange"):
+                res["yaxis"] = "autorange"
+            else:
+                res["yaxis"] = figure_of_interest["layout"]["yaxis"]["range"]
+
+            return res, [unique_data] * len(all_relayout_data)
+
+        return res, all_relayout_data
 
     @app.callback(
         Output("note-saved-div", "children"),

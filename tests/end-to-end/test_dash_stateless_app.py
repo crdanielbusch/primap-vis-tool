@@ -2,9 +2,12 @@
 End to end testing of an app that doesn't use global state
 """
 
+from __future__ import annotations
+
 import re
 import time
 from pathlib import Path
+from typing import Any
 
 import dash
 import dash.testing
@@ -28,6 +31,79 @@ import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
 
 TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
 TEST_DS_FILE = TEST_DATA_DIR / "test_ds.nc"
+
+
+def get_element_workaround(
+    dash_duo,
+    expected_id_component: str,
+    class_name: str = "dash-graph",
+    timeout: float = 5.0,
+    repeat_freq: float = 0.5,
+) -> Any:
+    """
+    Get an element in the page
+
+    This is a workaround.
+    It feels like there should be a way to do this directly via the dash_duo API,
+    I just can't work out what it is.
+
+    Parameters
+    ----------
+    dash_duo
+        Dash duo instance
+
+    expected_id_component
+        The string we expected to find in the component's ID
+
+    class_name
+        The element's class name
+
+    timeout
+        How long to wait before timing out
+
+    repeat_freq
+        How quickly to check if there are new elements
+
+    Returns
+    -------
+        Element that has an ID that matches ``expected_id_component``.
+
+    Raises
+    ------
+    ValueError
+        More than one element has an ID that matches ``expected_id_component``.
+
+    KeyError
+        No elements have an ID that matches ``expected_id_component``.
+    """
+    now = time.time()
+    while time.time() < (now + timeout):
+        found_elements = dash_duo.driver.find_elements(By.CLASS_NAME, class_name)
+        matching = []
+        for element in found_elements:
+            if expected_id_component in element.get_attribute("id"):
+                matching.append(element)
+
+        if len(matching) == 1:
+            return matching[0]
+
+        if len(matching) > 1:
+            matching_element_ids = [e.get_attribute("id") for e in matching]
+            msg = (
+                "More than one element has an id that contains {expected_id_component}. "
+                f"{matching_element_ids=}"
+            )
+            raise ValueError(msg)
+
+        time.sleep(repeat_freq)
+
+    available_element_ids = [e.get_attribute("id") for e in found_elements]
+    msg = (
+        f"No element with an id containing {expected_id_component} was found. "
+        f"We looked for elements with {class_name=}. "
+        f"The element ids we found were {available_element_ids}."
+    )
+    raise KeyError(msg)
 
 
 @pytest.fixture
@@ -59,8 +135,8 @@ def setup_app(
     app = primap_visualisation_tool_stateless_app.create_app.create_app()
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
-    time.sleep(3.0)
 
+    # Returning the app too may be necessary at some point
     return dash_duo
 
 
@@ -77,6 +153,9 @@ def test_001_dash_example(dash_duo):
 def test_002_app_starts(dash_duo, app_default):
     dash_duo.start_server(app_default)
 
+    # Give time to sort out and shut down
+    time.sleep(2)
+
 
 def test_003_dropdown_country(dash_duo, tmp_path):
     test_file = TEST_DS_FILE
@@ -86,7 +165,10 @@ def test_003_dropdown_country(dash_duo, tmp_path):
     tmp_db = tmp_path / "003_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH")
+    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH", timeout=4)
+
+    # Give time to sort out and shut down
+    time.sleep(2)
 
 
 def test_004_dropdown_country_earth_not_present(dash_duo):
@@ -96,7 +178,10 @@ def test_004_dropdown_country_earth_not_present(dash_duo):
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
-    dash_duo.wait_for_contains_text("#dropdown-country", "Australia")
+    dash_duo.wait_for_contains_text("#dropdown-country", "Australia", timeout=4)
+
+    # Give time to sort out and shut down
+    time.sleep(2)
 
 
 def test_005_dropdown_category(dash_duo):
@@ -106,7 +191,10 @@ def test_005_dropdown_category(dash_duo):
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
-    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL")
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL", timeout=4)
+
+    # Give time to sort out and shut down
+    time.sleep(2)
 
 
 def test_006_dropdown_entity(dash_duo):
@@ -116,7 +204,10 @@ def test_006_dropdown_entity(dash_duo):
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
-    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2")
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=4)
+
+    # Give time to sort out and shut down
+    time.sleep(2)
 
 
 def test_007_country_buttons(dash_duo, tmp_path):
@@ -128,23 +219,24 @@ def test_007_country_buttons(dash_duo, tmp_path):
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("next_country", timeout=2)
 
-    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH")
+    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH", timeout=4)
 
     # Click next
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
 
     # Country dropdown should update
-    dash_duo.wait_for_contains_text("#dropdown-country", "EU27BX")
+    dash_duo.wait_for_contains_text("#dropdown-country", "EU27BX", timeout=4)
 
     # Click previous
     button_country_prev = dash_duo.driver.find_element(By.ID, "prev_country")
     button_country_prev.click()
 
     # Country dropdown should be back to where it started
-    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH")
+    dash_duo.wait_for_contains_text("#dropdown-country", "EARTH", timeout=4)
 
-    time.sleep(1.0)
+    # Give time to sort out and shut down
+    time.sleep(2)
 
 
 def test_008_initial_figures(dash_duo, tmp_path):
@@ -155,8 +247,14 @@ def test_008_initial_figures(dash_duo, tmp_path):
     tmp_db = tmp_path / "008_notes_database.db"
 
     setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("graph-overview", timeout=10)
-    dash_duo.wait_for_element_by_id("graph-entity-split", timeout=10)
+
+    # Make sure that expected elements are on the page before continuing
+    get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-entity-split", timeout=5
+    )
     # Add a sleep to give the page time to load.
     # Working out if the page is actually loaded looks incredibly difficult
     # (e.g. https://stackoverflow.com/a/11002061),
@@ -227,8 +325,10 @@ def test_008_initial_figures(dash_duo, tmp_path):
         ),
     )
     for figure_id, expected_legend_items in figures_expected_items:
-        figure = dash_duo.driver.find_element(By.ID, figure_id)
-        wait = WebDriverWait(dash_duo.driver, timeout=20)
+        figure = get_element_workaround(
+            dash_duo=dash_duo, expected_id_component=figure_id, timeout=5
+        )
+        wait = WebDriverWait(dash_duo.driver, timeout=4)
         wait.until(lambda d: figure.find_elements(By.CLASS_NAME, "legend"))
         legend = figure.find_element(By.CLASS_NAME, "legend")
         traces = legend.find_elements(By.CLASS_NAME, "traces")
@@ -255,6 +355,9 @@ def test_008_initial_figures(dash_duo, tmp_path):
                 else:
                     raise NotImplementedError(exp_dash)
 
+    # Give time to sort out and shut down
+    time.sleep(2)
+
 
 def test_009_category_buttons(dash_duo, tmp_path):
     test_file = TEST_DS_FILE
@@ -280,7 +383,8 @@ def test_009_category_buttons(dash_duo, tmp_path):
     # Category dropdown should update back to where it started
     dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL")
 
-    time.sleep(1.0)
+    # Give time to sort out and shut down
+    time.sleep(2)
 
 
 def test_010_entity_buttons(dash_duo):
@@ -306,6 +410,9 @@ def test_010_entity_buttons(dash_duo):
     # Entity dropdown should update back to where it started
     dash_duo.wait_for_contains_text("#dropdown-entity", "CO2")
 
+    # Give time to sort out and shut down
+    time.sleep(2)
+
 
 def test_011_dropdown_source_scenario(dash_duo):
     test_file = TEST_DS_FILE
@@ -318,6 +425,9 @@ def test_011_dropdown_source_scenario(dash_duo):
         "#dropdown-source-scenario",
         "PRIMAP-hist_v2.5_final_nr, HISTCR",
     )
+
+    # Give time to sort out and shut down
+    time.sleep(2)
 
 
 def test_012_dropdown_source_scenario_option_not_available(dash_duo):
@@ -361,6 +471,9 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
         "PRIMAP-hist_v2.4.2_final_nr, HISTCR",
     )
 
+    # Give time to sort out and shut down
+    time.sleep(2)
+
 
 def get_dropdown_value(
     dropdown_element: selenium.webdriver.remote.webelement.WebElement,
@@ -390,6 +503,9 @@ def test_013_notes_save_no_input(dash_duo, tmp_path):
     # Should get no output
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
     assert not note_saved_div.text
+
+    # Give time to sort out and shut down
+    time.sleep(2)
 
 
 def test_014_notes_save_basic(dash_duo, tmp_path):
@@ -429,6 +545,9 @@ def test_014_notes_save_basic(dash_duo, tmp_path):
     assert re.match(
         rf"Notes for {current_country} saved at .* in {tmp_db}", note_saved_div.text
     )
+
+    # Give time to sort out and shut down
+    time.sleep(2)
 
 
 def test_015_notes_save_and_step(dash_duo, tmp_path):
@@ -482,6 +601,9 @@ def test_015_notes_save_and_step(dash_duo, tmp_path):
     current_country = get_dropdown_value(dropdown_country)
     assert note_saved_div.text == f"Loaded existing notes for {current_country}"
 
+    # Give time to sort out and shut down
+    time.sleep(2)
+
 
 def test_016_notes_step_without_user_save(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
@@ -532,6 +654,9 @@ def test_016_notes_step_without_user_save(dash_duo, tmp_path):
     dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
     current_country = get_dropdown_value(dropdown_country)
     assert note_saved_div.text == f"Loaded existing notes for {current_country}"
+
+    # Give time to sort out and shut down
+    time.sleep(2)
 
 
 def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
@@ -593,6 +718,9 @@ def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
     assert note_saved_div.text == f"Loaded existing notes for {country_with_notes}"
 
+    # Give time to sort out and shut down
+    time.sleep(2)
+
 
 def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
@@ -602,6 +730,10 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
+
+    # Re-size the window to ensure buttons don't overlap.
+    # Will be fixed once we update the layout.
+    dash_duo.driver.set_window_size(1440, 1000)
 
     # Go to a country
     dropdown_country_input = dash_duo.find_element("#dropdown-country input")
@@ -639,6 +771,9 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     dash_duo.wait_for_contains_text(
         "#note-saved-div", f"Loaded existing notes for {country_with_notes}", timeout=2
     )
+
+    # Give time to sort out and shut down
+    time.sleep(2)
 
 
 def test_019_notes_multi_step_flow(dash_duo, tmp_path):
@@ -742,6 +877,9 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     # being saved may or may not appear, so don't check that here.
     assert f"Loaded existing notes for {second_country}" in note_saved_div.text
 
+    # Give time to sort out and shut down
+    time.sleep(2)
+
 
 def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     """
@@ -753,6 +891,8 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     tmp_db = tmp_path / "019_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
+    # Give time to set up
+    time.sleep(2)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
 
     # Go to a country
@@ -817,4 +957,177 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     )
     assert (
         db.set_index("country")["notes"].loc[second_country] == input_for_second_country
+    )
+
+    # Give time to sort out and shut down
+    time.sleep(2)
+
+
+def get_xtick_values(graph):
+    return [
+        v.text
+        for v in graph.find_elements_by_class_name("xaxislayer-above")[
+            0
+        ].find_elements_by_class_name("xtick")
+    ]
+
+
+def get_ytick_values(graph):
+    return [
+        v.text
+        for v in graph.find_elements_by_class_name("yaxislayer-above")[
+            0
+        ].find_elements_by_class_name("ytick")
+    ]
+
+
+def assert_ticks_changed_but_remain_consistent_across_graphs(
+    graphs, xticks_prev, yticks_prev, check_yticks_change=True
+):
+    """
+    Would be better to check axis limits, but I can't work out how to do that
+
+    This is plan b
+    """
+    for i, graph in enumerate(graphs):
+        assert xticks_prev != get_xtick_values(graph)
+        if check_yticks_change:
+            assert yticks_prev != get_ytick_values(graph)
+        else:
+            assert yticks_prev == get_ytick_values(graph)
+
+        if i == 0:
+            exp_xticks = get_xtick_values(graph)
+            exp_yticks = get_ytick_values(graph)
+        else:
+            # This appears to be sensitive to window size,
+            # which is quite annoying.
+            # Not sure how to fix.
+            assert exp_xticks == get_xtick_values(graph)
+            assert exp_yticks == get_ytick_values(graph)
+
+
+def test_021_linked_zoom(dash_duo, tmp_path):
+    test_file = TEST_DS_FILE
+
+    test_ds = pm.open_dataset(test_file)
+
+    tmp_db = tmp_path / "008_notes_database.db"
+
+    dash_duo = setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
+    # Give time to set up
+    time.sleep(2)
+
+    # Make sure that expected elements are on the page before continuing
+    graph_overview = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    graph_entity_split = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-entity-split", timeout=5
+    )
+    graph_category_split = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-category-split", timeout=5
+    )
+
+    # Re-size the window.
+    # This ensures consistent behaviour of the ticks.
+    # A much nicer way to handle this would be to get the actual Python objects
+    # that correspond to the app's state, then just check them directly.
+    # However, I can't work out how to do that right now, so I'm using this hack instead.
+    dash_duo.driver.set_window_size(1412, 1000)
+    # Give time to respond to new size
+    time.sleep(1)
+
+    graphs = [graph_overview, graph_category_split, graph_entity_split]
+
+    # Can't see a better way to do this, maybe someone else finds it.
+    xticks_prev = get_xtick_values(graph_overview)
+    yticks_prev = get_ytick_values(graph_overview)
+
+    # Zoom in via entity graph
+    dash_duo.zoom_in_graph_by_ratio(graph_entity_split, zoom_box_fraction=0.2)
+    time.sleep(1.0)
+
+    # Limits of all graphs should update
+    assert_ticks_changed_but_remain_consistent_across_graphs(
+        graphs=graphs,
+        xticks_prev=xticks_prev,
+        yticks_prev=yticks_prev,
+        check_yticks_change=True,
+    )
+
+    xticks_prev = get_xtick_values(graph_overview)
+    yticks_prev = get_ytick_values(graph_overview)
+
+    # Reset via entity graph
+    ActionChains(dash_duo.driver).double_click(graph_entity_split).perform()
+    time.sleep(1.0)
+
+    # Limits of all graphs should update
+    assert_ticks_changed_but_remain_consistent_across_graphs(
+        graphs=graphs,
+        xticks_prev=xticks_prev,
+        yticks_prev=yticks_prev,
+        check_yticks_change=True,
+    )
+
+    xticks_prev = get_xtick_values(graph_overview)
+    yticks_prev = get_ytick_values(graph_overview)
+
+    # Zoom in via category graph
+    dash_duo.zoom_in_graph_by_ratio(graph_category_split, zoom_box_fraction=0.1)
+    time.sleep(1.0)
+
+    # Limits of all graphs should update
+    assert_ticks_changed_but_remain_consistent_across_graphs(
+        graphs=graphs,
+        xticks_prev=xticks_prev,
+        yticks_prev=yticks_prev,
+        check_yticks_change=True,
+    )
+
+    xticks_prev = get_xtick_values(graph_overview)
+    yticks_prev = get_ytick_values(graph_overview)
+
+    # Reset via category graph
+    ActionChains(dash_duo.driver).double_click(graph_category_split).perform()
+    time.sleep(1.0)
+
+    # Limits of all graphs should update
+    assert_ticks_changed_but_remain_consistent_across_graphs(
+        graphs=graphs,
+        xticks_prev=xticks_prev,
+        yticks_prev=yticks_prev,
+        check_yticks_change=True,
+    )
+
+    # Check overview graph last because its zoom only affects the x-axis
+    # if you use it first, which makes the y-axis values unpredictable.
+    # TODO: check why this happens.
+    # It is odd that zoom behaviour changes depending on order.
+    xticks_prev = get_xtick_values(graph_overview)
+    yticks_prev = get_ytick_values(graph_overview)
+
+    # Zoom in on overview graph
+    dash_duo.zoom_in_graph_by_ratio(graph_overview, zoom_box_fraction=0.2)
+
+    assert_ticks_changed_but_remain_consistent_across_graphs(
+        graphs=graphs,
+        xticks_prev=xticks_prev,
+        yticks_prev=yticks_prev,
+        check_yticks_change=True,
+    )
+
+    xticks_prev = get_xtick_values(graph_overview)
+    yticks_prev = get_ytick_values(graph_overview)
+
+    # Reset via overview graph
+    ActionChains(dash_duo.driver).double_click(graph_overview).perform()
+    time.sleep(1.0)
+
+    assert_ticks_changed_but_remain_consistent_across_graphs(
+        graphs=graphs,
+        xticks_prev=xticks_prev,
+        yticks_prev=yticks_prev,
+        check_yticks_change=True,
     )
