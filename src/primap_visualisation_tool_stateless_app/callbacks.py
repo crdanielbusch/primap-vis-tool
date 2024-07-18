@@ -426,9 +426,14 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         """
         if app_dataset is None:
             app_dataset = get_application_dataset()
-
+        if figure_current:
+            print(f"{figure_current['layout']['xaxis']=}")
         if ctx.triggered_id == "xyrange" and xyrange:
-            return update_xy_range(xyrange=xyrange, figure=figure_current)
+            fig = update_xy_range(xyrange=xyrange, figure=figure_current)
+            range = fig['layout']['xaxis']['range']
+            fig['layout']['xaxis'] = {'range' : range, 'type' : 'date'}
+            print(f"{fig['layout']['xaxis']=}")
+            return fig
 
         if any(
             v is None

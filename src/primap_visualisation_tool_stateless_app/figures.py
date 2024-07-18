@@ -397,6 +397,7 @@ def create_overview_figure(  # type: ignore # noqa: PLR0913
     if xyrange:
         fig = update_xy_range(xyrange=xyrange, figure=fig)
 
+
     return fig
 
 
