@@ -430,8 +430,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             print(f"{figure_current['layout']['xaxis']=}")
         if ctx.triggered_id == "xyrange" and xyrange:
             fig = update_xy_range(xyrange=xyrange, figure=figure_current)
-            range = fig['layout']['xaxis']['range']
-            fig['layout']['xaxis'] = {'range' : range, 'type' : 'date'}
+            fig["layout"]["xaxis"]["type"] = "date"
             print(f"{fig['layout']['xaxis']=}")
             return fig
 
