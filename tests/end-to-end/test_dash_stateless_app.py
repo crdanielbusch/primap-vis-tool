@@ -247,6 +247,8 @@ def test_008_initial_figures(dash_duo, tmp_path):
     tmp_db = tmp_path / "008_notes_database.db"
 
     setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
+    # Give time to set up
+    time.sleep(2)
 
     # Make sure that expected elements are on the page before continuing
     get_element_workaround(
@@ -729,6 +731,8 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     tmp_db = tmp_path / "017_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
+    # Give time to set up
+    time.sleep(2)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
 
     # Re-size the window to ensure buttons don't overlap.
