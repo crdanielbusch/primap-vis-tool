@@ -48,7 +48,7 @@ def create_layout(  # type: ignore  # noqa: PLR0913
         dcc.Store(id="country-dropdown-store", storage_type="memory"),
         dcc.Store(id="xyrange", storage_type="memory"),
     ]
-    dropdowns_and_buttons = [
+    country_category_entity_dropdowns = [
         html.B(children="Country", **HEADLINES_STYLING_INITIAL),
         dcc.Dropdown(
             # TODO: try passing in a dict here and see if keys
@@ -106,6 +106,8 @@ def create_layout(  # type: ignore  # noqa: PLR0913
                 ),
             ]
         ),
+    ]
+    other_dropdowns = [
         html.B(children="Source Scenario", **HEADLINES_STYLING_INITIAL),
         dcc.Dropdown(
             source_scenario_options,
@@ -113,6 +115,7 @@ def create_layout(  # type: ignore  # noqa: PLR0913
             id="dropdown-source-scenario",
             **DROPDOWN_STYLING_INITIAL,
         ),
+        # html.Br(),
         html.B(children="Source Scenario dashed", **HEADLINES_STYLING_INITIAL),
         dcc.Dropdown(
             source_scenario_options,
@@ -120,6 +123,7 @@ def create_layout(  # type: ignore  # noqa: PLR0913
             id="dropdown-source-scenario-dashed",
             **DROPDOWN_STYLING_INITIAL,
         ),
+        # html.Br(),
         html.B(children="GWP to use", **HEADLINES_STYLING_INITIAL),
         dcc.Dropdown(
             ["placeholder"],
@@ -134,10 +138,22 @@ def create_layout(  # type: ignore  # noqa: PLR0913
         dcc.Textarea(
             id="input-for-notes",
             placeholder="No notes for this country yet",
-            style={"width": "100%"},
-            rows=8,  # used to define height of text area
+            style={"width": "90%", "margin-left": "10px"},
+            rows=4,  # used to define height of text area
         ),
-        dbc.Button(children="Save", id="save-button", **BUTTON_STYLING_INITIAL),
+        dbc.Button(
+            children="Save",
+            id="save-button",
+            color="light",
+            n_clicks=0,
+            style={
+                "fontSize": 12,
+                "height": "37px",
+                "width": "90%",
+                "margin-left": "10px",
+                "margin-right": "10px",
+            },
+        ),
         html.H4(
             id="note-saved-div",
             children="",
@@ -155,13 +171,13 @@ def create_layout(  # type: ignore  # noqa: PLR0913
     ]
 
     category_figure = [
-        html.Br(),
+        # html.Br(),
         html.B(children="Category split", **HEADLINES_STYLING_INITIAL),
         dcc.Graph(id=dict(name="graph-category-split", type="graph")),
     ]
 
     entity_figure = [
-        html.Br(),
+        # html.Br(),
         html.B(children="Entity split", **HEADLINES_STYLING_INITIAL),
         dcc.Graph(id=dict(name="graph-entity-split", type="graph")),
     ]
@@ -171,9 +187,27 @@ def create_layout(  # type: ignore  # noqa: PLR0913
         dbc.Row(
             [
                 # first column with dropdown menus
-                dbc.Col(dbc.Stack([*stores, *dropdowns_and_buttons]), width=2),
-                # second column with notes field
-                dbc.Col(dbc.Stack(notes), width=2),
+                dbc.Col(
+                    [
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    dbc.Stack(
+                                        [
+                                            *stores,
+                                            *country_category_entity_dropdowns,
+                                        ],
+                                        gap=1,
+                                    ),
+                                ),
+                                dbc.Col(
+                                    dbc.Stack([*other_dropdowns], gap=1),
+                                ),
+                            ]
+                        ),
+                        dbc.Row(notes),
+                    ]
+                ),
                 # third column with overview figure
                 dbc.Col(
                     overview_figure,
