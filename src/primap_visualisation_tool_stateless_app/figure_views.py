@@ -9,7 +9,16 @@ from loguru import logger
 
 def update_xy_range(xyrange: dict[str, Any], figure: Any) -> Any:
     """
-    TODO: write
+    Update the x and y range in a figure.
+
+    Parameters
+    ----------
+    xyrange
+        The x- and y-range to apply to the figure
+
+    Returns
+    -------
+        The updated category figure.
     """
     logger.info(f"{xyrange=}")
 
@@ -18,16 +27,13 @@ def update_xy_range(xyrange: dict[str, Any], figure: Any) -> Any:
         # figure["layout"].update(**update_value)
         for axis in ["xaxis", "yaxis"]:
             if xyrange[axis] == "autorange":
-                # update_value = {axis : {"autorange" : True}}
+                # There may be a smarter way to update the values of the dict
+                # without removing 'title' and 'type'
                 figure["layout"][axis]["autorange"] = True
             else:
-                # update_value = {axis : {"range" : xyrange[axis], "autorange" : False}}
                 figure["layout"][axis]["range"] = xyrange[axis]
                 figure["layout"][axis]["autorange"] = False
     else:
-        pass
+        print("Figure not a dict")
         # figure.update_layout(**update_value)
-    print("Updated figure")
-    print(f"{figure['layout']['xaxis']=}")
-    print(f"{figure['layout']['yaxis']=}")
     return figure
