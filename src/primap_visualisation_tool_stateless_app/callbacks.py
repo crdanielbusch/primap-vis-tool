@@ -535,9 +535,10 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
     @app.callback(  # type: ignore
         Output("xyrange", "data"),
-        Output({"type": "graph", "name": ALL}, "relayoutData"),
+        # Output({"type": "graph", "name": ALL}, "relayoutData"),
         Input({"type": "graph", "name": ALL}, "relayoutData"),
         State({"type": "graph", "name": ALL}, "figure"),
+        prevent_initial_call=True,
     )
     def update_shared_xy_range(
         all_relayout_data: list[None | dict[str, str | bool]],
@@ -545,10 +546,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     ) -> tuple[dict[str, str], list[Any] | Any]:
         if any(v is None for v in (all_figures)):
             # initial callback when figures are None
-            return {
-                "xaxis": "autorange",
-                "yaxis": "autorange",
-            }, all_relayout_data
+            print("All figure None")
 
         # I don't like this unique data thing, it feels like the
         # wrong way to check what has changed.
@@ -570,9 +568,11 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             else:
                 res["yaxis"] = figure_of_interest["layout"]["yaxis"]["range"]
 
-            return res, [unique_data] * len(all_relayout_data)
+            # return res, [unique_data] * len(all_relayout_data)
+            return res
 
-        return res, all_relayout_data
+        # return res, all_relayout_data
+        return res
 
     @app.callback(
         Output("note-saved-div", "children"),
@@ -582,7 +582,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         State("country-dropdown-store", "data"),
         Input("save-button", "n_clicks"),
         Input("dropdown-country", "value"),
-        prevent_initial_call=True,
     )  # type:ignore
     def save_note(
         notes_value: str,
