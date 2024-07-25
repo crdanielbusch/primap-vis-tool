@@ -535,29 +535,32 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
     @app.callback(  # type: ignore
         Output("xyrange", "data"),
-        # Output({"type": "graph", "name": ALL}, "relayoutData"),
+        Output("relayout-store", "data"),
         Input({"type": "graph", "name": ALL}, "relayoutData"),
         State({"type": "graph", "name": ALL}, "figure"),
+        State("relayout-store", "data"),
         prevent_initial_call=True,
     )
     def update_shared_xy_range(
         all_relayout_data: list[None | dict[str, str | bool]],
         all_figures: list[dict[str, Any]],
+        all_relayout_data_prev: list[None | dict[str, str | bool]],
     ) -> tuple[dict[str, str], list[Any] | Any]:
-        if any(v is None for v in (all_figures)):
-            # initial callback when figures are None
-            print("All figure None")
+        # first time this callback runs, set current relayout data as reference
+        if all_relayout_data_prev is None:
+            all_relayout_data_prev = all_relayout_data
 
-        # I don't like this unique data thing, it feels like the
-        # wrong way to check what has changed.
-        unique_data = None
-        for relayout_data, figure in zip(all_relayout_data, all_figures):
-            if all_relayout_data.count(relayout_data) == 1:
-                unique_data = relayout_data
-                figure_of_interest = figure
+        # find out which figure triggered the callback
+        # relayoutData of that figure is now different to the previous version
+        unique_data = [
+            j for i, j in zip(all_relayout_data_prev, all_relayout_data) if i != j
+        ]
 
         res = {}
         if unique_data:
+            # choose the figure according to relayout data
+            idx = all_relayout_data.index(unique_data[0])
+            figure_of_interest = all_figures[idx]
             if figure_of_interest["layout"]["xaxis"].get("autorange"):
                 res["xaxis"] = "autorange"
             else:
@@ -568,11 +571,9 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             else:
                 res["yaxis"] = figure_of_interest["layout"]["yaxis"]["range"]
 
-            # return res, [unique_data] * len(all_relayout_data)
-            return res
+            return res, all_relayout_data
 
-        # return res, all_relayout_data
-        return res
+        return res, all_relayout_data
 
     @app.callback(
         Output("note-saved-div", "children"),
