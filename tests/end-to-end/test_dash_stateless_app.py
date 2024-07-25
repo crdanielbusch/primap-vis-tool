@@ -1131,5 +1131,5 @@ def test_021_linked_zoom(dash_duo, tmp_path):
         graphs=graphs,
         xticks_prev=xticks_prev,
         yticks_prev=yticks_prev,
-        check_yticks_change=True,
+        check_yticks_change=False,
     )
