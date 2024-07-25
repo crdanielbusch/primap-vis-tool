@@ -543,6 +543,13 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         all_relayout_data: list[None | dict[str, str | bool]],
         all_figures: list[dict[str, Any]],
     ) -> tuple[dict[str, str], list[Any] | Any]:
+        if any(v is None for v in (all_figures)):
+            # initial callback when figures are None
+            return {
+                "xaxis": "autorange",
+                "yaxis": "autorange",
+            }, all_relayout_data
+
         # I don't like this unique data thing, it feels like the
         # wrong way to check what has changed.
         unique_data = None
