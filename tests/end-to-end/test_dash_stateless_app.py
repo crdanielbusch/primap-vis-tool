@@ -602,7 +602,7 @@ def test_015_notes_save_and_step(dash_duo, tmp_path):
     assert note_saved_div.text == f"Loaded existing notes for {current_country}"
 
     # Give time to sort out and shut down
-    time.sleep(2)
+    time.sleep(3)
 
 
 def test_016_notes_step_without_user_save(dash_duo, tmp_path):
