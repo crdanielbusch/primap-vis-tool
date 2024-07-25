@@ -544,7 +544,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     def update_shared_xy_range(
         all_relayout_data: list[None | dict[str, str | bool]],
         all_figures: list[dict[str, Any]],
-        all_relayout_data_prev: list[None | dict[str, str | bool]],
+        all_relayout_data_prev: None | list[None | dict[str, str | bool]],
     ) -> tuple[dict[str, str], list[Any] | Any]:
         # first time this callback runs, set current relayout data as reference
         if all_relayout_data_prev is None:
