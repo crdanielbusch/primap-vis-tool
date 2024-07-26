@@ -730,11 +730,14 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     tmp_db = tmp_path / "017_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
+    # Give time to set up
+    time.sleep(2)
+
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
 
     # Re-size the window to ensure buttons don't overlap.
     # Will be fixed once we update the layout.
-    dash_duo.driver.set_window_size(1440, 1000)
+    dash_duo.driver.set_window_size(2000, 1500)
 
     # Go to a country
     dropdown_country_input = dash_duo.find_element("#dropdown-country input")
@@ -759,7 +762,7 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     )
 
     # Go to a different country via the buttons
-    dash_duo.multiple_click("#next_country", 15, delay=0.01)
+    dash_duo.multiple_click("#next_country", 15, delay=0.05)
     time.sleep(1.0)
     assert get_dropdown_value(dropdown_country) != country_with_notes
 
