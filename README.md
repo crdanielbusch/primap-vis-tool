@@ -33,7 +33,7 @@ poetry install --all-extras
 
 ## Run the app
 
-<!--- sec-begin-run -->
+<!--- sec-begin-run-overview -->
 
 The first time you run the app, we suggest simply running it from the root directory with
 
@@ -47,7 +47,11 @@ If you don't have a dataset available already, simply use `tests/test-data/test_
 poetry run python src/primap_visualisation_tool_stateless_app/main.py --dataset tests/test-data/test_ds.nc
 ```
 
+<!--- sec-end-run-overview -->
+
 ### Plotting configuration
+
+<!--- sec-begin-run-plotting-config -->
 
 The first time you run the app, it will create a plotting configuration file for you.
 The file will be saved in the same directory as your dataset
@@ -85,7 +89,11 @@ Then, tell the app to use the configuration file with the `--plotting-config-yam
 poetry run python src/primap_visualisation_tool_stateless_app/main.py --dataset <path-to-dataset> --plotting-config-yaml <path-to-plotting-config-yaml>
 ```
 
+<!--- sec-end-run-plotting-config -->
+
 ### Notes database and other options
+
+<!--- sec-begin-run-notes-db-other -->
 
 The app's other options are quite self-explanatory.
 A help message can be shown with:
@@ -103,7 +111,7 @@ the default notes database file is `tests/test-data/test_ds.db`.
 For post-processing, this notes file can be read into a {py:obj}`pandas.DataFrame`
 using {py:func}`primap_visualisation_tool_stateless_app.notes.db.read_country_notes_db_as_pd`.
 
-<!--- sec-end-run -->
+<!--- sec-end-run-notes-db-other -->
 
 ### For developers
 
