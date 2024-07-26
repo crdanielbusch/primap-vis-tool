@@ -248,6 +248,12 @@ def test_008_initial_figures(dash_duo, tmp_path):
 
     setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
 
+    # Add a sleep to give the page time to load.
+    # Working out if the page is actually loaded looks incredibly difficult
+    # (e.g. https://stackoverflow.com/a/11002061),
+    # hence we go for this very basic solution.
+    time.sleep(2.0)
+
     # Make sure that expected elements are on the page before continuing
     get_element_workaround(
         dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
@@ -255,11 +261,6 @@ def test_008_initial_figures(dash_duo, tmp_path):
     get_element_workaround(
         dash_duo=dash_duo, expected_id_component="graph-entity-split", timeout=5
     )
-    # Add a sleep to give the page time to load.
-    # Working out if the page is actually loaded looks incredibly difficult
-    # (e.g. https://stackoverflow.com/a/11002061),
-    # hence we go for this very basic solution.
-    time.sleep(2.0)
 
     # If we don't provide plotting config, the defaults are used
     source_scenario_definition = (
