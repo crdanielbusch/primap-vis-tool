@@ -552,26 +552,32 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
         # find out which figure triggered the callback
         # relayoutData of that figure is now different to the previous version
-        unique_data = [
-            j for i, j in zip(all_relayout_data_prev, all_relayout_data) if i != j
-        ]
+        changed_l = []
+        for old, new in zip(all_relayout_data_prev, all_relayout_data):
+            if old != new:
+                changed_l.append(new)
+
+        if not changed_l:
+            # fast return
+            return {}, all_relayout_data
+
+        if len(changed_l) > 1:
+            msg = "How did more than one element change?"
+            raise NotImplementedError(msg)
+
+        changed = changed_l[0]
+        figure_that_changed = all_figures[all_relayout_data.index(changed)]
 
         res = {}
-        if unique_data:
-            # choose the figure according to relayout data
-            idx = all_relayout_data.index(unique_data[0])
-            figure_of_interest = all_figures[idx]
-            if figure_of_interest["layout"]["xaxis"].get("autorange"):
-                res["xaxis"] = "autorange"
-            else:
-                res["xaxis"] = figure_of_interest["layout"]["xaxis"]["range"]
+        if figure_that_changed["layout"]["xaxis"].get("autorange"):
+            res["xaxis"] = "autorange"
+        else:
+            res["xaxis"] = figure_that_changed["layout"]["xaxis"]["range"]
 
-            if figure_of_interest["layout"]["yaxis"].get("autorange"):
-                res["yaxis"] = "autorange"
-            else:
-                res["yaxis"] = figure_of_interest["layout"]["yaxis"]["range"]
-
-            return res, all_relayout_data
+        if figure_that_changed["layout"]["yaxis"].get("autorange"):
+            res["yaxis"] = "autorange"
+        else:
+            res["yaxis"] = figure_that_changed["layout"]["yaxis"]["range"]
 
         return res, all_relayout_data
 
