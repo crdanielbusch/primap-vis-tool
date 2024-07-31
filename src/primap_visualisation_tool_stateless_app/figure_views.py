@@ -32,6 +32,9 @@ def update_xy_range(xyrange: dict[str, Any], figure: Any) -> Any:
                 figure["layout"][axis]["range"] = xyrange[axis]
                 figure["layout"][axis]["autorange"] = False
     else:
-        print("Figure not a dict")
+        # I think this will help us figure out what is going on better,
+        # and it's generally better practice to error if we hit an unknown path
+        # than blindly continue
+        raise NotImplementedError(figure)
 
     return figure
