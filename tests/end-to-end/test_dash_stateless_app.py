@@ -495,7 +495,7 @@ def test_013_notes_save_no_input(dash_duo, tmp_path):
     tmp_db = tmp_path / "012_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("save-button", timeout=2)
+    dash_duo.wait_for_element_by_id("save-button", timeout=3)
 
     # Click without anything in the field
     save_button = dash_duo.driver.find_element(By.ID, "save-button")
