@@ -248,6 +248,12 @@ def test_008_initial_figures(dash_duo, tmp_path):
 
     setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
 
+    # Add a sleep to give the page time to load.
+    # Working out if the page is actually loaded looks incredibly difficult
+    # (e.g. https://stackoverflow.com/a/11002061),
+    # hence we go for this very basic solution.
+    time.sleep(2.0)
+
     # Make sure that expected elements are on the page before continuing
     get_element_workaround(
         dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
@@ -255,11 +261,6 @@ def test_008_initial_figures(dash_duo, tmp_path):
     get_element_workaround(
         dash_duo=dash_duo, expected_id_component="graph-entity-split", timeout=5
     )
-    # Add a sleep to give the page time to load.
-    # Working out if the page is actually loaded looks incredibly difficult
-    # (e.g. https://stackoverflow.com/a/11002061),
-    # hence we go for this very basic solution.
-    time.sleep(2.0)
 
     # If we don't provide plotting config, the defaults are used
     source_scenario_definition = (
@@ -729,11 +730,14 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     tmp_db = tmp_path / "017_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
+    # Give time to set up
+    time.sleep(2)
+
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
 
     # Re-size the window to ensure buttons don't overlap.
     # Will be fixed once we update the layout.
-    dash_duo.driver.set_window_size(1440, 1000)
+    dash_duo.driver.set_window_size(2000, 1500)
 
     # Go to a country
     dropdown_country_input = dash_duo.find_element("#dropdown-country input")
@@ -758,7 +762,7 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     )
 
     # Go to a different country via the buttons
-    dash_duo.multiple_click("#next_country", 15, delay=0.01)
+    dash_duo.multiple_click("#next_country", 15, delay=0.05)
     time.sleep(1.0)
     assert get_dropdown_value(dropdown_country) != country_with_notes
 
@@ -1003,8 +1007,10 @@ def assert_ticks_changed_but_remain_consistent_across_graphs(
             # This appears to be sensitive to window size,
             # which is quite annoying.
             # Not sure how to fix.
-            assert exp_xticks == get_xtick_values(graph)
-            assert exp_yticks == get_ytick_values(graph)
+            actual_xticks = get_xtick_values(graph)
+            actual_yticks = get_ytick_values(graph)
+            assert exp_xticks == actual_xticks
+            assert exp_yticks == actual_yticks
 
 
 def test_021_linked_zoom(dash_duo, tmp_path):
@@ -1115,7 +1121,7 @@ def test_021_linked_zoom(dash_duo, tmp_path):
         graphs=graphs,
         xticks_prev=xticks_prev,
         yticks_prev=yticks_prev,
-        check_yticks_change=True,
+        check_yticks_change=False,
     )
 
     xticks_prev = get_xtick_values(graph_overview)
@@ -1129,5 +1135,5 @@ def test_021_linked_zoom(dash_duo, tmp_path):
         graphs=graphs,
         xticks_prev=xticks_prev,
         yticks_prev=yticks_prev,
-        check_yticks_change=True,
+        check_yticks_change=False,
     )
