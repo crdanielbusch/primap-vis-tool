@@ -510,6 +510,7 @@ def test_013_notes_save_no_input(dash_duo, tmp_path):
 
 
 def test_014_notes_save_basic(dash_duo, tmp_path):
+    time.sleep(2)
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
