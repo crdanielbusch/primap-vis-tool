@@ -442,6 +442,8 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
+    time.sleep(2)
+
     dropdown_source_scenario_div = dash_duo.driver.find_element(
         By.ID, "dropdown-source-scenario"
     )
