@@ -524,6 +524,10 @@ def test_014_notes_save_basic(dash_duo, tmp_path):
     input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
     input_for_notes.send_keys(input_for_first_country)
 
+    # Re-size the window to ensure buttons don't overlap.
+    # Will be fixed once we update the layout.
+    dash_duo.driver.set_window_size(2000, 1500)
+
     # Save
     save_button = dash_duo.driver.find_element(By.ID, "save-button")
     save_button.click()
