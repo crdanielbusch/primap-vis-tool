@@ -910,6 +910,7 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     tmp_db = tmp_path / "019_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
+    dash_duo.driver.set_window_size(2000, 1500)
     # Give time to set up
     time.sleep(2)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
