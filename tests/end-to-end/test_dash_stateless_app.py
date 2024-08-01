@@ -495,7 +495,7 @@ def test_013_notes_save_no_input(dash_duo, tmp_path):
     tmp_db = tmp_path / "012_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("save-button", timeout=3)
+    dash_duo.wait_for_element_by_id("save-button", timeout=2)
 
     # Click without anything in the field
     save_button = dash_duo.driver.find_element(By.ID, "save-button")
@@ -802,6 +802,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
 
     # Save
     save_button = dash_duo.driver.find_element(By.ID, "save-button")
+    time.sleep(1)
     save_button.click()
     dash_duo.wait_for_contains_text(
         "#note-saved-div", f"Notes for {first_country} saved at", timeout=2
@@ -809,6 +810,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
 
     # Click forward a country
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    time.sleep(1)
     button_country_next.click()
 
     # Make sure input field has finished updating
@@ -823,7 +825,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     dash_duo.wait_for_text_to_equal(
         "#input-for-notes", input_for_second_country, timeout=2
     )
-
+    time.sleep(1)
     # Save
     save_button.click()
 
@@ -846,6 +848,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
 
     # Click back to starting country
     button_country_previous = dash_duo.driver.find_element(By.ID, "prev_country")
+    time.sleep(1)
     button_country_previous.click()
 
     # Previous input should reappear
@@ -860,6 +863,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     )
 
     # Click back one more country
+    time.sleep(1)
     button_country_previous.click()
 
     # Input field should be empty again
@@ -870,6 +874,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     )
 
     # Click forward two countries
+    time.sleep(1)
     dash_duo.multiple_click("#next_country", 2, delay=0.01)
 
     # Previous input should reappear
