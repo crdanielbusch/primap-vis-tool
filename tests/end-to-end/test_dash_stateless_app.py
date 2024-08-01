@@ -442,6 +442,8 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
+    time.sleep(2)
+
     dropdown_source_scenario_div = dash_duo.driver.find_element(
         By.ID, "dropdown-source-scenario"
     )
@@ -497,6 +499,10 @@ def test_013_notes_save_no_input(dash_duo, tmp_path):
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
 
+    # Re-size the window to ensure buttons don't overlap.
+    # Will be fixed once we update the layout.
+    dash_duo.driver.set_window_size(2000, 1500)
+
     # Click without anything in the field
     save_button = dash_duo.driver.find_element(By.ID, "save-button")
     save_button.click()
@@ -510,6 +516,7 @@ def test_013_notes_save_no_input(dash_duo, tmp_path):
 
 
 def test_014_notes_save_basic(dash_duo, tmp_path):
+    time.sleep(2)
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
@@ -522,6 +529,10 @@ def test_014_notes_save_basic(dash_duo, tmp_path):
     input_for_first_country = "All looks great!"
     input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
     input_for_notes.send_keys(input_for_first_country)
+
+    # Re-size the window to ensure buttons don't overlap.
+    # Will be fixed once we update the layout.
+    dash_duo.driver.set_window_size(2000, 1500)
 
     # Save
     save_button = dash_duo.driver.find_element(By.ID, "save-button")
@@ -559,6 +570,7 @@ def test_015_notes_save_and_step(dash_duo, tmp_path):
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
+    dash_duo.driver.set_window_size(2000, 1500)
 
     # Add some input
     note_to_save = "All looks great!"
@@ -613,6 +625,7 @@ def test_016_notes_step_without_user_save(dash_duo, tmp_path):
     tmp_db = tmp_path / "015_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
+    dash_duo.driver.set_window_size(2000, 1500)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
 
     # Add some input
@@ -668,6 +681,7 @@ def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
+    dash_duo.driver.set_window_size(2000, 1500)
 
     # Click forward without any input
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
@@ -730,14 +744,11 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     tmp_db = tmp_path / "017_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
+    dash_duo.driver.set_window_size(2000, 1500)
     # Give time to set up
     time.sleep(2)
 
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
-
-    # Re-size the window to ensure buttons don't overlap.
-    # Will be fixed once we update the layout.
-    dash_duo.driver.set_window_size(2000, 1500)
 
     # Go to a country
     dropdown_country_input = dash_duo.find_element("#dropdown-country input")
@@ -780,7 +791,7 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_019_notes_multi_step_flow(dash_duo, tmp_path):
+def test_019_notes_multi_step_flow(dash_duo, tmp_path):  # noqa: PLR0915
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
@@ -788,6 +799,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
+    dash_duo.driver.set_window_size(2000, 1500)
 
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
     first_country = get_dropdown_value(dropdown_country)
@@ -802,6 +814,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
 
     # Save
     save_button = dash_duo.driver.find_element(By.ID, "save-button")
+    time.sleep(1)
     save_button.click()
     dash_duo.wait_for_contains_text(
         "#note-saved-div", f"Notes for {first_country} saved at", timeout=2
@@ -809,6 +822,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
 
     # Click forward a country
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    time.sleep(1)
     button_country_next.click()
 
     # Make sure input field has finished updating
@@ -823,7 +837,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     dash_duo.wait_for_text_to_equal(
         "#input-for-notes", input_for_second_country, timeout=2
     )
-
+    time.sleep(1)
     # Save
     save_button.click()
 
@@ -846,6 +860,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
 
     # Click back to starting country
     button_country_previous = dash_duo.driver.find_element(By.ID, "prev_country")
+    time.sleep(1)
     button_country_previous.click()
 
     # Previous input should reappear
@@ -860,6 +875,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     )
 
     # Click back one more country
+    time.sleep(1)
     button_country_previous.click()
 
     # Input field should be empty again
@@ -870,6 +886,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):
     )
 
     # Click forward two countries
+    time.sleep(1)
     dash_duo.multiple_click("#next_country", 2, delay=0.01)
 
     # Previous input should reappear
@@ -895,6 +912,7 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     tmp_db = tmp_path / "019_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
+    dash_duo.driver.set_window_size(2000, 1500)
     # Give time to set up
     time.sleep(2)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
