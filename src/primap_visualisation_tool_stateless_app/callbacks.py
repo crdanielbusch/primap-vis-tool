@@ -283,11 +283,16 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # User cleared one of the selections in the dropdown, do nothing
             return figure_current
 
+        create_kwargs = {}
+        if xyrange is not None and "xaxis" in xyrange:
+            create_kwargs["xyrange"] = {"xaxis": xyrange["xaxis"], "yaxis": "autorange"}
+
         return create_overview_figure(
             country=country,
             category=category,
             entity=entity,
             dataset=app_dataset,
+            **create_kwargs,
         )
 
     @app.callback(  # type: ignore
@@ -426,6 +431,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         """
         if app_dataset is None:
             app_dataset = get_application_dataset()
+
         if ctx.triggered_id == "xyrange" and xyrange:
             fig = update_xy_range(xyrange=xyrange, figure=figure_current)
             return fig
