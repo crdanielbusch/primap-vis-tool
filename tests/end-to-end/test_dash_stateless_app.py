@@ -1042,7 +1042,7 @@ def test_021_linked_zoom(dash_duo, tmp_path):
 
     test_ds = pm.open_dataset(test_file)
 
-    tmp_db = tmp_path / "008_notes_database.db"
+    tmp_db = tmp_path / "021_notes_database.db"
 
     dash_duo = setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
     # Give time to set up
@@ -1161,3 +1161,63 @@ def test_021_linked_zoom(dash_duo, tmp_path):
         yticks_prev=yticks_prev,
         check_yticks_change=False,
     )
+
+
+def test_022_zoom_reset_countries(dash_duo, tmp_path):
+    """
+    Test the behaviour of the zoom's reset as we cycle through countries
+    """
+    test_file = TEST_DS_FILE
+
+    test_ds = pm.open_dataset(test_file)
+
+    tmp_db = tmp_path / "022_notes_database.db"
+
+    dash_duo = setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
+    # Give time to set up
+    time.sleep(2)
+
+    # Make sure that expected elements are on the page before continuing
+    graph_overview = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-entity-split", timeout=5
+    )
+    get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-category-split", timeout=5
+    )
+
+    # Re-size the window.
+    # This ensures consistent behaviour of the ticks.
+    # A much nicer way to handle this would be to get the actual Python objects
+    # that correspond to the app's state, then just check them directly.
+    # However, I can't work out how to do that right now, so I'm using this hack instead.
+    dash_duo.driver.set_window_size(1412, 1000)
+    # Give time to respond to new size
+    time.sleep(1)
+
+    # Click to next country
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+    # Give a second to sort itself out
+    time.sleep(1)
+
+    # Zoom in on overview graph
+    dash_duo.zoom_in_graph_by_ratio(graph_overview, zoom_box_fraction=0.2)
+
+    xticks_prev = get_xtick_values(graph_overview)
+    yticks_prev = get_ytick_values(graph_overview)
+
+    time.sleep(2)
+    # Click to next country
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+
+    # Give a second to sort itself out
+    time.sleep(2)
+
+    # x-tick values of overview plot should be unchanged
+    assert xticks_prev == get_xtick_values(graph_overview)
+    # y-tick values of overview plot should change
+    assert yticks_prev != get_ytick_values(graph_overview)
