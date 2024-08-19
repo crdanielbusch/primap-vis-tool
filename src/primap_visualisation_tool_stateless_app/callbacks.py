@@ -283,9 +283,17 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # User cleared one of the selections in the dropdown, do nothing
             return figure_current
 
+        # If we're creating a new figure
+        # (because, e.g. we changed a dropdown),
+        # then keep the x-axis if they're set
+        # (which then gets propagated to all other figures),
+        # but don't retain the y-axis limits.
         create_kwargs = {}
-        if xyrange is not None and "xaxis" in xyrange:
-            create_kwargs["xyrange"] = {"xaxis": xyrange["xaxis"], "yaxis": "autorange"}
+        if xyrange is not None:
+            create_kwargs["xyrange"] = {}
+            for key in ["xaxis"]:
+                if key in xyrange and xyrange[key] != "autorange":
+                    create_kwargs["xyrange"][key] = xyrange[key]
 
         return create_overview_figure(
             country=country,
@@ -568,8 +576,11 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return {}, all_relayout_data
 
         if len(changed_l) > 1:
-            msg = "How did more than one element change?"
-            raise NotImplementedError(msg)
+            changed_l_zero = changed_l[0]
+            for element in changed_l[1:]:
+                if changed_l_zero != element:
+                    msg = "How did more than one element change?"
+                    raise NotImplementedError(msg)
 
         changed = changed_l[0]
         figure_that_changed = all_figures[all_relayout_data.index(changed)]

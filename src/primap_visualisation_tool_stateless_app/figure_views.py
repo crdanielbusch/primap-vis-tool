@@ -26,6 +26,9 @@ def update_xy_range(xyrange: dict[str, Any], figure: Any) -> Any:
     # Hmmm, really don't like these if statements, one for another day
     if isinstance(figure, dict):
         for axis in ["xaxis", "yaxis"]:
+            if axis not in xyrange:
+                continue
+
             if xyrange[axis] == "autorange":
                 # There may be a smarter way to update the values of the dict
                 figure["layout"][axis]["autorange"] = True
@@ -35,6 +38,9 @@ def update_xy_range(xyrange: dict[str, Any], figure: Any) -> Any:
 
     elif isinstance(figure, go.Figure):
         for axis in ["xaxis", "yaxis"]:
+            if axis not in xyrange:
+                continue
+
             if xyrange[axis] == "autorange":
                 # figure["layout"][axis]["autorange"] = True
                 figure.update_layout(**{axis: dict(autorange=True)})
