@@ -4,7 +4,7 @@ Callback definitions
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -155,6 +155,33 @@ def update_source_scenario_options(
     return tuple(new_source_scenario_options)
 
 
+def get_xyrange_for_figure_update(
+    xyrange: dict[str, Any], axes_to_grab: Iterable[str]
+) -> dict[str, Any]:
+    """
+    Get xyrange to use when updating a figure
+
+    Parameters
+    ----------
+    xyrange
+        `xyrange` in the app's state
+
+    axes_to_grab
+        Axes from `xyrange` we wish to copy out
+
+    Returns
+    -------
+    :
+        `xyrange` to use when updating the figure
+    """
+    res = {}
+    for key in axes_to_grab:
+        if key in xyrange and xyrange[key] != "autorange":
+            res[key] = xyrange[key]
+
+    return res
+
+
 def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     """
     Register callbacks onto an app
@@ -284,17 +311,16 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return figure_current
 
         xyrange_create = None
-        if ctx.triggered_id.startswith("dropdown"):
+        if xyrange is not None and ctx.triggered_id.startswith("dropdown"):
             # If we're creating a new figure
             # because we changed a dropdown,
             # then keep the x-axis if they're set
             # (which then gets propagated to all other figures),
             # but don't retain the y-axis limits.
-            if xyrange is not None:
-                xyrange_create = {}
-                for key in ["xaxis"]:
-                    if key in xyrange and xyrange[key] != "autorange":
-                        xyrange_create[key] = xyrange[key]
+            xyrange_create = get_xyrange_for_figure_update(
+                xyrange=xyrange,
+                axes_to_grab=["xaxis"],
+            )
 
         return create_overview_figure(
             country=country,
@@ -460,16 +486,17 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return figure_current
 
         xyrange_create = None
-        if ctx.triggered_id.startswith("dropdown-source-scenario"):
+        if xyrange is not None and ctx.triggered_id.startswith(
+            "dropdown-source-scenario"
+        ):
             # If we're creating a new figure
             # because we changed a source-scenario dropdown,
             # then keep the x-axis and y-axis if they're set
             # (which then gets propagated to all other figures).
-            if xyrange is not None:
-                xyrange_create = {}
-                for key in ["xaxis", "yaxis"]:
-                    if key in xyrange and xyrange[key] != "autorange":
-                        xyrange_create[key] = xyrange[key]
+            xyrange_create = get_xyrange_for_figure_update(
+                xyrange=xyrange,
+                axes_to_grab=["xaxis", "yaxis"],
+            )
 
         return create_category_figure(
             country=country,
@@ -554,16 +581,17 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return figure_current
 
         xyrange_create = None
-        if ctx.triggered_id.startswith("dropdown-source-scenario"):
+        if xyrange is not None and ctx.triggered_id.startswith(
+            "dropdown-source-scenario"
+        ):
             # If we're creating a new figure
             # because we changed a source-scenario dropdown,
             # then keep the x-axis and y-axis if they're set
             # (which then gets propagated to all other figures).
-            if xyrange is not None:
-                xyrange_create = {}
-                for key in ["xaxis", "yaxis"]:
-                    if key in xyrange and xyrange[key] != "autorange":
-                        xyrange_create[key] = xyrange[key]
+            xyrange_create = get_xyrange_for_figure_update(
+                xyrange=xyrange,
+                axes_to_grab=["xaxis", "yaxis"],
+            )
 
         return create_entity_figure(
             country=country,
