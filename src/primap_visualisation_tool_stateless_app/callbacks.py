@@ -283,24 +283,25 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # User cleared one of the selections in the dropdown, do nothing
             return figure_current
 
-        # If we're creating a new figure
-        # (because, e.g. we changed a dropdown),
-        # then keep the x-axis if they're set
-        # (which then gets propagated to all other figures),
-        # but don't retain the y-axis limits.
-        create_kwargs = {}
-        if xyrange is not None:
-            create_kwargs["xyrange"] = {}
-            for key in ["xaxis"]:
-                if key in xyrange and xyrange[key] != "autorange":
-                    create_kwargs["xyrange"][key] = xyrange[key]
+        xyrange_create = None
+        if ctx.triggered_id.startswith("dropdown"):
+            # If we're creating a new figure
+            # because we changed a dropdown,
+            # then keep the x-axis if they're set
+            # (which then gets propagated to all other figures),
+            # but don't retain the y-axis limits.
+            if xyrange is not None:
+                xyrange_create = {}
+                for key in ["xaxis"]:
+                    if key in xyrange and xyrange[key] != "autorange":
+                        xyrange_create[key] = xyrange[key]
 
         return create_overview_figure(
             country=country,
             category=category,
             entity=entity,
             dataset=app_dataset,
-            **create_kwargs,
+            xyrange=xyrange_create,
         )
 
     @app.callback(  # type: ignore
@@ -349,9 +350,10 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         # memory_data shares information between callbacks
         # to make sure they are executed sequentially.
         # When the user changes country, category, entity
-        # first the dropdown will be updated and then category and
-        # entity figure.
-        # The actual value of memory_data is irrelevant, but it must be JSON enumerable
+        # first the dropdown will be updated
+        # and then the category and entity figures.
+        # The actual value of memory_data is irrelevant,
+        # but it must be JSON enumerable.
         if not memory_data:
             memory_data = {"_": 0}
         else:
@@ -457,6 +459,18 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # User cleared one of the selections in the dropdown, do nothing
             return figure_current
 
+        xyrange_create = None
+        if ctx.triggered_id.startswith("dropdown-source-scenario"):
+            # If we're creating a new figure
+            # because we changed a source-scenario dropdown,
+            # then keep the x-axis and y-axis if they're set
+            # (which then gets propagated to all other figures).
+            if xyrange is not None:
+                xyrange_create = {}
+                for key in ["xaxis", "yaxis"]:
+                    if key in xyrange and xyrange[key] != "autorange":
+                        xyrange_create[key] = xyrange[key]
+
         return create_category_figure(
             country=country,
             category=category,
@@ -464,6 +478,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             source_scenario=source_scenario,
             source_scenario_dashed=source_scenario_dashed,
             dataset=app_dataset,
+            xyrange=xyrange_create,
         )
 
     @app.callback(  # type: ignore
@@ -538,6 +553,18 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # User cleared one of the selections in the dropdown, do nothing
             return figure_current
 
+        xyrange_create = None
+        if ctx.triggered_id.startswith("dropdown-source-scenario"):
+            # If we're creating a new figure
+            # because we changed a source-scenario dropdown,
+            # then keep the x-axis and y-axis if they're set
+            # (which then gets propagated to all other figures).
+            if xyrange is not None:
+                xyrange_create = {}
+                for key in ["xaxis", "yaxis"]:
+                    if key in xyrange and xyrange[key] != "autorange":
+                        xyrange_create[key] = xyrange[key]
+
         return create_entity_figure(
             country=country,
             category=category,
@@ -545,6 +572,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             source_scenario=source_scenario,
             source_scenario_dashed=source_scenario_dashed,
             dataset=app_dataset,
+            xyrange=xyrange_create,
         )
 
     @app.callback(  # type: ignore
