@@ -1360,3 +1360,86 @@ def test_022_zoom_country_dropdown_change(dash_duo, tmp_path):  # noqa: PLR0915
     # limit to reset.
     assert_graph_ticks_equal(graphs, xticks_expected=graphs_xticks_prev)
     assert_graph_ticks_not_equal(graphs, yticks_compare=graphs_yticks_prev)
+
+
+@pytest.mark.parametrize(
+    "source_scenario_element_to_alter",
+    (
+        "dropdown-source-scenario",
+        "dropdown-source-scenario-dashed",
+    ),
+)
+def test_023_zoom_source_scenario_dropdown_change(
+    dash_duo, tmp_path, source_scenario_element_to_alter
+):
+    """
+    Test the behaviour of the zoom's reset as we cycle through source-scenarios
+    """
+    test_file = TEST_DS_FILE
+
+    test_ds = pm.open_dataset(test_file)
+
+    tmp_db = tmp_path / "023_notes_database.db"
+
+    dash_duo = setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
+    # Give time to set up
+    time.sleep(2)
+
+    # Make sure that expected elements are on the page before continuing
+    graph_overview = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    graph_entity_split = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-entity-split", timeout=5
+    )
+    graph_category_split = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-category-split", timeout=5
+    )
+    graphs = [graph_overview, graph_category_split, graph_entity_split]
+
+    # Re-size the window.
+    # This ensures consistent behaviour of the ticks.
+    # A much nicer way to handle this would be to get the actual Python objects
+    # that correspond to the app's state, then just check them directly.
+    # However, I can't work out how to do that right now, so I'm using this hack instead.
+    dash_duo.driver.set_window_size(1400, 948)
+    # Give time to respond to new size
+    time.sleep(1)
+
+    # Zoom in on category graph
+    dash_duo.zoom_in_graph_by_ratio(graph_category_split, zoom_box_fraction=0.2)
+    # Give a second to sort itself out
+    time.sleep(1)
+
+    xticks_prev = get_xtick_values(graph_overview)
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
+
+    # Alter the dropdown
+    dropdown_source_scenario_div = dash_duo.driver.find_element(
+        By.ID, source_scenario_element_to_alter
+    )
+
+    # Find the arrow that expands the dropdown options and click on it
+    dropdown_source_scenario_div.find_element(
+        By.CLASS_NAME, "Select-arrow-zone"
+    ).click()
+
+    # simulate keyboard
+    action = ActionChains(dash_duo.driver)
+    action.send_keys(Keys.ARROW_DOWN)
+    action.send_keys(Keys.ARROW_DOWN)
+    action.send_keys(Keys.ENTER)
+    action.perform()
+    time.sleep(0.3)
+
+    dash_duo.wait_for_contains_text(
+        f"#{source_scenario_element_to_alter}",
+        "UNFCCC NAI, 231015",
+    )
+
+    # x-tick and y-tick values of all plots should be unchanged.
+    assert_graph_ticks_equal(
+        graphs,
+        xticks_expected=[xticks_prev for _ in graphs],
+        yticks_expected=graphs_yticks_prev,
+    )
