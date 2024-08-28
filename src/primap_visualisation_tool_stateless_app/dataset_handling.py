@@ -288,26 +288,33 @@ def infer_source_scenarios(inp: xr.Dataset) -> SourceScenarioDefinition:
     primap_variants = set(source_scenarios).difference(set(other_source_scenarios))
 
     primap_sources = set([v.split(",")[0] for v in primap_variants])
-    exp_n_primap_sources = 2
-    if len(primap_sources) != exp_n_primap_sources:
-        msg = (
-            f"Expected to find {exp_n_primap_sources} PRIMAP sources, "
-            f"but found {primap_sources}, based on "
-            f"PRIMAP variants of {primap_variants}"
-        )
-        raise AssertionError(msg)
-
     primap_versions = sorted(
         [[Version(v.split("_")[1]), v] for v in primap_sources], key=lambda x: x[0]
     )
+    if len(primap_sources) == 2:
+        primap_older = primap_versions[0][1]
+        primap_newer = primap_versions[1][1]
 
-    primap_older = primap_versions[0][1]
-    primap_newer = primap_versions[1][1]
+        primap_old_cr = f"{primap_older}, HISTCR"
+        primap_old_tp = f"{primap_older}, HISTTP"
+        primap_new_cr = f"{primap_newer}, HISTCR"
+        primap_new_tp = f"{primap_newer}, HISTTP"
 
-    primap_old_cr = f"{primap_older}, HISTCR"
-    primap_old_tp = f"{primap_older}, HISTTP"
-    primap_new_cr = f"{primap_newer}, HISTCR"
-    primap_new_tp = f"{primap_newer}, HISTTP"
+    # elif len(primap_sources) == 3:
+    #     primap_older = primap_versions[0][1]
+    #     primap_new_previous_iteration = primap_versions[1][1]
+    #     primap_newer = primap_versions[2][1]
+    #
+    #     primap_old_cr = f"{primap_older}, HISTCR"
+    #     primap_old_tp = f"{primap_older}, HISTTP"
+    #     primap_new_previous_iteration_cr = f"{primap_new_previous_iteration}, HISTCR"
+    #     primap_new_previous_iteration_tp = f"{primap_new_previous_iteration}, HISTTP"
+    #     primap_new_cr = f"{primap_newer}, HISTCR"
+    #     primap_new_tp = f"{primap_newer}, HISTTP"
+    #     breakpoint()
+
+    else:
+        raise NotImplementedError(len(primap_sources))
 
     missing_expected_primap_scenarios = [
         v
@@ -317,7 +324,7 @@ def infer_source_scenarios(inp: xr.Dataset) -> SourceScenarioDefinition:
             primap_new_cr,
             primap_new_tp,
         )
-        if v not in source_scenarios
+        if v is not None and v not in source_scenarios
     ]
 
     if missing_expected_primap_scenarios:
