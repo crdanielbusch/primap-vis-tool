@@ -21,7 +21,7 @@ def country_iso3_to_name(country_iso3: str) -> str:
         Country name
     """
     try:
-        return pycountry.countries.get(alpha_3=country_iso3).name
+        return str(pycountry.countries.get(alpha_3=country_iso3).name)
     except AttributeError:
         # use input as name if pycountry cannot find a match
         # (e.g. EARTH)
@@ -43,7 +43,7 @@ def country_name_to_iso3(country: str) -> str:
         Country ISO3 code
     """
     try:
-        return pycountry.countries.get(name=country).alpha_3
+        return str(pycountry.countries.get(name=country).alpha_3)
     except AttributeError:
         # use input as ISO3 if pycountry cannot find a match
         # (e.g. EARTH)
