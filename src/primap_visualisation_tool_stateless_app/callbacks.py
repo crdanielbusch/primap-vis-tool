@@ -20,6 +20,7 @@ from dash import (  # type: ignore
 from dash.dependencies import ALL  # type: ignore
 
 import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
+from primap_visualisation_tool_stateless_app.country_mapping import country_name_to_iso3
 from primap_visualisation_tool_stateless_app.dataset_handling import (
     get_category_options,
     get_country_code_mapping,
@@ -662,10 +663,12 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # hence do nothing.
             return "", "", country_store
 
+        dropdown_country_current_iso3 = country_name_to_iso3(dropdown_country_current)
+
         with notes_db_cursor(db_filepath=notes_db_filepath) as db_cursor:
             save_country_notes_in_notes_db(
                 db_cursor=db_cursor,
-                country=dropdown_country_current,
+                country_iso3=dropdown_country_current_iso3,
                 notes_to_save=notes_value,
             )
 
@@ -708,20 +711,22 @@ def save_notes_and_load_existing_notes_after_dropdown_country_change(
         Information about which notes were saved/loaded (first element)
         and the new value to show in the notes input field (second element).
     """
+    country_current_iso3 = country_name_to_iso3(country_current)
+
     if not notes_value:
         note_saved_info = ""
 
     else:
         note_saved_info = ensure_existing_note_saved(
             notes_value=notes_value,
-            country_notes=country_notes,
+            country=country_notes,
             notes_db_filepath=notes_db_filepath,
         )
 
     # Load any notes for the country that is now being displayed
     with notes_db_cursor(db_filepath=notes_db_filepath) as db_cursor:
         new_country_notes_value_in_db = get_country_notes_from_notes_db(
-            db_cursor=db_cursor, country=country_current
+            db_cursor=db_cursor, country_iso3=country_current_iso3
         )
 
     if new_country_notes_value_in_db is None:
@@ -743,7 +748,7 @@ def save_notes_and_load_existing_notes_after_dropdown_country_change(
 
 def ensure_existing_note_saved(
     notes_value: str,
-    country_notes: str,
+    country: str,
     notes_db_filepath: Path,
 ) -> str:
     """
@@ -757,7 +762,7 @@ def ensure_existing_note_saved(
     notes_value
         Notes to save
 
-    country_notes
+    country
         The country to which the notes apply
 
     notes_db_filepath
@@ -767,27 +772,29 @@ def ensure_existing_note_saved(
     -------
         Information about how the notes were saved.
     """
+    country_iso3 = country_name_to_iso3(country)
+
     with notes_db_cursor(db_filepath=notes_db_filepath) as db_cursor:
         current_country_notes_value_in_db = get_country_notes_from_notes_db(
-            db_cursor=db_cursor, country=country_notes
+            db_cursor=db_cursor, country_iso3=country_iso3
         )
         if notes_value == current_country_notes_value_in_db:
             # The note has already been saved, don't need to do anything more
-            note_saved_info = f"Notes for {country_notes} already saved"
+            note_saved_info = f"Notes for {country} already saved"
 
         else:
             # Note differs, hence must save first
             save_country_notes_in_notes_db(
                 db_cursor=db_cursor,
-                country=country_notes,
+                country_iso3=country_iso3,
                 notes_to_save=notes_value,
             )
 
             note_saved_info = ". ".join(
                 [
-                    f"Autosaved notes for {country_notes}",
+                    f"Autosaved notes for {country}",
                     get_note_save_confirmation_string(
-                        db_filepath=notes_db_filepath, country=country_notes
+                        db_filepath=notes_db_filepath, country=country
                     ),
                 ]
             )
