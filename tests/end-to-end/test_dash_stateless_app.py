@@ -360,6 +360,46 @@ def test_008_initial_figures(dash_duo, tmp_path):
     time.sleep(2)
 
 
+def test_009_deselect_source_scenario_option(dash_duo):
+    test_file = TEST_DS_FILE
+
+    test_ds = pm.open_dataset(test_file)
+
+    setup_app(dash_duo=dash_duo, ds=test_ds)
+
+    expected_graph_overview_source_scenarios = [
+        "PRIMAP-hist_v2.5_final_nr, HISTCR",
+        "PRIMAP-hist_v2.5_final_nr, HISTTP",
+        "PRIMAP-hist_v2.4.2_final_nr, HISTCR",
+        "PRIMAP-hist_v2.4.2_final_nr, HISTTP",
+        "CRF 2023, 230926",
+        "CRF 2022, 230510",
+        "EDGAR 7.0, HISTORY",
+        "FAOSTAT 2022, HISTORY",
+        "UNFCCC NAI, 231015",
+    ]
+
+    figure = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    wait = WebDriverWait(dash_duo.driver, timeout=4)
+    wait.until(lambda d: figure.find_elements(By.CLASS_NAME, "legend"))
+    legend = figure.find_element(By.CLASS_NAME, "legend")
+    traces = legend.find_elements(By.CLASS_NAME, "traces")
+    legend_items = [trace.text for trace in traces]
+    assert len(legend_items) == len(expected_graph_overview_source_scenarios)
+
+    for i, name in enumerate(expected_graph_overview_source_scenarios):
+        assert legend_items[i] == name
+
+    # Click on legend element
+    # with something like
+    # legend_item = legend.driver.find_element(By.ID, "EDGAR 7.0, HISTORY")
+    # legend_item.click()
+
+    assert False
+
+
 def test_009_category_buttons(dash_duo, tmp_path):
     test_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_file)
