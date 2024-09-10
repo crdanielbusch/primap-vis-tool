@@ -48,6 +48,7 @@ def create_layout(  # type: ignore  # noqa: PLR0913
         dcc.Store(id="country-dropdown-store", storage_type="memory"),
         dcc.Store(id="relayout-store", storage_type="memory"),
         dcc.Store(id="xyrange", storage_type="memory", data={}),
+        dcc.Store(id="visible-sources", data={}),
     ]
     country_category_entity_dropdowns = [
         html.B(children="Country", **HEADLINES_STYLING_INITIAL),

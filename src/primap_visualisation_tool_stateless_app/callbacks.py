@@ -581,6 +581,40 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
         return res, all_relayout_data
 
+    @app.callback(  # type: ignore
+        Output("visible-sources", "data"),
+        Input(dict(name="graph-overview", type="graph"), "restyleData"),
+        State(dict(name="graph-overview", type="graph"), "figure"),
+        State("visible-sources", "data"),
+        prevent_initial_call=True,
+    )
+    def update_visible_sources_dict(
+        legend_value: list[Any],
+        figure_data: dict[str, Any],
+        visible_sources: dict[str, Any],
+    ) -> None:
+        """
+        Update which lines are selected in the legend of overview plot.
+
+        Parameters
+        ----------
+        legend_value
+            Information about which line was clicked in legend
+        figure_data
+            The overview plot
+        """
+        lines_in_figure = [i["name"] for i in figure_data["data"]]
+
+        lines_to_change = [lines_in_figure[i] for i in legend_value[1]]
+
+        for source_scenario, new_value in zip(
+            lines_to_change, legend_value[0]["visible"]
+        ):
+            visible_sources[source_scenario] = new_value
+
+        print(visible_sources)
+        return visible_sources
+
     @app.callback(
         Output("note-saved-div", "children"),
         Output("input-for-notes", "value"),
