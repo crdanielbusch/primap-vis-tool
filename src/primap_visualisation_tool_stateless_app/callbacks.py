@@ -237,7 +237,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Input("dropdown-entity", "value"),
         Input("xyrange", "data"),
         State(dict(name="graph-overview", type="graph"), "figure"),
-        State("visible-sources", "data"),
+        State("source-scenario-visible", "data"),
     )
     def update_overview_figure(  # noqa: PLR0913
         country: str,
@@ -264,6 +264,9 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
         xyrange
             The x- and y-range to apply to the figure
+
+        source_scenario_visible
+            Configuration of which sources should be shown
 
         figure_current
             Current state of the figure
@@ -585,16 +588,17 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         return res, all_relayout_data
 
     @app.callback(  # type: ignore
-        Output("visible-sources", "data"),
+        Output("source-scenario-visible", "data"),
         Input(dict(name="graph-overview", type="graph"), "restyleData"),
         State(dict(name="graph-overview", type="graph"), "figure"),
-        State("visible-sources", "data"),
+        State("source-scenario-visible", "data"),
         prevent_initial_call=True,
     )
     def update_visible_sources_dict(
-        legend_value: list[Any],
+        legend_value: list[dict[str, list[str]] | list[int]],
         figure_data: dict[str, Any],
-        visible_sources: dict[str, Any],
+        source_scenario_visible: dict[str, bool | str],
+        app_dataset: xr.Dataset | None = None,
     ) -> dict[str, str | bool]:
         """
         Update which lines are selected in the legend of overview plot.
@@ -603,14 +607,34 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         ----------
         legend_value
             Information about which line was clicked in legend
+
         figure_data
             The overview plot
 
+        source_scenario_visible
+            Configuration of which sources should be shown
+
+        app_dataset
+            The app dataset to use. If not provided, we use get_app_dataset()
 
         Returns
         -------
             Updated visible sources.
         """
+        if app_dataset is None:
+            app_dataset = get_application_dataset()
+
+        # get all available options from data set in first execution of this callback
+        if not source_scenario_visible:
+            all_source_scenario_options = tuple(app_dataset["SourceScen"].to_numpy())
+            source_scenario_visible = {
+                k: v
+                for (k, v) in zip(
+                    all_source_scenario_options,
+                    [True] * len(all_source_scenario_options),
+                )
+            }
+
         lines_in_figure = [i["name"] for i in figure_data["data"]]
 
         lines_to_change = [lines_in_figure[i] for i in legend_value[1]]
@@ -618,10 +642,9 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         for source_scenario, new_value in zip(
             lines_to_change, legend_value[0]["visible"]
         ):
-            visible_sources[source_scenario] = new_value
+            source_scenario_visible[source_scenario] = new_value
 
-        print(visible_sources)
-        return visible_sources
+        return source_scenario_visible
 
     @app.callback(
         Output("note-saved-div", "children"),

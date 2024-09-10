@@ -289,6 +289,9 @@ def create_overview_figure(  # type: ignore # noqa: PLR0913 PLR0912
     dataset
         Dataset from which to generate the figure
 
+    source_scenario_visible
+        Configuration of which sources should be shown
+
     xyrange
         x-, y-range to apply to the figure.
         If not supplied, no range is set.
@@ -342,7 +345,7 @@ def create_overview_figure(  # type: ignore # noqa: PLR0913 PLR0912
         if k not in source_scenario_sorted:
             source_scenario_sorted.append(k)
 
-    # in the first call of this function the visible sources will be empty
+    # in initial figure set all source scenarios to visible
     if not source_scenario_visible:
         source_scenario_visible = {
             k: v
