@@ -237,6 +237,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Input("dropdown-entity", "value"),
         Input("xyrange", "data"),
         State(dict(name="graph-overview", type="graph"), "figure"),
+        State("visible-sources", "data"),
     )
     def update_overview_figure(  # noqa: PLR0913
         country: str,
@@ -244,6 +245,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         entity: str,
         xyrange: dict[str, int],
         figure_current: go.Figure,
+        source_scenario_visible: dict[str, bool | str],
         app_dataset: xr.Dataset | None = None,
     ) -> go.Figure:
         """
@@ -288,6 +290,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             category=category,
             entity=entity,
             dataset=app_dataset,
+            source_scenario_visible=source_scenario_visible,
         )
 
     @app.callback(  # type: ignore
@@ -592,7 +595,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         legend_value: list[Any],
         figure_data: dict[str, Any],
         visible_sources: dict[str, Any],
-    ) -> None:
+    ) -> dict[str, str | bool]:
         """
         Update which lines are selected in the legend of overview plot.
 
@@ -602,6 +605,11 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             Information about which line was clicked in legend
         figure_data
             The overview plot
+
+
+        Returns
+        -------
+            Updated visible sources.
         """
         lines_in_figure = [i["name"] for i in figure_data["data"]]
 
