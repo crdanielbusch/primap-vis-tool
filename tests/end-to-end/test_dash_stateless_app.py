@@ -367,7 +367,27 @@ def test_009_deselect_source_scenario_option(dash_duo):
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
-    assert False
+    figure_overview = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    wait = WebDriverWait(dash_duo.driver, timeout=4)
+    wait.until(lambda d: figure_overview.find_elements(By.CLASS_NAME, "legend"))
+    legend = figure_overview.find_element(By.CLASS_NAME, "legend")
+    traces = legend.find_elements(By.CLASS_NAME, "traces")
+    for trace in traces:
+        if trace.text != "EDGAR 7.0, HISTORY":
+            continue
+
+        toggles = trace.find_elements(By.CLASS_NAME, "legendtoggle")
+        assert len(toggles) == 1
+        toggle = toggles[0]
+        toggle.click()
+
+    assert False, "Count number of lines here"
+    assert False, "Go to next category"
+    assert (
+        False
+    ), "Count number of lines here, making sure that the deselected line hasn't now re-appeared"
 
 
 def test_010_category_buttons(dash_duo, tmp_path):
