@@ -373,8 +373,7 @@ def test_009_deselect_source_scenario_option(dash_duo):
     wait = WebDriverWait(dash_duo.driver, timeout=4)
 
     # find all traces in the plot
-    cartesian_layer = figure_overview.find_element(By.CLASS_NAME, "cartesianlayer")
-    scatter_layer = cartesian_layer.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    scatter_layer = figure_overview.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
     traces = scatter_layer.find_elements(By.TAG_NAME, "path")
     assert len(traces) == 9
 
@@ -394,9 +393,8 @@ def test_009_deselect_source_scenario_option(dash_duo):
 
     time.sleep(2)
 
-    # find all traces in the plot
-    cartesian_layer = figure_overview.find_element(By.CLASS_NAME, "cartesianlayer")
-    scatter_layer = cartesian_layer.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    # after clicking the legend toggle, one trace should disappear
+    scatter_layer = figure_overview.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
     traces = scatter_layer.find_elements(By.TAG_NAME, "path")
     assert len(traces) == 8
 
@@ -408,8 +406,7 @@ def test_009_deselect_source_scenario_option(dash_duo):
 
     # find all traces in the plot
     # and make sure one is still invisible
-    cartesian_layer = figure_overview.find_element(By.CLASS_NAME, "cartesianlayer")
-    scatter_layer = cartesian_layer.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    scatter_layer = figure_overview.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
     traces = scatter_layer.find_elements(By.TAG_NAME, "path")
     assert len(traces) == 8
 
