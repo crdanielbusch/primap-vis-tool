@@ -266,7 +266,10 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             The x- and y-range to apply to the figure
 
         source_scenario_visible
-            Configuration of which sources should be shown
+            Whether each source-scenario should be visible or not.
+            
+            We attempt to preserve this as we move through different views,
+            to avoid the user having to reset what is shown every time.
 
         figure_current
             Current state of the figure
@@ -597,11 +600,11 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     def update_visible_sources_dict(
         legend_value: list[dict[str, list[str]] | list[int]],
         figure_data: dict[str, Any],
-        source_scenario_visible: dict[str, bool | str],
+        source_scenario_visible: dict[str, bool | str] | None,
         app_dataset: xr.Dataset | None = None,
     ) -> dict[str, str | bool]:
         """
-        Update which lines are selected in the legend of overview plot.
+        Update which lines are visible in the legend of overview plot.
 
         Parameters
         ----------
@@ -612,7 +615,10 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             The overview plot
 
         source_scenario_visible
-            Configuration of which sources should be shown
+            Whether each source-scenario should be visible or not.
+            
+            We attempt to preserve this as we move through different views,
+            to avoid the user having to reset what is shown every time.
 
         app_dataset
             The app dataset to use. If not provided, we use get_app_dataset()
@@ -628,16 +634,14 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         if not source_scenario_visible:
             all_source_scenario_options = tuple(app_dataset["SourceScen"].to_numpy())
             source_scenario_visible = {
-                k: v
-                for (k, v) in zip(
-                    all_source_scenario_options,
-                    [True] * len(all_source_scenario_options),
-                )
+                k: True
+                for k in all_source_scenario_options
             }
 
         lines_in_figure = [i["name"] for i in figure_data["data"]]
 
-        lines_to_change = [lines_in_figure[i] for i in legend_value[1]]
+        thing = legend_value[1]
+        lines_to_change = [lines_in_figure[i] for i in thing]
 
         for source_scenario, new_value in zip(
             lines_to_change, legend_value[0]["visible"]

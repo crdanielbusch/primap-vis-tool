@@ -290,7 +290,7 @@ def create_overview_figure(  # type: ignore # noqa: PLR0913 PLR0912
         Dataset from which to generate the figure
 
     source_scenario_visible
-        Configuration of which sources should be shown
+        Whether each source-scenario should be visible or not.
 
     xyrange
         x-, y-range to apply to the figure.
@@ -346,12 +346,10 @@ def create_overview_figure(  # type: ignore # noqa: PLR0913 PLR0912
             source_scenario_sorted.append(k)
 
     # in initial figure set all source scenarios to visible
-    if not source_scenario_visible:
+if not source_scenario_visible:
         source_scenario_visible = {
-            k: v
-            for (k, v) in zip(
-                source_scenario_sorted, [True] * len(source_scenario_sorted)
-            )
+            k: True
+            for k in all_source_scenario_options
         }
 
     fig = go.Figure()
