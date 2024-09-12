@@ -137,11 +137,48 @@ def create_layout(  # type: ignore  # noqa: PLR0913
 
     notes = [
         html.B(children="Notes", **HEADLINES_STYLING_INITIAL),
-        dcc.Textarea(
-            id="input-for-notes",
-            placeholder="No notes for this country yet",
-            style={"width": "90%", "margin-left": "10px"},
-            rows=4,  # used to define height of text area
+        dbc.Stack(
+            [
+                dcc.Textarea(
+                    id="input-for-notes",
+                    placeholder="No notes for this country yet",
+                    style={
+                        "width": "90%",
+                        "height": "100px",
+                        "margin-left": "10px",
+                        "fontSize": "8px",
+                        "line-height": "1",
+                    },
+                    # rows=6,  # used to define height of text area
+                ),
+                dbc.Button(
+                    children="+",
+                    id="font-size-up",
+                    color="light",
+                    n_clicks=0,
+                    style={
+                        "fontSize": 16,
+                        # "height" : "37px",
+                        # "width" : "90%",
+                        "margin-left": "10px",
+                        "margin-right": "10px",
+                    },
+                ),
+                dbc.Button(
+                    children="-",
+                    id="font-size-down",
+                    color="light",
+                    n_clicks=0,
+                    style={
+                        "fontSize": 16,
+                        # "height" : "37px",
+                        # "width" : "90%",
+                        "margin-left": "10px",
+                        "margin-right": "10px",
+                    },
+                ),
+            ],
+            direction="horizontal",
         ),
         dbc.Button(
             children="Save",
