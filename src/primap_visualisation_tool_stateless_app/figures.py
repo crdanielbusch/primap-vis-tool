@@ -346,11 +346,8 @@ def create_overview_figure(  # type: ignore # noqa: PLR0913 PLR0912
             source_scenario_sorted.append(k)
 
     # in initial figure set all source scenarios to visible
-if not source_scenario_visible:
-        source_scenario_visible = {
-            k: True
-            for k in all_source_scenario_options
-        }
+    if not source_scenario_visible:
+        source_scenario_visible = {k: True for k in source_scenario_sorted}
 
     fig = go.Figure()
 

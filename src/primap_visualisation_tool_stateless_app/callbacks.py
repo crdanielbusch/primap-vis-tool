@@ -267,7 +267,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
         source_scenario_visible
             Whether each source-scenario should be visible or not.
-            
+
             We attempt to preserve this as we move through different views,
             to avoid the user having to reset what is shown every time.
 
@@ -598,8 +598,8 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         prevent_initial_call=True,
     )
     def update_visible_sources_dict(
-        legend_value: list[dict[str, list[str]] | list[int]],
-        figure_data: dict[str, Any],
+        click_toggle_data: list[dict[str, list[str]] | list[int]],
+        overview_figure: dict[str, Any],
         source_scenario_visible: dict[str, bool | str] | None,
         app_dataset: xr.Dataset | None = None,
     ) -> dict[str, str | bool]:
@@ -608,15 +608,15 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
         Parameters
         ----------
-        legend_value
-            Information about which line was clicked in legend
+        click_toggle_data
+            Information about new style property for trace
 
-        figure_data
+        overview_figure
             The overview plot
 
         source_scenario_visible
             Whether each source-scenario should be visible or not.
-            
+
             We attempt to preserve this as we move through different views,
             to avoid the user having to reset what is shown every time.
 
@@ -633,20 +633,18 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         # get all available options from data set in first execution of this callback
         if not source_scenario_visible:
             all_source_scenario_options = tuple(app_dataset["SourceScen"].to_numpy())
-            source_scenario_visible = {
-                k: True
-                for k in all_source_scenario_options
-            }
+            source_scenario_visible = {k: True for k in all_source_scenario_options}
 
-        lines_in_figure = [i["name"] for i in figure_data["data"]]
+        # click_toggle_data is a list with the new style property of the trace
+        # and the number of the trace that is to be changed, e.g. [{'visible': ['legendonly']}, [6]]
+        # or [{'visible': [True]}, [7]]
+        trace_index = click_toggle_data[1][0]
+        new_value = click_toggle_data[0]["visible"][0]
 
-        thing = legend_value[1]
-        lines_to_change = [lines_in_figure[i] for i in thing]
+        traces = [i["name"] for i in overview_figure["data"]]
+        trace_to_change = traces[trace_index]
 
-        for source_scenario, new_value in zip(
-            lines_to_change, legend_value[0]["visible"]
-        ):
-            source_scenario_visible[source_scenario] = new_value
+        source_scenario_visible[trace_to_change] = new_value
 
         return source_scenario_visible
 
