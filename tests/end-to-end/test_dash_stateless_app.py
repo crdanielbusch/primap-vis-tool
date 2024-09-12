@@ -367,7 +367,51 @@ def test_009_deselect_source_scenario_option(dash_duo):
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
 
-    assert False
+    figure_overview = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    wait = WebDriverWait(dash_duo.driver, timeout=4)
+
+    # find all traces in the plot
+    cartesian_layer = figure_overview.find_element(By.CLASS_NAME, "cartesianlayer")
+    scatter_layer = cartesian_layer.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    traces = scatter_layer.find_elements(By.TAG_NAME, "path")
+    assert len(traces) == 9
+
+    time.sleep(2)
+
+    wait.until(lambda d: figure_overview.find_elements(By.CLASS_NAME, "legend"))
+    legend = figure_overview.find_element(By.CLASS_NAME, "legend")
+    traces = legend.find_elements(By.CLASS_NAME, "traces")
+    for trace in traces:
+        if trace.text != "EDGAR 7.0, HISTORY":
+            continue
+
+        toggles = trace.find_elements(By.CLASS_NAME, "legendtoggle")
+        assert len(toggles) == 1
+        toggle = toggles[0]
+        toggle.click()
+
+    time.sleep(2)
+
+    # find all traces in the plot
+    cartesian_layer = figure_overview.find_element(By.CLASS_NAME, "cartesianlayer")
+    scatter_layer = cartesian_layer.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    traces = scatter_layer.find_elements(By.TAG_NAME, "path")
+    assert len(traces) == 8
+
+    # Click next
+    button_category_next = dash_duo.driver.find_element(By.ID, "next_category")
+    button_category_next.click()
+
+    time.sleep(2)
+
+    # find all traces in the plot
+    # and make sure one is still invisible
+    cartesian_layer = figure_overview.find_element(By.CLASS_NAME, "cartesianlayer")
+    scatter_layer = cartesian_layer.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    traces = scatter_layer.find_elements(By.TAG_NAME, "path")
+    assert len(traces) == 8
 
 
 def test_010_category_buttons(dash_duo, tmp_path):
