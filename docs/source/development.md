@@ -38,7 +38,7 @@ We run these tests in CI, so we know they can work,
 we just have to work out your specific situation.
 
 In order to run the end-to-end tests, you will need a browser driver.
-If you're using Mac, we have had good success with [selenium]().
+If you're using Mac, we have had good success with Chrome.
 As your browser updates, you may occassionally get an error of the form,
 "This version of ChromeDriver only supports Chrome version".
 To fix this, you should be able to simply run `brew upgrade chromedriver`.
