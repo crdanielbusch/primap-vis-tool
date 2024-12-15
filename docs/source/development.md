@@ -30,11 +30,18 @@ The other files handle the other components of the app, including:
 For testing, we use [pytest](https://docs.pytest.org/en/stable/).
 For our end-to-end tests, i.e. the tests which actually run things in a browser,
 we use the [testing tools provided by Dash](https://dash.plotly.com/testing).
+
 Dash provides [docs for setting up to run end-to-end tests](https://dash.plotly.com/testing#end-to-end-tests),
 but making this work can be a little fiddly.
 If you are really stuck, please reach out to one of the other developers.
 We run these tests in CI, so we know they can work,
 we just have to work out your specific situation.
+
+In order to run the end-to-end tests, you will need a browser driver.
+If you're using Mac, we have had good success with [selenium]().
+As your browser updates, you may occassionally get an error of the form,
+"This version of ChromeDriver only supports Chrome version".
+To fix this, you should be able to simply run `brew upgrade chromedriver`.
 
 As one other note, end-to-end testing is in general fiddly and notoriously flaky.
 We do our best to avoid this here, but we haven't solved this problem
