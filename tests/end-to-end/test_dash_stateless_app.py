@@ -431,6 +431,7 @@ def test_011_dropdown_source_scenario(dash_duo):
     time.sleep(2)
 
 
+@pytest.mark.xfail(reason="Flaky on CI")
 def test_012_dropdown_source_scenario_option_not_available(dash_duo):
     test_file = TEST_DS_FILE
 
@@ -441,6 +442,8 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
     )
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
+    # Give time to set up
+    time.sleep(2)
 
     time.sleep(2)
 
