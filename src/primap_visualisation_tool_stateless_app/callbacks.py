@@ -486,16 +486,15 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return figure_current
 
         xyrange_create = None
-        if xyrange is not None and ctx.triggered_id.startswith(
-            "dropdown-source-scenario"
-        ):
+        if xyrange is not None and ctx.triggered_id.startswith("dropdown"):
             # If we're creating a new figure
-            # because we changed a source-scenario dropdown,
-            # then keep the x-axis and y-axis if they're set
-            # (which then gets propagated to all other figures).
+            # because we changed a dropdown,
+            # then keep the x-axis if they're set
+            # (which then gets propagated to all other figures),
+            # but don't retain the y-axis limits.
             xyrange_create = get_xyrange_for_figure_update(
                 xyrange=xyrange,
-                axes_to_grab=["xaxis", "yaxis"],
+                axes_to_grab=["xaxis"],
             )
 
         return create_category_figure(
@@ -581,16 +580,15 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return figure_current
 
         xyrange_create = None
-        if xyrange is not None and ctx.triggered_id.startswith(
-            "dropdown-source-scenario"
-        ):
+        if xyrange is not None and ctx.triggered_id.startswith("dropdown"):
             # If we're creating a new figure
-            # because we changed a source-scenario dropdown,
-            # then keep the x-axis and y-axis if they're set
-            # (which then gets propagated to all other figures).
+            # because we changed a dropdown,
+            # then keep the x-axis if they're set
+            # (which then gets propagated to all other figures),
+            # but don't retain the y-axis limits.
             xyrange_create = get_xyrange_for_figure_update(
                 xyrange=xyrange,
-                axes_to_grab=["xaxis", "yaxis"],
+                axes_to_grab=["xaxis"],
             )
 
         return create_entity_figure(
