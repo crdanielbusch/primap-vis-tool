@@ -445,7 +445,9 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
     # Give time to set up
     time.sleep(2)
 
-    time.sleep(2)
+    # Re-size the window to ensure the drop-down
+    # and the clear buttons don't overlap.
+    dash_duo.driver.set_window_size(2000, 1500)
 
     dropdown_source_scenario_div = dash_duo.driver.find_element(
         By.ID, "dropdown-source-scenario"
@@ -453,7 +455,9 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
 
     # Find the arrow that expands the dropdown options and click on it
     dropdown_source_scenario_div.find_element(
-        By.CLASS_NAME, "Select-arrow-zone"
+        # By.CLASS_NAME, "Select-arrow-zone"
+        By.CLASS_NAME,
+        "Select-arrow",
     ).click()
 
     # simulate keyboard
