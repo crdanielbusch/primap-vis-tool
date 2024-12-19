@@ -315,12 +315,20 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # If we're creating a new figure
             # because we changed a dropdown,
             # then keep the x-axis if they're set
-            # (which then gets propagated to all other figures),
-            # but don't retain the y-axis limits.
+            # (which then gets propagated to all other figures).
             xyrange_create = get_xyrange_for_figure_update(
                 xyrange=xyrange,
                 axes_to_grab=["xaxis"],
             )
+            if ctx.triggered_id.startswith("dropdown-source-scenario"):
+                # Retain the y-axis limits too.
+                xyrange_create = {
+                    **xyrange_create,
+                    **get_xyrange_for_figure_update(
+                        xyrange=xyrange,
+                        axes_to_grab=["yaxis"],
+                    ),
+                }
 
         return create_overview_figure(
             country=country,
@@ -490,12 +498,20 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # If we're creating a new figure
             # because we changed a dropdown,
             # then keep the x-axis if they're set
-            # (which then gets propagated to all other figures),
-            # but don't retain the y-axis limits.
+            # (which then gets propagated to all other figures).
             xyrange_create = get_xyrange_for_figure_update(
                 xyrange=xyrange,
                 axes_to_grab=["xaxis"],
             )
+            if ctx.triggered_id.startswith("dropdown-source-scenario"):
+                # Retain the y-axis limits too.
+                xyrange_create = {
+                    **xyrange_create,
+                    **get_xyrange_for_figure_update(
+                        xyrange=xyrange,
+                        axes_to_grab=["yaxis"],
+                    ),
+                }
 
         return create_category_figure(
             country=country,
@@ -584,12 +600,20 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # If we're creating a new figure
             # because we changed a dropdown,
             # then keep the x-axis if they're set
-            # (which then gets propagated to all other figures),
-            # but don't retain the y-axis limits.
+            # (which then gets propagated to all other figures).
             xyrange_create = get_xyrange_for_figure_update(
                 xyrange=xyrange,
                 axes_to_grab=["xaxis"],
             )
+            if ctx.triggered_id.startswith("dropdown-source-scenario"):
+                # Retain the y-axis limits too.
+                xyrange_create = {
+                    **xyrange_create,
+                    **get_xyrange_for_figure_update(
+                        xyrange=xyrange,
+                        axes_to_grab=["yaxis"],
+                    ),
+                }
 
         return create_entity_figure(
             country=country,
