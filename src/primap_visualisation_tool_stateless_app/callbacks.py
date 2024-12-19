@@ -4,7 +4,7 @@ Callback definitions
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -155,6 +155,33 @@ def update_source_scenario_options(
     return tuple(new_source_scenario_options)
 
 
+def get_xyrange_for_figure_update(
+    xyrange: dict[str, Any], axes_to_grab: Iterable[str]
+) -> dict[str, Any]:
+    """
+    Get xyrange to use when updating a figure
+
+    Parameters
+    ----------
+    xyrange
+        `xyrange` in the app's state
+
+    axes_to_grab
+        Axes from `xyrange` we wish to copy out
+
+    Returns
+    -------
+    :
+        `xyrange` to use when updating the figure
+    """
+    res = {}
+    for key in axes_to_grab:
+        if key in xyrange and xyrange[key] != "autorange":
+            res[key] = xyrange[key]
+
+    return res
+
+
 def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     """
     Register callbacks onto an app
@@ -291,11 +318,32 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # User cleared one of the selections in the dropdown, do nothing
             return figure_current
 
+        xyrange_create = None
+        if xyrange is not None and ctx.triggered_id.startswith("dropdown"):
+            # If we're creating a new figure
+            # because we changed a dropdown,
+            # then keep the x-axis if they're set
+            # (which then gets propagated to all other figures).
+            xyrange_create = get_xyrange_for_figure_update(
+                xyrange=xyrange,
+                axes_to_grab=["xaxis"],
+            )
+            if ctx.triggered_id.startswith("dropdown-source-scenario"):
+                # Retain the y-axis limits too.
+                xyrange_create = {
+                    **xyrange_create,
+                    **get_xyrange_for_figure_update(
+                        xyrange=xyrange,
+                        axes_to_grab=["yaxis"],
+                    ),
+                }
+
         return create_overview_figure(
             country=country,
             category=category,
             entity=entity,
             dataset=app_dataset,
+            xyrange=xyrange_create,
             source_scenario_visible=source_scenario_visible,
         )
 
@@ -345,9 +393,10 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         # memory_data shares information between callbacks
         # to make sure they are executed sequentially.
         # When the user changes country, category, entity
-        # first the dropdown will be updated and then category and
-        # entity figure.
-        # The actual value of memory_data is irrelevant, but it must be JSON enumerable
+        # first the dropdown will be updated
+        # and then the category and entity figures.
+        # The actual value of memory_data is irrelevant,
+        # but it must be JSON enumerable.
         if not memory_data:
             memory_data = {"_": 0}
         else:
@@ -435,6 +484,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         """
         if app_dataset is None:
             app_dataset = get_application_dataset()
+
         if ctx.triggered_id == "xyrange" and xyrange:
             fig = update_xy_range(xyrange=xyrange, figure=figure_current)
             return fig
@@ -452,6 +502,26 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # User cleared one of the selections in the dropdown, do nothing
             return figure_current
 
+        xyrange_create = None
+        if xyrange is not None and ctx.triggered_id.startswith("dropdown"):
+            # If we're creating a new figure
+            # because we changed a dropdown,
+            # then keep the x-axis if they're set
+            # (which then gets propagated to all other figures).
+            xyrange_create = get_xyrange_for_figure_update(
+                xyrange=xyrange,
+                axes_to_grab=["xaxis"],
+            )
+            if ctx.triggered_id.startswith("dropdown-source-scenario"):
+                # Retain the y-axis limits too.
+                xyrange_create = {
+                    **xyrange_create,
+                    **get_xyrange_for_figure_update(
+                        xyrange=xyrange,
+                        axes_to_grab=["yaxis"],
+                    ),
+                }
+
         return create_category_figure(
             country=country,
             category=category,
@@ -459,6 +529,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             source_scenario=source_scenario,
             source_scenario_dashed=source_scenario_dashed,
             dataset=app_dataset,
+            xyrange=xyrange_create,
         )
 
     @app.callback(  # type: ignore
@@ -533,6 +604,26 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # User cleared one of the selections in the dropdown, do nothing
             return figure_current
 
+        xyrange_create = None
+        if xyrange is not None and ctx.triggered_id.startswith("dropdown"):
+            # If we're creating a new figure
+            # because we changed a dropdown,
+            # then keep the x-axis if they're set
+            # (which then gets propagated to all other figures).
+            xyrange_create = get_xyrange_for_figure_update(
+                xyrange=xyrange,
+                axes_to_grab=["xaxis"],
+            )
+            if ctx.triggered_id.startswith("dropdown-source-scenario"):
+                # Retain the y-axis limits too.
+                xyrange_create = {
+                    **xyrange_create,
+                    **get_xyrange_for_figure_update(
+                        xyrange=xyrange,
+                        axes_to_grab=["yaxis"],
+                    ),
+                }
+
         return create_entity_figure(
             country=country,
             category=category,
@@ -540,6 +631,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             source_scenario=source_scenario,
             source_scenario_dashed=source_scenario_dashed,
             dataset=app_dataset,
+            xyrange=xyrange_create,
         )
 
     @app.callback(  # type: ignore
@@ -571,8 +663,11 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return {}, all_relayout_data
 
         if len(changed_l) > 1:
-            msg = "How did more than one element change?"
-            raise NotImplementedError(msg)
+            changed_l_zero = changed_l[0]
+            for element in changed_l[1:]:
+                if changed_l_zero != element:
+                    msg = "How did more than one element change?"
+                    raise NotImplementedError(msg)
 
         changed = changed_l[0]
         figure_that_changed = all_figures[all_relayout_data.index(changed)]

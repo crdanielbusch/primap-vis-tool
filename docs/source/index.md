@@ -28,7 +28,7 @@
 ```{toctree}
 :caption: Contents
 :maxdepth: 2
-notebooks
+getting-started
 development
 api/primap_visualisation_tool_stateless_app
 changelog
