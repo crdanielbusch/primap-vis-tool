@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import re
 import time
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -1009,32 +1010,95 @@ def get_ytick_values(graph):
     ]
 
 
-def assert_ticks_changed_but_remain_consistent_across_graphs(
-    graphs, xticks_prev, yticks_prev, check_yticks_change=True
+def assert_graph_ticks_equal(
+    graphs,
+    xticks_expected: Iterable[list[str], ...] | None = None,
+    yticks_expected: Iterable[list[str], ...] | None = None,
 ):
     """
-    Would be better to check axis limits, but I can't work out how to do that
+    Assert that the graph ticks equal what we expect
 
-    This is plan b
+    `xticks_expected`/`yticks_expected`
+    should provide the expected ticks for each graph in `graphs`.
+
+    This appears to be sensitive to window size,
+    which is quite annoying.
+    Not sure how to fix.
     """
-    for i, graph in enumerate(graphs):
-        assert xticks_prev != get_xtick_values(graph)
-        if check_yticks_change:
-            assert yticks_prev != get_ytick_values(graph)
-        else:
-            assert yticks_prev == get_ytick_values(graph)
+    if not xticks_expected and not yticks_expected:
+        msg = "Function won't do anything"
+        raise AssertionError(msg)
 
+    for i, graph in enumerate(graphs):
+        if xticks_expected is not None:
+            xticks_expected_graph = xticks_expected[i]
+            actual_xticks = get_xtick_values(graph)
+            assert xticks_expected_graph == actual_xticks
+
+        if yticks_expected is not None:
+            yticks_expected_graph = yticks_expected[i]
+            actual_yticks = get_ytick_values(graph)
+            assert yticks_expected_graph == actual_yticks
+
+
+def assert_graph_ticks_not_equal(
+    graphs,
+    xticks_compare: Iterable[list[str], ...] | None = None,
+    yticks_compare: Iterable[list[str], ...] | None = None,
+):
+    """
+    Assert that the graph ticks are not equal to some value, e.g. have changed
+
+    `xticks_expected`/`yticks_expected`
+    should provide the expected ticks for each graph in `graphs`.
+
+    This appears to be sensitive to window size,
+    which is quite annoying.
+    Not sure how to fix.
+    """
+    if not xticks_compare and not yticks_compare:
+        msg = "Function won't do anything"
+        raise AssertionError(msg)
+
+    for i, graph in enumerate(graphs):
+        if xticks_compare is not None:
+            xticks_expected_graph = xticks_compare[i]
+            actual_xticks = get_xtick_values(graph)
+            assert xticks_expected_graph != actual_xticks
+
+        if yticks_compare is not None:
+            yticks_expected_graph = yticks_compare[i]
+            actual_yticks = get_ytick_values(graph)
+            assert yticks_expected_graph != actual_yticks
+
+
+def assert_ticks_consistent_across_graphs(
+    graphs,
+    check_xticks=True,
+    check_yticks=True,
+):
+    """
+    Assert that the ticks are consistent across all our graphs
+    """
+    if not check_xticks and not check_yticks:
+        msg = "Function won't do anything"
+        raise AssertionError(msg)
+
+    for i, graph in enumerate(graphs):
         if i == 0:
             exp_xticks = get_xtick_values(graph)
             exp_yticks = get_ytick_values(graph)
         else:
-            # This appears to be sensitive to window size,
-            # which is quite annoying.
-            # Not sure how to fix.
-            actual_xticks = get_xtick_values(graph)
-            actual_yticks = get_ytick_values(graph)
-            assert exp_xticks == actual_xticks
-            assert exp_yticks == actual_yticks
+            if check_xticks:
+                # This appears to be sensitive to window size,
+                # which is quite annoying.
+                # Not sure how to fix.
+                actual_xticks = get_xtick_values(graph)
+                assert exp_xticks == actual_xticks
+
+            if check_yticks:
+                actual_yticks = get_ytick_values(graph)
+                assert exp_yticks == actual_yticks
 
 
 def test_021_linked_zoom(dash_duo, tmp_path):
@@ -1042,7 +1106,7 @@ def test_021_linked_zoom(dash_duo, tmp_path):
 
     test_ds = pm.open_dataset(test_file)
 
-    tmp_db = tmp_path / "008_notes_database.db"
+    tmp_db = tmp_path / "021_notes_database.db"
 
     dash_duo = setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
     # Give time to set up
@@ -1071,93 +1135,311 @@ def test_021_linked_zoom(dash_duo, tmp_path):
     graphs = [graph_overview, graph_category_split, graph_entity_split]
 
     # Can't see a better way to do this, maybe someone else finds it.
-    xticks_prev = get_xtick_values(graph_overview)
-    yticks_prev = get_ytick_values(graph_overview)
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
 
     # Zoom in via entity graph
     dash_duo.zoom_in_graph_by_ratio(graph_entity_split, zoom_box_fraction=0.2)
     time.sleep(1.0)
 
     # Limits of all graphs should update
-    assert_ticks_changed_but_remain_consistent_across_graphs(
+    assert_ticks_consistent_across_graphs(
         graphs=graphs,
-        xticks_prev=xticks_prev,
-        yticks_prev=yticks_prev,
-        check_yticks_change=True,
+        check_xticks=True,
+        check_yticks=True,
+    )
+    assert_graph_ticks_not_equal(
+        graphs, xticks_compare=graphs_xticks_prev, yticks_compare=graphs_yticks_prev
     )
 
-    xticks_prev = get_xtick_values(graph_overview)
-    yticks_prev = get_ytick_values(graph_overview)
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
 
     # Reset via entity graph
     ActionChains(dash_duo.driver).double_click(graph_entity_split).perform()
     time.sleep(1.0)
 
     # Limits of all graphs should update
-    assert_ticks_changed_but_remain_consistent_across_graphs(
+    assert_ticks_consistent_across_graphs(
         graphs=graphs,
-        xticks_prev=xticks_prev,
-        yticks_prev=yticks_prev,
-        check_yticks_change=True,
+        check_xticks=True,
+        check_yticks=True,
+    )
+    assert_graph_ticks_not_equal(
+        graphs, xticks_compare=graphs_xticks_prev, yticks_compare=graphs_yticks_prev
     )
 
-    xticks_prev = get_xtick_values(graph_overview)
-    yticks_prev = get_ytick_values(graph_overview)
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
 
     # Zoom in via category graph
     dash_duo.zoom_in_graph_by_ratio(graph_category_split, zoom_box_fraction=0.1)
     time.sleep(1.0)
 
     # Limits of all graphs should update
-    assert_ticks_changed_but_remain_consistent_across_graphs(
+    assert_ticks_consistent_across_graphs(
         graphs=graphs,
-        xticks_prev=xticks_prev,
-        yticks_prev=yticks_prev,
-        check_yticks_change=True,
+        check_xticks=True,
+        check_yticks=True,
+    )
+    assert_graph_ticks_not_equal(
+        graphs, xticks_compare=graphs_xticks_prev, yticks_compare=graphs_yticks_prev
     )
 
-    xticks_prev = get_xtick_values(graph_overview)
-    yticks_prev = get_ytick_values(graph_overview)
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
 
     # Reset via category graph
     ActionChains(dash_duo.driver).double_click(graph_category_split).perform()
     time.sleep(1.0)
 
     # Limits of all graphs should update
-    assert_ticks_changed_but_remain_consistent_across_graphs(
+    assert_ticks_consistent_across_graphs(
         graphs=graphs,
-        xticks_prev=xticks_prev,
-        yticks_prev=yticks_prev,
-        check_yticks_change=True,
+        check_xticks=True,
+        check_yticks=True,
+    )
+    assert_graph_ticks_not_equal(
+        graphs, xticks_compare=graphs_xticks_prev, yticks_compare=graphs_yticks_prev
     )
 
-    # Check overview graph last because its zoom only affects the x-axis
-    # if you use it first, which makes the y-axis values unpredictable.
-    # TODO: check why this happens.
-    # It is odd that zoom behaviour changes depending on order.
-    xticks_prev = get_xtick_values(graph_overview)
-    yticks_prev = get_ytick_values(graph_overview)
+    # Check overview graph last because its zoom only affects the x-axis.
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
 
     # Zoom in on overview graph
     dash_duo.zoom_in_graph_by_ratio(graph_overview, zoom_box_fraction=0.2)
 
-    assert_ticks_changed_but_remain_consistent_across_graphs(
+    assert_ticks_consistent_across_graphs(
         graphs=graphs,
-        xticks_prev=xticks_prev,
-        yticks_prev=yticks_prev,
-        check_yticks_change=False,
+        check_xticks=True,
+        check_yticks=True,
     )
+    assert_graph_ticks_not_equal(graphs, xticks_compare=graphs_xticks_prev)
+    assert_graph_ticks_equal(graphs, yticks_expected=graphs_yticks_prev)
 
-    xticks_prev = get_xtick_values(graph_overview)
-    yticks_prev = get_ytick_values(graph_overview)
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
 
     # Reset via overview graph
     ActionChains(dash_duo.driver).double_click(graph_overview).perform()
     time.sleep(1.0)
 
-    assert_ticks_changed_but_remain_consistent_across_graphs(
+    assert_ticks_consistent_across_graphs(
         graphs=graphs,
-        xticks_prev=xticks_prev,
-        yticks_prev=yticks_prev,
-        check_yticks_change=False,
+        check_xticks=True,
+        check_yticks=True,
+    )
+    assert_graph_ticks_not_equal(graphs, xticks_compare=graphs_xticks_prev)
+    assert_graph_ticks_equal(graphs, yticks_expected=graphs_yticks_prev)
+
+
+def test_022_zoom_country_dropdown_change(dash_duo, tmp_path):  # noqa: PLR0915
+    """
+    Test the behaviour of the zoom's reset as we cycle through countries
+    """
+    test_file = TEST_DS_FILE
+
+    test_ds = pm.open_dataset(test_file)
+
+    tmp_db = tmp_path / "022_notes_database.db"
+
+    dash_duo = setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
+    # Give time to set up
+    time.sleep(2)
+
+    # Make sure that expected elements are on the page before continuing
+    graph_overview = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    graph_entity_split = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-entity-split", timeout=5
+    )
+    graph_category_split = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-category-split", timeout=5
+    )
+    graphs = [graph_overview, graph_category_split, graph_entity_split]
+
+    # Click to next country
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+    # Give a second to sort itself out
+    time.sleep(1)
+
+    # Re-size the window.
+    # This ensures consistent behaviour of the ticks.
+    # A much nicer way to handle this would be to get the actual Python objects
+    # that correspond to the app's state, then just check them directly.
+    # However, I can't work out how to do that right now, so I'm using this hack instead.
+    dash_duo.driver.set_window_size(1400, 948)
+    # Give time to respond to new size
+    time.sleep(1)
+
+    # Zoom in on overview graph
+    dash_duo.zoom_in_graph_by_ratio(graph_overview, zoom_box_fraction=0.2)
+
+    xticks_prev = get_xtick_values(graph_overview)
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
+
+    # Click to next country
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+    # Give a second to sort itself out
+    time.sleep(1)
+
+    # Re-size the window
+    # This seems to make the ticks behave for some reason
+    dash_duo.driver.set_window_size(1200, 948)
+    # Give a second to sort itself out
+    time.sleep(0.5)
+
+    dash_duo.driver.set_window_size(1400, 948)
+    # Give a second to sort itself out
+    time.sleep(0.5)
+
+    # x-tick values of all plots should be unchanged.
+    assert_graph_ticks_equal(graphs, xticks_expected=[xticks_prev for _ in graphs])
+    # y-ticks should have changed.
+    assert_graph_ticks_not_equal(graphs, yticks_compare=graphs_yticks_prev)
+
+    # If we zoom in using the overview graph's range zoom,
+    # the x-axis limits should change, but the y-axis limits shouldn't.
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
+
+    dash_duo.zoom_in_graph_by_ratio(graph_overview, zoom_box_fraction=0.2)
+    # Give a second to sort itself out
+    time.sleep(0.5)
+
+    # x-tick values of all plots should change
+    assert_graph_ticks_not_equal(graphs, xticks_compare=graphs_xticks_prev)
+    # y-ticks should not have changed.
+    assert_graph_ticks_equal(graphs, yticks_expected=graphs_yticks_prev)
+
+    # Zoom in via entity graph.
+    # This has the side-effect of locking the y-axis zoom too.
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
+
+    dash_duo.zoom_in_graph_by_ratio(graph_entity_split, zoom_box_fraction=0.2)
+    # Give a second to sort itself out
+    time.sleep(0.5)
+
+    assert_graph_ticks_not_equal(
+        graphs, xticks_compare=graphs_xticks_prev, yticks_compare=graphs_yticks_prev
+    )
+    assert_ticks_consistent_across_graphs(
+        graphs=graphs,
+        check_xticks=True,
+        check_yticks=True,
+    )
+
+    # Click to next country.
+    # This has the side-effect of unlocking the y-axis zoom.
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
+
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+    # Give a second to sort itself out
+    time.sleep(1)
+
+    # Re-size the window
+    # This seems to make the ticks behave for some reason
+    dash_duo.driver.set_window_size(1200, 948)
+    # Give a second to sort itself out
+    time.sleep(0.5)
+
+    dash_duo.driver.set_window_size(1400, 948)
+    # Give a second to sort itself out
+    time.sleep(0.5)
+
+    # x-tick values of all plots should be unchanged,
+    # but y-tick values should update
+    # because changing country causes the y-axis
+    # limit to reset.
+    assert_graph_ticks_equal(graphs, xticks_expected=graphs_xticks_prev)
+    assert_graph_ticks_not_equal(graphs, yticks_compare=graphs_yticks_prev)
+
+
+@pytest.mark.parametrize(
+    "source_scenario_element_to_alter",
+    (
+        "dropdown-source-scenario",
+        "dropdown-source-scenario-dashed",
+    ),
+)
+def test_023_zoom_source_scenario_dropdown_change(
+    dash_duo, tmp_path, source_scenario_element_to_alter
+):
+    """
+    Test the behaviour of the zoom's reset as we cycle through source-scenarios
+    """
+    test_file = TEST_DS_FILE
+
+    test_ds = pm.open_dataset(test_file)
+
+    tmp_db = tmp_path / "023_notes_database.db"
+
+    dash_duo = setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
+    # Give time to set up
+    time.sleep(2)
+
+    # Make sure that expected elements are on the page before continuing
+    graph_overview = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    graph_entity_split = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-entity-split", timeout=5
+    )
+    graph_category_split = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-category-split", timeout=5
+    )
+    graphs = [graph_overview, graph_category_split, graph_entity_split]
+
+    # Re-size the window.
+    # This ensures consistent behaviour of the ticks.
+    # A much nicer way to handle this would be to get the actual Python objects
+    # that correspond to the app's state, then just check them directly.
+    # However, I can't work out how to do that right now, so I'm using this hack instead.
+    dash_duo.driver.set_window_size(1400, 948)
+    # Give time to respond to new size
+    time.sleep(1)
+
+    # Zoom in on category graph
+    dash_duo.zoom_in_graph_by_ratio(graph_category_split, zoom_box_fraction=0.2)
+    # Give a second to sort itself out
+    time.sleep(1)
+
+    xticks_prev = get_xtick_values(graph_overview)
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
+
+    # Alter the dropdown
+    dropdown_source_scenario_div = dash_duo.driver.find_element(
+        By.ID, source_scenario_element_to_alter
+    )
+
+    # Find the arrow that expands the dropdown options and click on it
+    dropdown_source_scenario_div.find_element(
+        By.CLASS_NAME, "Select-arrow-zone"
+    ).click()
+
+    # simulate keyboard
+    action = ActionChains(dash_duo.driver)
+    action.send_keys(Keys.ARROW_DOWN)
+    action.send_keys(Keys.ARROW_DOWN)
+    action.send_keys(Keys.ENTER)
+    action.perform()
+    time.sleep(0.3)
+
+    dash_duo.wait_for_contains_text(
+        f"#{source_scenario_element_to_alter}",
+        "UNFCCC NAI, 231015",
+    )
+
+    # x-tick and y-tick values of all plots should be unchanged.
+    assert_graph_ticks_equal(
+        graphs,
+        xticks_expected=[xticks_prev for _ in graphs],
+        yticks_expected=graphs_yticks_prev,
     )
