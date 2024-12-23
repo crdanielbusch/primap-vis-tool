@@ -367,7 +367,7 @@ def test_009_deselect_source_scenario_option(dash_duo):
     test_ds = pm.open_dataset(test_file)
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
-
+    dash_duo.driver.set_window_size(2000, 1500)
     figure_overview = get_element_workaround(
         dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
     )
