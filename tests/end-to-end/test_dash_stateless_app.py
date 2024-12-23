@@ -82,9 +82,8 @@ def get_element_workaround(
         matching = []
         try:
             found_elements = dash_duo.driver.find_elements(By.CLASS_NAME, class_name)
-            found_element_ids = [i.get_attribute("id") for i in found_elements]
-            for element, element_id in zip(found_elements, found_element_ids):
-                if expected_id_component in element_id:
+            for element in found_elements:
+                if expected_id_component in element.get_attribute("id"):
                     matching.append(element)
 
         except selenium.common.exceptions.StaleElementReferenceException:
@@ -372,7 +371,7 @@ def test_009_deselect_source_scenario_option(dash_duo):
     test_ds = pm.open_dataset(test_file)
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
-    dash_duo.driver.set_window_size(2000, 1500)
+    time.sleep(2.0)
     figure_overview = get_element_workaround(
         dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
     )
