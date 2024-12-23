@@ -733,7 +733,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         # click_toggle_data is a list with the new style property of the trace
         # and the number of the trace that is to be changed, e.g. [{'visible': ['legendonly']}, [6]]
         # or [{'visible': [True]}, [7]]
-        # click_toggle_data_index: list[int] = click_toggle_data[1]
         # We need to explicitly cast the types to make mypy happy
         first_element = cast(dict[str, list[str | bool]], click_toggle_data[0])
         second_element = cast(list[int], click_toggle_data[1])
