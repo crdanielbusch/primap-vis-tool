@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import plotly.graph_objects as go  # type: ignore
 import xarray as xr
@@ -264,6 +264,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Input("dropdown-entity", "value"),
         Input("xyrange", "data"),
         State(dict(name="graph-overview", type="graph"), "figure"),
+        State("source-scenario-visible", "data"),
     )
     def update_overview_figure(  # noqa: PLR0913
         country: str,
@@ -271,6 +272,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         entity: str,
         xyrange: dict[str, int],
         figure_current: go.Figure,
+        source_scenario_visible: dict[str, bool | str],
         app_dataset: xr.Dataset | None = None,
     ) -> go.Figure:
         """
@@ -289,6 +291,12 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
         xyrange
             The x- and y-range to apply to the figure
+
+        source_scenario_visible
+            Whether each source-scenario should be visible or not.
+
+            We attempt to preserve this as we move through different views,
+            to avoid the user having to reset what is shown every time.
 
         figure_current
             Current state of the figure
@@ -336,6 +344,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             entity=entity,
             dataset=app_dataset,
             xyrange=xyrange_create,
+            source_scenario_visible=source_scenario_visible,
         )
 
     @app.callback(  # type: ignore
@@ -675,6 +684,67 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             res["yaxis"] = figure_that_changed["layout"]["yaxis"]["range"]
 
         return res, all_relayout_data
+
+    @app.callback(  # type: ignore
+        Output("source-scenario-visible", "data"),
+        Input(dict(name="graph-overview", type="graph"), "restyleData"),
+        State(dict(name="graph-overview", type="graph"), "figure"),
+        State("source-scenario-visible", "data"),
+        prevent_initial_call=True,
+    )
+    def update_visible_sources_dict(
+        click_toggle_data: list[dict[str, list[str | bool]] | list[int]],
+        overview_figure: dict[str, Any],
+        source_scenario_visible: dict[str, bool | str] | None,
+        app_dataset: xr.Dataset | None = None,
+    ) -> dict[str, str | bool]:
+        """
+        Update which lines are visible in the legend of overview plot.
+
+        Parameters
+        ----------
+        click_toggle_data
+            Information about new style property for trace
+
+        overview_figure
+            The overview plot
+
+        source_scenario_visible
+            Whether each source-scenario should be visible or not.
+
+            We attempt to preserve this as we move through different views,
+            to avoid the user having to reset what is shown every time.
+
+        app_dataset
+            The app dataset to use. If not provided, we use get_app_dataset()
+
+        Returns
+        -------
+            Updated visible sources.
+        """
+        if app_dataset is None:
+            app_dataset = get_application_dataset()
+
+        # get all available options from data set in first execution of this callback
+        if not source_scenario_visible:
+            all_source_scenario_options = tuple(app_dataset["SourceScen"].to_numpy())
+            source_scenario_visible = {k: True for k in all_source_scenario_options}
+
+        # click_toggle_data is a list with the new style property of the trace
+        # and the number of the trace that is to be changed, e.g. [{'visible': ['legendonly']}, [6]]
+        # or [{'visible': [True]}, [7]]
+        # We need to explicitly cast the types to make mypy happy
+        first_element = cast(dict[str, list[str | bool]], click_toggle_data[0])
+        second_element = cast(list[int], click_toggle_data[1])
+        new_value = first_element["visible"][0]
+        trace_index = second_element[0]
+
+        traces = [i["name"] for i in overview_figure["data"]]
+        trace_to_change = traces[trace_index]
+
+        source_scenario_visible[trace_to_change] = new_value
+
+        return source_scenario_visible
 
     @app.callback(
         Output("note-saved-div", "children"),

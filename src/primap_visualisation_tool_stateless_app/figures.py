@@ -263,11 +263,12 @@ def apply_gwp(
     return inp
 
 
-def create_overview_figure(  # type: ignore # noqa: PLR0913
+def create_overview_figure(  # type: ignore # noqa: PLR0913 PLR0912
     country: str,
     category: str,
     entity: str,
     dataset: xr.Dataset,
+    source_scenario_visible: dict[str, bool | str],
     xyrange: dict[str, list[str] | str] | None = None,
     plotting_config: PlottingConfig | None = None,
 ) -> go.Figure:
@@ -287,6 +288,9 @@ def create_overview_figure(  # type: ignore # noqa: PLR0913
 
     dataset
         Dataset from which to generate the figure
+
+    source_scenario_visible
+        Whether each source-scenario should be visible or not.
 
     xyrange
         x-, y-range to apply to the figure.
@@ -341,6 +345,10 @@ def create_overview_figure(  # type: ignore # noqa: PLR0913
         if k not in source_scenario_sorted:
             source_scenario_sorted.append(k)
 
+    # in initial figure set all source scenarios to visible
+    if not source_scenario_visible:
+        source_scenario_visible = {k: True for k in source_scenario_sorted}
+
     fig = go.Figure()
 
     for source_scenario in source_scenario_sorted:
@@ -374,7 +382,7 @@ def create_overview_figure(  # type: ignore # noqa: PLR0913
                 marker_size=10,
                 name=source_scenario,
                 line=line_layout,
-                # visible=self.source_scenario_visible[source_scenario],
+                visible=source_scenario_visible[source_scenario],
                 hovertemplate="%{y:.2e} ",
             )
         )

@@ -79,11 +79,15 @@ def get_element_workaround(
     """
     now = time.time()
     while time.time() < (now + timeout):
-        found_elements = dash_duo.driver.find_elements(By.CLASS_NAME, class_name)
         matching = []
-        for element in found_elements:
-            if expected_id_component in element.get_attribute("id"):
-                matching.append(element)
+        try:
+            found_elements = dash_duo.driver.find_elements(By.CLASS_NAME, class_name)
+            for element in found_elements:
+                if expected_id_component in element.get_attribute("id"):
+                    matching.append(element)
+
+        except selenium.common.exceptions.StaleElementReferenceException:
+            continue
 
         if len(matching) == 1:
             return matching[0]
@@ -361,7 +365,58 @@ def test_008_initial_figures(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_009_category_buttons(dash_duo, tmp_path):
+def test_009_deselect_source_scenario_option(dash_duo):
+    test_file = TEST_DS_FILE
+
+    test_ds = pm.open_dataset(test_file)
+
+    setup_app(dash_duo=dash_duo, ds=test_ds)
+    time.sleep(2.0)
+    figure_overview = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    wait = WebDriverWait(dash_duo.driver, timeout=4)
+
+    # find all traces in the plot
+    scatter_layer = figure_overview.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    traces = scatter_layer.find_elements(By.TAG_NAME, "path")
+    assert len(traces) == 9
+
+    time.sleep(2)
+
+    wait.until(lambda d: figure_overview.find_elements(By.CLASS_NAME, "legend"))
+    legend = figure_overview.find_element(By.CLASS_NAME, "legend")
+    traces = legend.find_elements(By.CLASS_NAME, "traces")
+    for trace in traces:
+        if trace.text != "EDGAR 7.0, HISTORY":
+            continue
+
+        toggles = trace.find_elements(By.CLASS_NAME, "legendtoggle")
+        assert len(toggles) == 1
+        toggle = toggles[0]
+        toggle.click()
+
+    time.sleep(2)
+
+    # after clicking the legend toggle, one trace should disappear
+    scatter_layer = figure_overview.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    traces = scatter_layer.find_elements(By.TAG_NAME, "path")
+    assert len(traces) == 8
+
+    # Click next
+    button_category_next = dash_duo.driver.find_element(By.ID, "next_category")
+    button_category_next.click()
+
+    time.sleep(2)
+
+    # find all traces in the plot
+    # and make sure one is still invisible
+    scatter_layer = figure_overview.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    traces = scatter_layer.find_elements(By.TAG_NAME, "path")
+    assert len(traces) == 8
+
+
+def test_010_category_buttons(dash_duo, tmp_path):
     test_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_file)
 
@@ -389,7 +444,7 @@ def test_009_category_buttons(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_010_entity_buttons(dash_duo):
+def test_011_entity_buttons(dash_duo):
     test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
@@ -416,7 +471,7 @@ def test_010_entity_buttons(dash_duo):
     time.sleep(2)
 
 
-def test_011_dropdown_source_scenario(dash_duo):
+def test_012_dropdown_source_scenario(dash_duo):
     test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
@@ -432,7 +487,7 @@ def test_011_dropdown_source_scenario(dash_duo):
     time.sleep(2)
 
 
-def test_012_dropdown_source_scenario_option_not_available(dash_duo):
+def test_013_dropdown_source_scenario_option_not_available(dash_duo):
     test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
@@ -497,7 +552,7 @@ def get_dropdown_value(
     return dropdown_element.text.splitlines()[0]
 
 
-def test_013_notes_save_no_input(dash_duo, tmp_path):
+def test_014_notes_save_no_input(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
@@ -522,7 +577,7 @@ def test_013_notes_save_no_input(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_014_notes_save_basic(dash_duo, tmp_path):
+def test_015_notes_save_basic(dash_duo, tmp_path):
     time.sleep(2)
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
@@ -569,7 +624,7 @@ def test_014_notes_save_basic(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_015_notes_save_and_step(dash_duo, tmp_path):
+def test_016_notes_save_and_step(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
@@ -625,7 +680,7 @@ def test_015_notes_save_and_step(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_016_notes_step_without_user_save(dash_duo, tmp_path):
+def test_017_notes_step_without_user_save(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
@@ -680,7 +735,7 @@ def test_016_notes_step_without_user_save(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
+def test_018_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
@@ -744,7 +799,7 @@ def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
+def test_019_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
@@ -798,7 +853,7 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_019_notes_multi_step_flow(dash_duo, tmp_path):  # noqa: PLR0915
+def test_020_notes_multi_step_flow(dash_duo, tmp_path):  # noqa: PLR0915
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
@@ -909,7 +964,7 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):  # noqa: PLR0915
     time.sleep(2)
 
 
-def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
+def test_021_auto_save_and_load_existing(dash_duo, tmp_path):
     """
     Test behaviour if changing country triggers both auto-saving and loading of an existing note
     """
@@ -1101,7 +1156,7 @@ def assert_ticks_consistent_across_graphs(
                 assert exp_yticks == actual_yticks
 
 
-def test_021_linked_zoom(dash_duo, tmp_path):
+def test_022_linked_zoom(dash_duo, tmp_path):
     test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
