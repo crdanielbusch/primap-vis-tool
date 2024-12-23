@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import plotly.graph_objects as go  # type: ignore
 import xarray as xr
@@ -693,7 +693,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         prevent_initial_call=True,
     )
     def update_visible_sources_dict(
-        click_toggle_data: list[dict[str, list[str]] | list[int]],
+        click_toggle_data: list[dict[str, list[str | bool]] | list[int]],
         overview_figure: dict[str, Any],
         source_scenario_visible: dict[str, bool | str] | None,
         app_dataset: xr.Dataset | None = None,
@@ -733,8 +733,12 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         # click_toggle_data is a list with the new style property of the trace
         # and the number of the trace that is to be changed, e.g. [{'visible': ['legendonly']}, [6]]
         # or [{'visible': [True]}, [7]]
-        trace_index = click_toggle_data[1][0]
-        new_value = click_toggle_data[0]["visible"][0]
+        # click_toggle_data_index: list[int] = click_toggle_data[1]
+        # We need to explicitly cast the types to make mypy happy
+        first_element = cast(dict[str, list[str | bool]], click_toggle_data[0])
+        second_element = cast(list[int], click_toggle_data[1])
+        new_value = first_element["visible"][0]
+        trace_index = second_element[0]
 
         traces = [i["name"] for i in overview_figure["data"]]
         trace_to_change = traces[trace_index]
