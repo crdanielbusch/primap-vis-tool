@@ -79,12 +79,16 @@ def get_element_workaround(
     """
     now = time.time()
     while time.time() < (now + timeout):
-        found_elements = dash_duo.driver.find_elements(By.CLASS_NAME, class_name)
-        found_element_ids = [i.get_attribute("id") for i in found_elements]
         matching = []
-        for element, element_id in zip(found_elements, found_element_ids):
-            if expected_id_component in element_id:
-                matching.append(element)
+        try:
+            found_elements = dash_duo.driver.find_elements(By.CLASS_NAME, class_name)
+            found_element_ids = [i.get_attribute("id") for i in found_elements]
+            for element, element_id in zip(found_elements, found_element_ids):
+                if expected_id_component in element_id:
+                    matching.append(element)
+
+        except selenium.common.exceptions.StaleElementReferenceException:
+            continue
 
         if len(matching) == 1:
             return matching[0]
