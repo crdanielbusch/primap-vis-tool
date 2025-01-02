@@ -561,6 +561,41 @@ def test_014_notes_save_basic(dash_duo, tmp_path):
         rf"Notes for {current_country} saved at .* in {tmp_db}", note_saved_div.text
     )
 
+    # Click forward until Ecuador to make sure the iso3 country code is saved in the DB
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+    button_country_next.click()
+
+    time.sleep(2)
+
+    # Add some input
+    input_for_second_country = "All looks great again!"
+    # input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
+    input_for_notes.send_keys(input_for_second_country)
+
+    time.sleep(2)
+
+    # Save
+    save_button.click()
+
+    # Make sure database save operation has finished and been confirmed to the user
+    dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
+    current_country = get_dropdown_value(dropdown_country)
+    current_country_iso3 = name_to_iso3(current_country)
+    dash_duo.wait_for_contains_text(
+        "#note-saved-div", f"Notes for {current_country} saved", timeout=2
+    )
+
+    # Output should now be in the database
+    db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
+        tmp_db
+    )
+    assert db.shape[0] == 2
+    assert (
+        db.set_index("country_iso3")["notes"].loc[current_country_iso3]
+        == input_for_second_country
+    )
+
     # Give time to sort out and shut down
     time.sleep(2)
 
