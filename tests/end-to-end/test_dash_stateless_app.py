@@ -28,7 +28,7 @@ import primap_visualisation_tool_stateless_app.dataset_holder
 import primap_visualisation_tool_stateless_app.figures
 import primap_visualisation_tool_stateless_app.notes
 import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
-from primap_visualisation_tool_stateless_app.country_mapping import country_name_to_iso3
+from primap_visualisation_tool_stateless_app.iso_mapping import name_to_iso3
 
 TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
 TEST_DS_FILE = TEST_DATA_DIR / "test_ds.nc"
@@ -542,7 +542,7 @@ def test_014_notes_save_basic(dash_duo, tmp_path):
     # Make sure database save operation has finished and been confirmed to the user
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
     current_country = get_dropdown_value(dropdown_country)
-    current_country_iso3 = country_name_to_iso3(current_country)
+    current_country_iso3 = name_to_iso3(current_country)
     dash_duo.wait_for_contains_text(
         "#note-saved-div", f"Notes for {current_country} saved", timeout=2
     )
@@ -607,7 +607,7 @@ def test_015_notes_save_and_step(dash_duo, tmp_path):
     )
     assert db.shape[0] == 1
     assert (
-        db.set_index("country_iso3")["notes"].loc[country_name_to_iso3(current_country)]
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(current_country)]
         == note_to_save
     )
 
@@ -665,9 +665,7 @@ def test_016_notes_step_without_user_save(dash_duo, tmp_path):
     )
     assert db.shape[0] == 1
     assert (
-        db.set_index("country_iso3")["notes"].loc[
-            country_name_to_iso3(country_before_click)
-        ]
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(country_before_click)]
         == note_to_save
     )
 
@@ -733,9 +731,7 @@ def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     )
     assert db.shape[0] == 1
     assert (
-        db.set_index("country_iso3")["notes"].loc[
-            country_name_to_iso3(country_with_notes)
-        ]
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(country_with_notes)]
         == note_to_save
     )
 
@@ -868,11 +864,11 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):  # noqa: PLR0915
     )
     assert db.shape[0] == 2
     assert (
-        db.set_index("country_iso3")["notes"].loc[country_name_to_iso3(first_country)]
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(first_country)]
         == input_for_first_country
     )
     assert (
-        db.set_index("country_iso3")["notes"].loc[country_name_to_iso3(second_country)]
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(second_country)]
         == input_for_second_country
     )
 
@@ -993,11 +989,11 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     )
     assert db.shape[0] == 2
     assert (
-        db.set_index("country_iso3")["notes"].loc[country_name_to_iso3(first_country)]
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(first_country)]
         == input_for_first_country
     )
     assert (
-        db.set_index("country_iso3")["notes"].loc[country_name_to_iso3(second_country)]
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(second_country)]
         == input_for_second_country
     )
 

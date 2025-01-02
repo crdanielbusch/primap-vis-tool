@@ -13,7 +13,7 @@ from attrs import define
 from loguru import logger
 from packaging.version import InvalidVersion, Version
 
-from primap_visualisation_tool_stateless_app.country_mapping import country_iso3_to_name
+from primap_visualisation_tool_stateless_app.iso_mapping import iso3_to_name
 
 
 def get_country_start(
@@ -163,7 +163,7 @@ def get_country_code_mapping(dataset: xr.Dataset) -> dict[str, str]:
     all_codes = dataset.coords["area (ISO3)"].to_numpy()
     country_code_mapping = {}
     for code in all_codes:
-        country_code_mapping[country_iso3_to_name(code)] = code
+        country_code_mapping[iso3_to_name(code)] = code
 
     return country_code_mapping
 

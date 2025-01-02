@@ -20,7 +20,6 @@ from dash import (  # type: ignore
 from dash.dependencies import ALL  # type: ignore
 
 import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
-from primap_visualisation_tool_stateless_app.country_mapping import country_name_to_iso3
 from primap_visualisation_tool_stateless_app.dataset_handling import (
     get_category_options,
     get_country_code_mapping,
@@ -37,6 +36,7 @@ from primap_visualisation_tool_stateless_app.figures import (
     create_entity_figure,
     create_overview_figure,
 )
+from primap_visualisation_tool_stateless_app.iso_mapping import name_to_iso3
 from primap_visualisation_tool_stateless_app.notes import (
     get_country_notes_from_notes_db,
     get_note_save_confirmation_string,
@@ -663,7 +663,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # hence do nothing.
             return "", "", country_store
 
-        dropdown_country_current_iso3 = country_name_to_iso3(dropdown_country_current)
+        dropdown_country_current_iso3 = name_to_iso3(dropdown_country_current)
 
         with notes_db_cursor(db_filepath=notes_db_filepath) as db_cursor:
             save_country_notes_in_notes_db(
@@ -711,7 +711,7 @@ def save_notes_and_load_existing_notes_after_dropdown_country_change(
         Information about which notes were saved/loaded (first element)
         and the new value to show in the notes input field (second element).
     """
-    country_current_iso3 = country_name_to_iso3(country_current)
+    country_current_iso3 = name_to_iso3(country_current)
 
     if not notes_value:
         note_saved_info = ""
@@ -772,7 +772,7 @@ def ensure_existing_note_saved(
     -------
         Information about how the notes were saved.
     """
-    country_iso3 = country_name_to_iso3(country)
+    country_iso3 = name_to_iso3(country)
 
     with notes_db_cursor(db_filepath=notes_db_filepath) as db_cursor:
         current_country_notes_value_in_db = get_country_notes_from_notes_db(

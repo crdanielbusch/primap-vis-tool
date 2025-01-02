@@ -7,45 +7,43 @@ from __future__ import annotations
 import pycountry
 
 
-def country_iso3_to_name(country_iso3: str) -> str:
+def iso3_to_name(in_iso3: str) -> str:
     """
-    Convert country ISO3 code to name
+    Convert ISO3 code to name
 
     Parameters
     ----------
-    country_iso3
+    in_iso3
         Country ISO3 code
 
     Returns
     -------
-        Country name
+        country name or country group name
     """
     try:
-        return str(pycountry.countries.get(alpha_3=country_iso3).name)
+        return str(pycountry.countries.get(alpha_3=in_iso3).name)
     except AttributeError:
         # use input as name if pycountry cannot find a match
         # (e.g. EARTH)
-        # TODO: implement custom mapping later (Johannes)
-        return country_iso3
+        return in_iso3
 
 
-def country_name_to_iso3(country: str) -> str:
+def name_to_iso3(in_name: str) -> str:
     """
     Convert country name to ISO3 code
 
     Parameters
     ----------
-    country
-        Country name
+    in_name
+        country name or country group name
 
     Returns
     -------
         Country ISO3 code
     """
     try:
-        return str(pycountry.countries.get(name=country).alpha_3)
+        return str(pycountry.countries.get(name=in_name).alpha_3)
     except AttributeError:
         # use input as ISO3 if pycountry cannot find a match
         # (e.g. EARTH)
-        # TODO: implement custom mapping later (Johannes)
-        return country
+        return in_name
