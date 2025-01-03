@@ -29,6 +29,7 @@ import primap_visualisation_tool_stateless_app.dataset_holder
 import primap_visualisation_tool_stateless_app.figures
 import primap_visualisation_tool_stateless_app.notes
 import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
+from primap_visualisation_tool_stateless_app.iso_mapping import name_to_iso3
 
 TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
 TEST_DS_FILE = TEST_DATA_DIR / "test_ds.nc"
@@ -556,7 +557,7 @@ def test_014_notes_save_no_input(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "012_notes_database.db"
+    tmp_db = tmp_path / "013_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -582,7 +583,7 @@ def test_015_notes_save_basic(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "013_notes_database.db"
+    tmp_db = tmp_path / "014_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -603,6 +604,7 @@ def test_015_notes_save_basic(dash_duo, tmp_path):
     # Make sure database save operation has finished and been confirmed to the user
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
     current_country = get_dropdown_value(dropdown_country)
+    current_country_iso3 = name_to_iso3(current_country)
     dash_duo.wait_for_contains_text(
         "#note-saved-div", f"Notes for {current_country} saved", timeout=2
     )
@@ -612,12 +614,48 @@ def test_015_notes_save_basic(dash_duo, tmp_path):
     )
     assert db.shape[0] == 1
     assert (
-        db.set_index("country")["notes"].loc[current_country] == input_for_first_country
+        db.set_index("country_iso3")["notes"].loc[current_country_iso3]
+        == input_for_first_country
     )
     # and user should be notified with path in which data is saved too
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
     assert re.match(
         rf"Notes for {current_country} saved at .* in {tmp_db}", note_saved_div.text
+    )
+
+    # Click forward until Ecuador to make sure the iso3 country code is saved in the DB
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+    button_country_next.click()
+
+    time.sleep(2)
+
+    # Add some input
+    input_for_second_country = "All looks great again!"
+    # input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
+    input_for_notes.send_keys(input_for_second_country)
+
+    time.sleep(2)
+
+    # Save
+    save_button.click()
+
+    # Make sure database save operation has finished and been confirmed to the user
+    dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
+    current_country = get_dropdown_value(dropdown_country)
+    current_country_iso3 = name_to_iso3(current_country)
+    dash_duo.wait_for_contains_text(
+        "#note-saved-div", f"Notes for {current_country} saved", timeout=2
+    )
+
+    # Output should now be in the database
+    db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
+        tmp_db
+    )
+    assert db.shape[0] == 2
+    assert (
+        db.set_index("country_iso3")["notes"].loc[current_country_iso3]
+        == input_for_second_country
     )
 
     # Give time to sort out and shut down
@@ -628,7 +666,7 @@ def test_016_notes_save_and_step(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "014_notes_database.db"
+    tmp_db = tmp_path / "015_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -665,7 +703,10 @@ def test_016_notes_save_and_step(dash_duo, tmp_path):
         tmp_db
     )
     assert db.shape[0] == 1
-    assert db.set_index("country")["notes"].loc[current_country] == note_to_save
+    assert (
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(current_country)]
+        == note_to_save
+    )
 
     # Click back one country
     button_country_previous = dash_duo.driver.find_element(By.ID, "prev_country")
@@ -684,7 +725,7 @@ def test_017_notes_step_without_user_save(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "015_notes_database.db"
+    tmp_db = tmp_path / "016_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.driver.set_window_size(2000, 1500)
@@ -720,7 +761,10 @@ def test_017_notes_step_without_user_save(dash_duo, tmp_path):
         tmp_db
     )
     assert db.shape[0] == 1
-    assert db.set_index("country")["notes"].loc[country_before_click] == note_to_save
+    assert (
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(country_before_click)]
+        == note_to_save
+    )
 
     # Click back one country
     button_country_previous = dash_duo.driver.find_element(By.ID, "prev_country")
@@ -739,7 +783,7 @@ def test_018_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "016_notes_database.db"
+    tmp_db = tmp_path / "017_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -783,7 +827,10 @@ def test_018_notes_step_without_input_is_quiet(dash_duo, tmp_path):
         tmp_db
     )
     assert db.shape[0] == 1
-    assert db.set_index("country")["notes"].loc[country_with_notes] == note_to_save
+    assert (
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(country_with_notes)]
+        == note_to_save
+    )
 
     # Click back one country
     button_country_previous = dash_duo.driver.find_element(By.ID, "prev_country")
@@ -803,7 +850,7 @@ def test_019_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "017_notes_database.db"
+    tmp_db = tmp_path / "018_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.driver.set_window_size(2000, 1500)
@@ -857,7 +904,7 @@ def test_020_notes_multi_step_flow(dash_duo, tmp_path):  # noqa: PLR0915
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "018_notes_database.db"
+    tmp_db = tmp_path / "019_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -914,10 +961,12 @@ def test_020_notes_multi_step_flow(dash_duo, tmp_path):  # noqa: PLR0915
     )
     assert db.shape[0] == 2
     assert (
-        db.set_index("country")["notes"].loc[first_country] == input_for_first_country
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(first_country)]
+        == input_for_first_country
     )
     assert (
-        db.set_index("country")["notes"].loc[second_country] == input_for_second_country
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(second_country)]
+        == input_for_second_country
     )
 
     # Click back to starting country
@@ -971,7 +1020,7 @@ def test_021_auto_save_and_load_existing(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "019_notes_database.db"
+    tmp_db = tmp_path / "020_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.driver.set_window_size(2000, 1500)
@@ -1037,10 +1086,12 @@ def test_021_auto_save_and_load_existing(dash_duo, tmp_path):
     )
     assert db.shape[0] == 2
     assert (
-        db.set_index("country")["notes"].loc[first_country] == input_for_first_country
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(first_country)]
+        == input_for_first_country
     )
     assert (
-        db.set_index("country")["notes"].loc[second_country] == input_for_second_country
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(second_country)]
+        == input_for_second_country
     )
 
     # Give time to sort out and shut down

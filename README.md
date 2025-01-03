@@ -131,6 +131,14 @@ In order to create your environment, run `make virtual-environment`.
 If there are any issues, the messages from the `Makefile` should guide you
 through. If not, please raise an issue in the [issue tracker][issue_tracker].
 
+To run the tests, you will need to install
+[chrome driver](https://developer.chrome.com/docs/chromedriver/).
+If you get an error like
+".. Message: session not created: This version of ChromeDriver only supports Chrome version ..."
+this means you need to update your Chrome driver.
+On a Mac, this can be done with something like
+`brew install --cask chromedriver`.
+
 For the rest of our developer docs, please see [](development-reference).
 
 [issue_tracker]: https://github.com/crdanielbusch/primap-vis-tool/issues
