@@ -1,5 +1,14 @@
 """
-Country mapping handling
+Country/group to ISO mapping handling
+
+The name is a bit of a misnomer,
+because this handles mapping group names
+(like UMBRELLA) to their ISO equivalent
+(which isn't strictly defined).
+However, given that the golden path is country <-> ISO3,
+we use this naming
+(just keep in mind that a more accurate naming might be
+"country-like name" <-> "ISO3-like ID").
 """
 
 from __future__ import annotations
