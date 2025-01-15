@@ -251,23 +251,40 @@ def get_not_all_nan_source_scenario_dfs(
 class SourceScenarioDefinition:
     """Definition of source-scenarios provided in the app's dataset"""
 
-    primap_old_cr: str
-    """Old PRIMAP CR variant"""
+    primap_versions: tuple[str]
+    """
+    PRIMAP versions
 
-    primap_old_tp: str
-    """Old PRIMAP TP variant"""
-
-    primap_new_cr: str
-    """New PRIMAP CR variant"""
-
-    primap_new_tp: str
-    """New PRIMAP TP variant"""
+    These should be ordered from newest to oldest.
+    """
 
     other_source_scenarios: tuple[str, ...]
     """Other source scenarios"""
 
+    primap_cr_suffix: str = ", HISTCR"
+    """Suffix used to denote CR variants"""
 
-def infer_source_scenarios(inp: xr.Dataset) -> SourceScenarioDefinition:
+    primap_tp_suffix: str = ", HISTTP"
+    """Suffix used to denote TP variants"""
+
+    @property
+    def primap_scenarios(self) -> tuple[str, ...]:
+        """
+        PRIMAP scenarios
+
+        These are created by combining the PRIMAP versions
+        with the CR and TP suffixes.
+        """
+        return tuple(
+            f"{version}{suffix}"
+            for version in self.primap_versions
+            for suffix in [self.primap_cr_suffix, self.primap_tp_suffix]
+        )
+
+
+def infer_source_scenarios(
+    inp: xr.Dataset, primap_start_str: str = "PRIMAP-hist"
+) -> SourceScenarioDefinition:
     """
     Infer source scenarios from an :obj:`xr.Dataset`
 
@@ -276,6 +293,9 @@ def infer_source_scenarios(inp: xr.Dataset) -> SourceScenarioDefinition:
     inp
         :obj:`xr.Dataset` from which to infer the source scenarios
 
+    primap_start_str
+        String that indicates that a scenario is a PRIMAP scenario
+
     Returns
     -------
         Inferred source scenario definition
@@ -283,7 +303,7 @@ def infer_source_scenarios(inp: xr.Dataset) -> SourceScenarioDefinition:
     source_scenarios = inp["SourceScen"].values.tolist()  # noqa: PD011
 
     other_source_scenarios = tuple(
-        v for v in source_scenarios if not v.startswith("PRIMAP-hist")
+        v for v in source_scenarios if not v.startswith(primap_start_str)
     )
     primap_variants = set(source_scenarios).difference(set(other_source_scenarios))
 
@@ -291,53 +311,23 @@ def infer_source_scenarios(inp: xr.Dataset) -> SourceScenarioDefinition:
     primap_versions = sorted(
         [[Version(v.split("_")[1]), v] for v in primap_sources], key=lambda x: x[0]
     )
-    if len(primap_sources) == 2:
-        primap_older = primap_versions[0][1]
-        primap_newer = primap_versions[1][1]
 
-        primap_old_cr = f"{primap_older}, HISTCR"
-        primap_old_tp = f"{primap_older}, HISTTP"
-        primap_new_cr = f"{primap_newer}, HISTCR"
-        primap_new_tp = f"{primap_newer}, HISTTP"
-
-    # elif len(primap_sources) == 3:
-    #     primap_older = primap_versions[0][1]
-    #     primap_new_previous_iteration = primap_versions[1][1]
-    #     primap_newer = primap_versions[2][1]
-    #
-    #     primap_old_cr = f"{primap_older}, HISTCR"
-    #     primap_old_tp = f"{primap_older}, HISTTP"
-    #     primap_new_previous_iteration_cr = f"{primap_new_previous_iteration}, HISTCR"
-    #     primap_new_previous_iteration_tp = f"{primap_new_previous_iteration}, HISTTP"
-    #     primap_new_cr = f"{primap_newer}, HISTCR"
-    #     primap_new_tp = f"{primap_newer}, HISTTP"
-    #     breakpoint()
-
-    else:
-        raise NotImplementedError(len(primap_sources))
+    source_scenario_definition = SourceScenarioDefinition(
+        primap_versions=tuple(v[1] for v in primap_versions[::-1]),
+        other_source_scenarios=tuple(sorted(other_source_scenarios)),
+    )
 
     missing_expected_primap_scenarios = [
         v
-        for v in (
-            primap_old_cr,
-            primap_old_tp,
-            primap_new_cr,
-            primap_new_tp,
-        )
-        if v is not None and v not in source_scenarios
+        for v in source_scenario_definition.primap_scenarios
+        if v not in source_scenarios
     ]
 
     if missing_expected_primap_scenarios:
         msg = f"Missing expected PRIMAP scenarios {missing_expected_primap_scenarios}. {source_scenarios=}"
         raise AssertionError(msg)
 
-    return SourceScenarioDefinition(
-        primap_old_cr=primap_old_cr,
-        primap_old_tp=primap_old_tp,
-        primap_new_cr=primap_new_cr,
-        primap_new_tp=primap_new_tp,
-        other_source_scenarios=tuple(sorted(other_source_scenarios)),
-    )
+    return source_scenario_definition
 
 
 def group_other_source_scenarios(inp: tuple[str, ...]) -> tuple[tuple[str, ...], ...]:

@@ -113,29 +113,30 @@ def create_default_plotting_config(  # noqa: PLR0913
                 "dash": dash,
             }
 
+    primap_config = OrderedDict()
+    for i, primap_scenario in enumerate(source_scenarios.primap_scenarios):
+        if source_scenarios.primap_cr_suffix in primap_scenario:
+            colour = primap_cr_colour
+        elif source_scenarios.primap_tp_suffix in primap_scenario:
+            colour = primap_tp_colour
+        else:
+            raise NotImplementedError(primap_scenario)
+
+        if i < 1:
+            dash = new_dash
+        else:
+            dash = old_dashes[i // 2]
+
+        primap_config[primap_scenario] = {
+            "color": colour,
+            "dash": dash,
+            "width": primap_width,
+        }
+
     return PlottingConfig(
         source_scenario_settings=OrderedDict(
             {
-                source_scenarios.primap_new_cr: {
-                    "color": primap_cr_colour,
-                    "dash": new_dash,
-                    "width": primap_width,
-                },
-                source_scenarios.primap_new_tp: {
-                    "color": primap_tp_colour,
-                    "dash": new_dash,
-                    "width": primap_width,
-                },
-                source_scenarios.primap_old_cr: {
-                    "color": primap_cr_colour,
-                    "dash": old_dashes[0],
-                    "width": primap_width,
-                },
-                source_scenarios.primap_old_tp: {
-                    "color": primap_tp_colour,
-                    "dash": old_dashes[0],
-                    "width": primap_width,
-                },
+                **primap_config,
                 **source_scenario_settings_non_primap,
             }
         )
