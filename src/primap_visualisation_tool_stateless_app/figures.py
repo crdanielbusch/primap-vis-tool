@@ -114,6 +114,7 @@ def create_default_plotting_config(  # noqa: PLR0913
             }
 
     primap_config = OrderedDict()
+    assumed_n_primap_suffixes = 2  # CR and TP
     for i, primap_scenario in enumerate(source_scenarios.primap_scenarios):
         if source_scenarios.primap_cr_suffix in primap_scenario:
             colour = primap_cr_colour
@@ -122,10 +123,12 @@ def create_default_plotting_config(  # noqa: PLR0913
         else:
             raise NotImplementedError(primap_scenario)
 
-        if i < 1:
+        if i < assumed_n_primap_suffixes:
             dash = new_dash
         else:
-            dash = old_dashes[i // 2]
+            dash = old_dashes[
+                (i - assumed_n_primap_suffixes) // assumed_n_primap_suffixes
+            ]
 
         primap_config[primap_scenario] = {
             "color": colour,
