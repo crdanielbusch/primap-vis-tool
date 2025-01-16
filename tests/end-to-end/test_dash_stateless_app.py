@@ -245,12 +245,32 @@ def test_007_country_buttons(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_008_initial_figures(dash_duo, tmp_path):
-    test_file = TEST_DS_FILE
-
+@pytest.mark.parametrize(
+    "test_file, expected_graph_overview_source_scenarios",
+    (
+        pytest.param(
+            TEST_DS_FILE,
+            (
+                "PRIMAP-hist_v2.5_final_nr, HISTCR",
+                "PRIMAP-hist_v2.5_final_nr, HISTTP",
+                "PRIMAP-hist_v2.4.2_final_nr, HISTCR",
+                "PRIMAP-hist_v2.4.2_final_nr, HISTTP",
+                "CRF 2023, 230926",
+                "CRF 2022, 230510",
+                "EDGAR 7.0, HISTORY",
+                "FAOSTAT 2022, HISTORY",
+                "UNFCCC NAI, 231015",
+            ),
+            id="two-primap-versions",
+        ),
+    ),
+)
+def test_008_initial_figures(
+    test_file, expected_graph_overview_source_scenarios, dash_duo, tmp_path
+):
     test_ds = pm.open_dataset(test_file)
 
-    tmp_db = tmp_path / "008_notes_database.db"
+    tmp_db = tmp_path / f"008_notes_database_{test_file.name}.db"
 
     setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
 
@@ -280,17 +300,6 @@ def test_008_initial_figures(dash_duo, tmp_path):
         )
     )
 
-    expected_graph_overview_source_scenarios = [
-        "PRIMAP-hist_v2.5_final_nr, HISTCR",
-        "PRIMAP-hist_v2.5_final_nr, HISTTP",
-        "PRIMAP-hist_v2.4.2_final_nr, HISTCR",
-        "PRIMAP-hist_v2.4.2_final_nr, HISTTP",
-        "CRF 2023, 230926",
-        "CRF 2022, 230510",
-        "EDGAR 7.0, HISTORY",
-        "FAOSTAT 2022, HISTORY",
-        "UNFCCC NAI, 231015",
-    ]
     expected_graph_overview_items = []
     for k, v in plotting_config.source_scenario_settings.items():
         if k not in expected_graph_overview_source_scenarios:
@@ -900,7 +909,7 @@ def test_019_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_020_notes_multi_step_flow(dash_duo, tmp_path):  # noqa: PLR0915
+def test_020_notes_multi_step_flow(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
@@ -1340,7 +1349,7 @@ def test_022_linked_zoom(dash_duo, tmp_path):
     assert_graph_ticks_equal(graphs, yticks_expected=graphs_yticks_prev)
 
 
-def test_022_zoom_country_dropdown_change(dash_duo, tmp_path):  # noqa: PLR0915
+def test_022_zoom_country_dropdown_change(dash_duo, tmp_path):
     """
     Test the behaviour of the zoom's reset as we cycle through countries
     """
