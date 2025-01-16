@@ -263,9 +263,26 @@ def test_007_country_buttons(dash_duo, tmp_path):
             ),
             id="two-primap-versions",
         ),
+        pytest.param(
+            TEST_DATA_DIR / "test_ds_three_primap_versions.nc",
+            (
+                "PRIMAP-hist_v2.5_final_nr, HISTCR",
+                "PRIMAP-hist_v2.5_final_nr, HISTTP",
+                "PRIMAP-hist_v2.5rc1_nr, HISTCR",
+                "PRIMAP-hist_v2.5rc1_nr, HISTTP",
+                "PRIMAP-hist_v2.4.2_final_nr, HISTCR",
+                "PRIMAP-hist_v2.4.2_final_nr, HISTTP",
+                "CRF 2023, 230926",
+                "CRF 2022, 230510",
+                "EDGAR 7.0, HISTORY",
+                "FAOSTAT 2022, HISTORY",
+                "UNFCCC NAI, 231015",
+            ),
+            id="three-primap-versions",
+        ),
     ),
 )
-def test_008_initial_figures(
+def test_008_initial_figures(  # noqa: PLR0912
     test_file, expected_graph_overview_source_scenarios, dash_duo, tmp_path
 ):
     test_ds = pm.open_dataset(test_file)
@@ -368,6 +385,8 @@ def test_008_initial_figures(
                     assert "stroke-dasharray" not in style
                 elif exp_dash == "dot":
                     assert "stroke-dasharray: 3px, 3px" in style
+                elif exp_dash == "dash":
+                    assert "stroke-dasharray: 9px, 9px" in style
                 else:
                     raise NotImplementedError(exp_dash)
 

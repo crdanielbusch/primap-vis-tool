@@ -81,5 +81,4 @@ run-app:  ## run the app
 
 .PHONY: run-app-stateless
 run-app-stateless:  ## run the stateless version of the app
-	# poetry run python src/primap_visualisation_tool_stateless_app/main.py --dataset "data/test_ds.nc" --port 8051
-	poetry run python src/primap_visualisation_tool_stateless_app/main.py --dataset "data/test_ds_multi_primap.nc" --port 8051
+	poetry run python src/primap_visualisation_tool_stateless_app/main.py --dataset "data/test_ds.nc" --port 8051
