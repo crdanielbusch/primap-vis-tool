@@ -30,12 +30,12 @@ runs:
       uses: actions/cache@v4
       with:
         path: ~/.local  # the path depends on the OS
-        key: poetry-4  # increment to reset cache
+        key: poetry-5  # increment to reset cache
     - name: Install Poetry
       if: steps.cached-poetry.outputs.cache-hit != 'true'
       uses: snok/install-poetry@v1
       with:
-        version: 1.8.2
+        version: 2.0
     - name: Load cached venv
       if: ${{ inputs.run-poetry-install == 'true' }}
       id: cached-poetry-dependencies
