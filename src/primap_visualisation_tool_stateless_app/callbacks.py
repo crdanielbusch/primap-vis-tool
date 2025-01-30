@@ -845,6 +845,49 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             country_store,
         )
 
+    @app.callback(
+        Output("input-for-notes", "style"),
+        Input("font-size-down", "n_clicks"),
+        Input("font-size-up", "n_clicks"),
+        State("input-for-notes", "style"),
+        prevent_initial_call=True,
+    )  # type:ignore
+    def change_font_size(
+        n_clicks_down: int,
+        n_clicks_up: int,
+        style: dict[str, str],
+    ) -> dict[str, str]:
+        """
+        Change the font size in the notes field.
+
+        Parameters
+        ----------
+        n_clicks_down
+            Number of clicks on down button. This is only
+            used to trigger the callback.
+        n_clicks_up
+            Number of clicks on down button. This is only
+            used to trigger the callback.
+        style
+            Style parameters for notes text field
+
+        Returns
+        -------
+            Updated style parameters
+
+        """
+        if ctx.triggered_id == "font-size-up":
+            new_font_size = int(style["fontSize"][:-2]) + 2
+        elif ctx.triggered_id == "font-size-down":
+            new_font_size = int(style["fontSize"][:-2]) - 2
+        else:
+            msg = "How did we get here?"
+            raise NotImplementedError(msg)
+
+        style["fontSize"] = f"{new_font_size}px"
+
+        return style
+
 
 def save_notes_and_load_existing_notes_after_dropdown_country_change(
     notes_value: str,

@@ -121,6 +121,7 @@ jobs:
         shell: bash
         run: |
           TEMP_FILE=$(mktemp)
+          poetry self add poetry-plugin-export
           poetry export --without=tests --without=docs --without=dev > $TEMP_FILE
           poetry run liccheck -r $TEMP_FILE -R licence-check.txt
           cat licence-check.txt
