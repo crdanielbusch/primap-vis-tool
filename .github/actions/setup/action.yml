@@ -34,8 +34,8 @@ runs:
     - name: Install Poetry
       if: steps.cached-poetry.outputs.cache-hit != 'true'
       uses: snok/install-poetry@v1
-      with:
-        version: 2.0
+#      with:
+#        version: 2.0
     - name: Load cached venv
       if: ${{ inputs.run-poetry-install == 'true' }}
       id: cached-poetry-dependencies
@@ -48,6 +48,7 @@ runs:
       if: ${{ inputs.run-poetry-install == 'true' }}
       shell: bash
       run: |
+        poetry --version
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
         poetry env use ${{ inputs.python-version }}
