@@ -877,11 +877,10 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         -------
 
         """
-        print(style)
         if ctx.triggered_id == "font-size-up":
-            new_font_size = int(style["fontSize"][:-2]) + 1
+            new_font_size = int(style["fontSize"][:-2]) + 2
         elif ctx.triggered_id == "font-size-down":
-            new_font_size = int(style["fontSize"][:-2]) - 1
+            new_font_size = int(style["fontSize"][:-2]) - 2
         else:
             msg = "How did we get here?"
             raise NotImplementedError(msg)
