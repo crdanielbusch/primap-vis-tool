@@ -851,7 +851,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Input("font-size-up", "n_clicks"),
         State("input-for-notes", "style"),
         prevent_initial_call=True,
-    )
+    )  # type:ignore
     def change_font_size(
         n_clicks_down: int,
         n_clicks_up: int,
@@ -874,7 +874,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Returns
         -------
             Updated style parameters
-        -------
 
         """
         if ctx.triggered_id == "font-size-up":
