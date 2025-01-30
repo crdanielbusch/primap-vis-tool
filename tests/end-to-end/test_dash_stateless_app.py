@@ -1549,3 +1549,37 @@ def test_023_zoom_source_scenario_dropdown_change(
         xticks_expected=[xticks_prev for _ in graphs],
         yticks_expected=graphs_yticks_prev,
     )
+
+
+def test_024_change_font_size(dash_duo, tmp_path):
+    """
+    Test the buttons to increase / decrease font size in notes text box
+    """
+    test_file = TEST_DS_FILE
+
+    test_ds = pm.open_dataset(test_file)
+
+    tmp_db = tmp_path / "023_notes_database.db"
+
+    dash_duo = setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
+    dash_duo.driver.set_window_size(2000, 1500)
+
+    # Give time to set up
+    time.sleep(2)
+
+    input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
+
+    assert "font-size: 12px" in input_for_notes.get_attribute("style")
+
+    # Increase font size
+    button_fontsize_up = dash_duo.driver.find_element(By.ID, "font-size-up")
+    button_fontsize_up.click()
+    button_fontsize_up.click()
+
+    assert "font-size: 16px" in input_for_notes.get_attribute("style")
+
+    # Decrease font size
+    button_fontsize_down = dash_duo.driver.find_element(By.ID, "font-size-down")
+    button_fontsize_down.click()
+
+    assert "font-size: 14px" in input_for_notes.get_attribute("style")
