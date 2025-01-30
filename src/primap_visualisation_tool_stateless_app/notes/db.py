@@ -1,6 +1,7 @@
 """
 Database handling
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -70,11 +71,11 @@ def setup_db(cur: sqlite3.Cursor) -> None:
     cur
         Database cursor
     """
-    cur.execute("CREATE TABLE country_notes(country TEXT PRIMARY KEY, notes TEXT)")
+    cur.execute("CREATE TABLE country_notes(country_iso3 TEXT PRIMARY KEY, notes TEXT)")
 
 
 def save_country_notes_in_notes_db(
-    db_cursor: sqlite3.Cursor, country: str, notes_to_save: str
+    db_cursor: sqlite3.Cursor, country_iso3: str, notes_to_save: str
 ) -> str | None:
     """
     Save a country's notes in the notes database
@@ -84,8 +85,8 @@ def save_country_notes_in_notes_db(
     db_cursor
         Cursor for the notes database
 
-    country
-        Country to which the notes apply
+    country_iso3
+        The ISO3 code of the country to which the notes apply
 
     notes_to_save
         Notes to save
@@ -95,21 +96,23 @@ def save_country_notes_in_notes_db(
         Saved notes
     """
     sql_comand = """
-        INSERT INTO country_notes(country, notes)
+        INSERT INTO country_notes(country_iso3, notes)
         VALUES(?, ?)
-        ON CONFLICT(country)
+        ON CONFLICT(country_iso3)
         DO UPDATE SET notes=excluded.notes
     """
     db_cursor.execute(
         sql_comand,
-        (country, notes_to_save),
+        (country_iso3, notes_to_save),
     )
 
-    return get_country_notes_from_notes_db(db_cursor=db_cursor, country=country)
+    return get_country_notes_from_notes_db(
+        db_cursor=db_cursor, country_iso3=country_iso3
+    )
 
 
 def get_country_notes_from_notes_db(
-    db_cursor: sqlite3.Cursor, country: str
+    db_cursor: sqlite3.Cursor, country_iso3: str
 ) -> str | None:
     """
     Get a country's notes from the notes database
@@ -119,15 +122,15 @@ def get_country_notes_from_notes_db(
     db_cursor
         Cursor for the notes database
 
-    country
-        Country for which to get the notes
+    country_iso3
+        The ISO3 code of the country for which to get the notes
 
     Returns
     -------
         Country's notes
     """
     country_notes: list[tuple[str]] = db_cursor.execute(
-        "SELECT notes FROM country_notes WHERE country=?", (country,)
+        "SELECT notes FROM country_notes WHERE country_iso3=?", (country_iso3,)
     ).fetchall()
 
     # Country notes is our primary key, so we have exactly two cases:

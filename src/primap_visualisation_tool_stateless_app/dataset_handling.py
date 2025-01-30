@@ -8,11 +8,12 @@ from collections import defaultdict
 from collections.abc import Iterable
 
 import pandas as pd
-import pycountry
 import xarray as xr
 from attrs import define
 from loguru import logger
 from packaging.version import InvalidVersion, Version
+
+from primap_visualisation_tool_stateless_app.iso_mapping import iso3_to_name
 
 
 def get_country_start(
@@ -162,13 +163,7 @@ def get_country_code_mapping(dataset: xr.Dataset) -> dict[str, str]:
     all_codes = dataset.coords["area (ISO3)"].to_numpy()
     country_code_mapping = {}
     for code in all_codes:
-        try:
-            country_code_mapping[pycountry.countries.get(alpha_3=code).name] = code
-
-        # use ISO3 code as name if pycountry cannot find a match
-        except Exception:
-            # TODO: implement custom mapping later (Johannes)
-            country_code_mapping[code] = code
+        country_code_mapping[iso3_to_name(code)] = code
 
     return country_code_mapping
 

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import re
 import time
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +29,7 @@ import primap_visualisation_tool_stateless_app.dataset_holder
 import primap_visualisation_tool_stateless_app.figures
 import primap_visualisation_tool_stateless_app.notes
 import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
+from primap_visualisation_tool_stateless_app.iso_mapping import name_to_iso3
 
 TEST_DATA_DIR = Path(__file__).parent.parent / "test-data"
 TEST_DS_FILE = TEST_DATA_DIR / "test_ds.nc"
@@ -78,11 +80,15 @@ def get_element_workaround(
     """
     now = time.time()
     while time.time() < (now + timeout):
-        found_elements = dash_duo.driver.find_elements(By.CLASS_NAME, class_name)
         matching = []
-        for element in found_elements:
-            if expected_id_component in element.get_attribute("id"):
-                matching.append(element)
+        try:
+            found_elements = dash_duo.driver.find_elements(By.CLASS_NAME, class_name)
+            for element in found_elements:
+                if expected_id_component in element.get_attribute("id"):
+                    matching.append(element)
+
+        except selenium.common.exceptions.StaleElementReferenceException:
+            continue
 
         if len(matching) == 1:
             return matching[0]
@@ -360,7 +366,58 @@ def test_008_initial_figures(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_009_category_buttons(dash_duo, tmp_path):
+def test_009_deselect_source_scenario_option(dash_duo):
+    test_file = TEST_DS_FILE
+
+    test_ds = pm.open_dataset(test_file)
+
+    setup_app(dash_duo=dash_duo, ds=test_ds)
+    time.sleep(2.0)
+    figure_overview = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    wait = WebDriverWait(dash_duo.driver, timeout=4)
+
+    # find all traces in the plot
+    scatter_layer = figure_overview.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    traces = scatter_layer.find_elements(By.TAG_NAME, "path")
+    assert len(traces) == 9
+
+    time.sleep(2)
+
+    wait.until(lambda d: figure_overview.find_elements(By.CLASS_NAME, "legend"))
+    legend = figure_overview.find_element(By.CLASS_NAME, "legend")
+    traces = legend.find_elements(By.CLASS_NAME, "traces")
+    for trace in traces:
+        if trace.text != "EDGAR 7.0, HISTORY":
+            continue
+
+        toggles = trace.find_elements(By.CLASS_NAME, "legendtoggle")
+        assert len(toggles) == 1
+        toggle = toggles[0]
+        toggle.click()
+
+    time.sleep(2)
+
+    # after clicking the legend toggle, one trace should disappear
+    scatter_layer = figure_overview.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    traces = scatter_layer.find_elements(By.TAG_NAME, "path")
+    assert len(traces) == 8
+
+    # Click next
+    button_category_next = dash_duo.driver.find_element(By.ID, "next_category")
+    button_category_next.click()
+
+    time.sleep(2)
+
+    # find all traces in the plot
+    # and make sure one is still invisible
+    scatter_layer = figure_overview.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    traces = scatter_layer.find_elements(By.TAG_NAME, "path")
+    assert len(traces) == 8
+
+
+def test_010_category_buttons(dash_duo, tmp_path):
     test_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_file)
 
@@ -388,7 +445,7 @@ def test_009_category_buttons(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_010_entity_buttons(dash_duo):
+def test_011_entity_buttons(dash_duo):
     test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
@@ -415,7 +472,7 @@ def test_010_entity_buttons(dash_duo):
     time.sleep(2)
 
 
-def test_011_dropdown_source_scenario(dash_duo):
+def test_012_dropdown_source_scenario(dash_duo):
     test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
@@ -431,7 +488,7 @@ def test_011_dropdown_source_scenario(dash_duo):
     time.sleep(2)
 
 
-def test_012_dropdown_source_scenario_option_not_available(dash_duo):
+def test_013_dropdown_source_scenario_option_not_available(dash_duo):
     test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
@@ -441,8 +498,12 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
     )
 
     setup_app(dash_duo=dash_duo, ds=test_ds)
-
+    # Give time to set up
     time.sleep(2)
+
+    # Re-size the window to ensure the drop-down
+    # and the clear buttons don't overlap.
+    dash_duo.driver.set_window_size(2000, 1500)
 
     dropdown_source_scenario_div = dash_duo.driver.find_element(
         By.ID, "dropdown-source-scenario"
@@ -450,7 +511,9 @@ def test_012_dropdown_source_scenario_option_not_available(dash_duo):
 
     # Find the arrow that expands the dropdown options and click on it
     dropdown_source_scenario_div.find_element(
-        By.CLASS_NAME, "Select-arrow-zone"
+        # By.CLASS_NAME, "Select-arrow-zone"
+        By.CLASS_NAME,
+        "Select-arrow",
     ).click()
 
     # simulate keyboard
@@ -490,11 +553,11 @@ def get_dropdown_value(
     return dropdown_element.text.splitlines()[0]
 
 
-def test_013_notes_save_no_input(dash_duo, tmp_path):
+def test_014_notes_save_no_input(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "012_notes_database.db"
+    tmp_db = tmp_path / "013_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -515,12 +578,12 @@ def test_013_notes_save_no_input(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_014_notes_save_basic(dash_duo, tmp_path):
+def test_015_notes_save_basic(dash_duo, tmp_path):
     time.sleep(2)
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "013_notes_database.db"
+    tmp_db = tmp_path / "014_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -541,6 +604,7 @@ def test_014_notes_save_basic(dash_duo, tmp_path):
     # Make sure database save operation has finished and been confirmed to the user
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
     current_country = get_dropdown_value(dropdown_country)
+    current_country_iso3 = name_to_iso3(current_country)
     dash_duo.wait_for_contains_text(
         "#note-saved-div", f"Notes for {current_country} saved", timeout=2
     )
@@ -550,7 +614,8 @@ def test_014_notes_save_basic(dash_duo, tmp_path):
     )
     assert db.shape[0] == 1
     assert (
-        db.set_index("country")["notes"].loc[current_country] == input_for_first_country
+        db.set_index("country_iso3")["notes"].loc[current_country_iso3]
+        == input_for_first_country
     )
     # and user should be notified with path in which data is saved too
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
@@ -558,15 +623,50 @@ def test_014_notes_save_basic(dash_duo, tmp_path):
         rf"Notes for {current_country} saved at .* in {tmp_db}", note_saved_div.text
     )
 
+    # Click forward until Ecuador to make sure the iso3 country code is saved in the DB
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+    button_country_next.click()
+
+    time.sleep(2)
+
+    # Add some input
+    input_for_second_country = "All looks great again!"
+    # input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
+    input_for_notes.send_keys(input_for_second_country)
+
+    time.sleep(2)
+
+    # Save
+    save_button.click()
+
+    # Make sure database save operation has finished and been confirmed to the user
+    dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
+    current_country = get_dropdown_value(dropdown_country)
+    current_country_iso3 = name_to_iso3(current_country)
+    dash_duo.wait_for_contains_text(
+        "#note-saved-div", f"Notes for {current_country} saved", timeout=2
+    )
+
+    # Output should now be in the database
+    db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
+        tmp_db
+    )
+    assert db.shape[0] == 2
+    assert (
+        db.set_index("country_iso3")["notes"].loc[current_country_iso3]
+        == input_for_second_country
+    )
+
     # Give time to sort out and shut down
     time.sleep(2)
 
 
-def test_015_notes_save_and_step(dash_duo, tmp_path):
+def test_016_notes_save_and_step(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "014_notes_database.db"
+    tmp_db = tmp_path / "015_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -603,7 +703,10 @@ def test_015_notes_save_and_step(dash_duo, tmp_path):
         tmp_db
     )
     assert db.shape[0] == 1
-    assert db.set_index("country")["notes"].loc[current_country] == note_to_save
+    assert (
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(current_country)]
+        == note_to_save
+    )
 
     # Click back one country
     button_country_previous = dash_duo.driver.find_element(By.ID, "prev_country")
@@ -618,11 +721,11 @@ def test_015_notes_save_and_step(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_016_notes_step_without_user_save(dash_duo, tmp_path):
+def test_017_notes_step_without_user_save(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "015_notes_database.db"
+    tmp_db = tmp_path / "016_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.driver.set_window_size(2000, 1500)
@@ -658,7 +761,10 @@ def test_016_notes_step_without_user_save(dash_duo, tmp_path):
         tmp_db
     )
     assert db.shape[0] == 1
-    assert db.set_index("country")["notes"].loc[country_before_click] == note_to_save
+    assert (
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(country_before_click)]
+        == note_to_save
+    )
 
     # Click back one country
     button_country_previous = dash_duo.driver.find_element(By.ID, "prev_country")
@@ -673,11 +779,11 @@ def test_016_notes_step_without_user_save(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
+def test_018_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "016_notes_database.db"
+    tmp_db = tmp_path / "017_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -721,7 +827,10 @@ def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
         tmp_db
     )
     assert db.shape[0] == 1
-    assert db.set_index("country")["notes"].loc[country_with_notes] == note_to_save
+    assert (
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(country_with_notes)]
+        == note_to_save
+    )
 
     # Click back one country
     button_country_previous = dash_duo.driver.find_element(By.ID, "prev_country")
@@ -737,11 +846,11 @@ def test_017_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
+def test_019_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "017_notes_database.db"
+    tmp_db = tmp_path / "018_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.driver.set_window_size(2000, 1500)
@@ -791,11 +900,11 @@ def test_018_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_019_notes_multi_step_flow(dash_duo, tmp_path):  # noqa: PLR0915
+def test_020_notes_multi_step_flow(dash_duo, tmp_path):  # noqa: PLR0915
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "018_notes_database.db"
+    tmp_db = tmp_path / "019_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.wait_for_element_by_id("save-button", timeout=2)
@@ -852,10 +961,12 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):  # noqa: PLR0915
     )
     assert db.shape[0] == 2
     assert (
-        db.set_index("country")["notes"].loc[first_country] == input_for_first_country
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(first_country)]
+        == input_for_first_country
     )
     assert (
-        db.set_index("country")["notes"].loc[second_country] == input_for_second_country
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(second_country)]
+        == input_for_second_country
     )
 
     # Click back to starting country
@@ -902,14 +1013,14 @@ def test_019_notes_multi_step_flow(dash_duo, tmp_path):  # noqa: PLR0915
     time.sleep(2)
 
 
-def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
+def test_021_auto_save_and_load_existing(dash_duo, tmp_path):
     """
     Test behaviour if changing country triggers both auto-saving and loading of an existing note
     """
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "019_notes_database.db"
+    tmp_db = tmp_path / "020_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.driver.set_window_size(2000, 1500)
@@ -975,10 +1086,12 @@ def test_020_auto_save_and_load_existing(dash_duo, tmp_path):
     )
     assert db.shape[0] == 2
     assert (
-        db.set_index("country")["notes"].loc[first_country] == input_for_first_country
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(first_country)]
+        == input_for_first_country
     )
     assert (
-        db.set_index("country")["notes"].loc[second_country] == input_for_second_country
+        db.set_index("country_iso3")["notes"].loc[name_to_iso3(second_country)]
+        == input_for_second_country
     )
 
     # Give time to sort out and shut down
@@ -1003,40 +1116,103 @@ def get_ytick_values(graph):
     ]
 
 
-def assert_ticks_changed_but_remain_consistent_across_graphs(
-    graphs, xticks_prev, yticks_prev, check_yticks_change=True
+def assert_graph_ticks_equal(
+    graphs,
+    xticks_expected: Iterable[list[str], ...] | None = None,
+    yticks_expected: Iterable[list[str], ...] | None = None,
 ):
     """
-    Would be better to check axis limits, but I can't work out how to do that
+    Assert that the graph ticks equal what we expect
 
-    This is plan b
+    `xticks_expected`/`yticks_expected`
+    should provide the expected ticks for each graph in `graphs`.
+
+    This appears to be sensitive to window size,
+    which is quite annoying.
+    Not sure how to fix.
     """
-    for i, graph in enumerate(graphs):
-        assert xticks_prev != get_xtick_values(graph)
-        if check_yticks_change:
-            assert yticks_prev != get_ytick_values(graph)
-        else:
-            assert yticks_prev == get_ytick_values(graph)
+    if not xticks_expected and not yticks_expected:
+        msg = "Function won't do anything"
+        raise AssertionError(msg)
 
+    for i, graph in enumerate(graphs):
+        if xticks_expected is not None:
+            xticks_expected_graph = xticks_expected[i]
+            actual_xticks = get_xtick_values(graph)
+            assert xticks_expected_graph == actual_xticks
+
+        if yticks_expected is not None:
+            yticks_expected_graph = yticks_expected[i]
+            actual_yticks = get_ytick_values(graph)
+            assert yticks_expected_graph == actual_yticks
+
+
+def assert_graph_ticks_not_equal(
+    graphs,
+    xticks_compare: Iterable[list[str], ...] | None = None,
+    yticks_compare: Iterable[list[str], ...] | None = None,
+):
+    """
+    Assert that the graph ticks are not equal to some value, e.g. have changed
+
+    `xticks_expected`/`yticks_expected`
+    should provide the expected ticks for each graph in `graphs`.
+
+    This appears to be sensitive to window size,
+    which is quite annoying.
+    Not sure how to fix.
+    """
+    if not xticks_compare and not yticks_compare:
+        msg = "Function won't do anything"
+        raise AssertionError(msg)
+
+    for i, graph in enumerate(graphs):
+        if xticks_compare is not None:
+            xticks_expected_graph = xticks_compare[i]
+            actual_xticks = get_xtick_values(graph)
+            assert xticks_expected_graph != actual_xticks
+
+        if yticks_compare is not None:
+            yticks_expected_graph = yticks_compare[i]
+            actual_yticks = get_ytick_values(graph)
+            assert yticks_expected_graph != actual_yticks
+
+
+def assert_ticks_consistent_across_graphs(
+    graphs,
+    check_xticks=True,
+    check_yticks=True,
+):
+    """
+    Assert that the ticks are consistent across all our graphs
+    """
+    if not check_xticks and not check_yticks:
+        msg = "Function won't do anything"
+        raise AssertionError(msg)
+
+    for i, graph in enumerate(graphs):
         if i == 0:
             exp_xticks = get_xtick_values(graph)
             exp_yticks = get_ytick_values(graph)
         else:
-            # This appears to be sensitive to window size,
-            # which is quite annoying.
-            # Not sure how to fix.
-            actual_xticks = get_xtick_values(graph)
-            actual_yticks = get_ytick_values(graph)
-            assert exp_xticks == actual_xticks
-            assert exp_yticks == actual_yticks
+            if check_xticks:
+                # This appears to be sensitive to window size,
+                # which is quite annoying.
+                # Not sure how to fix.
+                actual_xticks = get_xtick_values(graph)
+                assert exp_xticks == actual_xticks
+
+            if check_yticks:
+                actual_yticks = get_ytick_values(graph)
+                assert exp_yticks == actual_yticks
 
 
-def test_021_linked_zoom(dash_duo, tmp_path):
+def test_022_linked_zoom(dash_duo, tmp_path):
     test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
 
-    tmp_db = tmp_path / "008_notes_database.db"
+    tmp_db = tmp_path / "021_notes_database.db"
 
     dash_duo = setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
     # Give time to set up
@@ -1065,93 +1241,311 @@ def test_021_linked_zoom(dash_duo, tmp_path):
     graphs = [graph_overview, graph_category_split, graph_entity_split]
 
     # Can't see a better way to do this, maybe someone else finds it.
-    xticks_prev = get_xtick_values(graph_overview)
-    yticks_prev = get_ytick_values(graph_overview)
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
 
     # Zoom in via entity graph
     dash_duo.zoom_in_graph_by_ratio(graph_entity_split, zoom_box_fraction=0.2)
     time.sleep(1.0)
 
     # Limits of all graphs should update
-    assert_ticks_changed_but_remain_consistent_across_graphs(
+    assert_ticks_consistent_across_graphs(
         graphs=graphs,
-        xticks_prev=xticks_prev,
-        yticks_prev=yticks_prev,
-        check_yticks_change=True,
+        check_xticks=True,
+        check_yticks=True,
+    )
+    assert_graph_ticks_not_equal(
+        graphs, xticks_compare=graphs_xticks_prev, yticks_compare=graphs_yticks_prev
     )
 
-    xticks_prev = get_xtick_values(graph_overview)
-    yticks_prev = get_ytick_values(graph_overview)
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
 
     # Reset via entity graph
     ActionChains(dash_duo.driver).double_click(graph_entity_split).perform()
     time.sleep(1.0)
 
     # Limits of all graphs should update
-    assert_ticks_changed_but_remain_consistent_across_graphs(
+    assert_ticks_consistent_across_graphs(
         graphs=graphs,
-        xticks_prev=xticks_prev,
-        yticks_prev=yticks_prev,
-        check_yticks_change=True,
+        check_xticks=True,
+        check_yticks=True,
+    )
+    assert_graph_ticks_not_equal(
+        graphs, xticks_compare=graphs_xticks_prev, yticks_compare=graphs_yticks_prev
     )
 
-    xticks_prev = get_xtick_values(graph_overview)
-    yticks_prev = get_ytick_values(graph_overview)
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
 
     # Zoom in via category graph
     dash_duo.zoom_in_graph_by_ratio(graph_category_split, zoom_box_fraction=0.1)
     time.sleep(1.0)
 
     # Limits of all graphs should update
-    assert_ticks_changed_but_remain_consistent_across_graphs(
+    assert_ticks_consistent_across_graphs(
         graphs=graphs,
-        xticks_prev=xticks_prev,
-        yticks_prev=yticks_prev,
-        check_yticks_change=True,
+        check_xticks=True,
+        check_yticks=True,
+    )
+    assert_graph_ticks_not_equal(
+        graphs, xticks_compare=graphs_xticks_prev, yticks_compare=graphs_yticks_prev
     )
 
-    xticks_prev = get_xtick_values(graph_overview)
-    yticks_prev = get_ytick_values(graph_overview)
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
 
     # Reset via category graph
     ActionChains(dash_duo.driver).double_click(graph_category_split).perform()
     time.sleep(1.0)
 
     # Limits of all graphs should update
-    assert_ticks_changed_but_remain_consistent_across_graphs(
+    assert_ticks_consistent_across_graphs(
         graphs=graphs,
-        xticks_prev=xticks_prev,
-        yticks_prev=yticks_prev,
-        check_yticks_change=True,
+        check_xticks=True,
+        check_yticks=True,
+    )
+    assert_graph_ticks_not_equal(
+        graphs, xticks_compare=graphs_xticks_prev, yticks_compare=graphs_yticks_prev
     )
 
-    # Check overview graph last because its zoom only affects the x-axis
-    # if you use it first, which makes the y-axis values unpredictable.
-    # TODO: check why this happens.
-    # It is odd that zoom behaviour changes depending on order.
-    xticks_prev = get_xtick_values(graph_overview)
-    yticks_prev = get_ytick_values(graph_overview)
+    # Check overview graph last because its zoom only affects the x-axis.
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
 
     # Zoom in on overview graph
     dash_duo.zoom_in_graph_by_ratio(graph_overview, zoom_box_fraction=0.2)
 
-    assert_ticks_changed_but_remain_consistent_across_graphs(
+    assert_ticks_consistent_across_graphs(
         graphs=graphs,
-        xticks_prev=xticks_prev,
-        yticks_prev=yticks_prev,
-        check_yticks_change=False,
+        check_xticks=True,
+        check_yticks=True,
     )
+    assert_graph_ticks_not_equal(graphs, xticks_compare=graphs_xticks_prev)
+    assert_graph_ticks_equal(graphs, yticks_expected=graphs_yticks_prev)
 
-    xticks_prev = get_xtick_values(graph_overview)
-    yticks_prev = get_ytick_values(graph_overview)
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
 
     # Reset via overview graph
     ActionChains(dash_duo.driver).double_click(graph_overview).perform()
     time.sleep(1.0)
 
-    assert_ticks_changed_but_remain_consistent_across_graphs(
+    assert_ticks_consistent_across_graphs(
         graphs=graphs,
-        xticks_prev=xticks_prev,
-        yticks_prev=yticks_prev,
-        check_yticks_change=False,
+        check_xticks=True,
+        check_yticks=True,
+    )
+    assert_graph_ticks_not_equal(graphs, xticks_compare=graphs_xticks_prev)
+    assert_graph_ticks_equal(graphs, yticks_expected=graphs_yticks_prev)
+
+
+def test_022_zoom_country_dropdown_change(dash_duo, tmp_path):  # noqa: PLR0915
+    """
+    Test the behaviour of the zoom's reset as we cycle through countries
+    """
+    test_file = TEST_DS_FILE
+
+    test_ds = pm.open_dataset(test_file)
+
+    tmp_db = tmp_path / "022_notes_database.db"
+
+    dash_duo = setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
+    # Give time to set up
+    time.sleep(2)
+
+    # Make sure that expected elements are on the page before continuing
+    graph_overview = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    graph_entity_split = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-entity-split", timeout=5
+    )
+    graph_category_split = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-category-split", timeout=5
+    )
+    graphs = [graph_overview, graph_category_split, graph_entity_split]
+
+    # Click to next country
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+    # Give a second to sort itself out
+    time.sleep(1)
+
+    # Re-size the window.
+    # This ensures consistent behaviour of the ticks.
+    # A much nicer way to handle this would be to get the actual Python objects
+    # that correspond to the app's state, then just check them directly.
+    # However, I can't work out how to do that right now, so I'm using this hack instead.
+    dash_duo.driver.set_window_size(1400, 948)
+    # Give time to respond to new size
+    time.sleep(1)
+
+    # Zoom in on overview graph
+    dash_duo.zoom_in_graph_by_ratio(graph_overview, zoom_box_fraction=0.2)
+
+    xticks_prev = get_xtick_values(graph_overview)
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
+
+    # Click to next country
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+    # Give a second to sort itself out
+    time.sleep(1)
+
+    # Re-size the window
+    # This seems to make the ticks behave for some reason
+    dash_duo.driver.set_window_size(1200, 948)
+    # Give a second to sort itself out
+    time.sleep(0.5)
+
+    dash_duo.driver.set_window_size(1400, 948)
+    # Give a second to sort itself out
+    time.sleep(0.5)
+
+    # x-tick values of all plots should be unchanged.
+    assert_graph_ticks_equal(graphs, xticks_expected=[xticks_prev for _ in graphs])
+    # y-ticks should have changed.
+    assert_graph_ticks_not_equal(graphs, yticks_compare=graphs_yticks_prev)
+
+    # If we zoom in using the overview graph's range zoom,
+    # the x-axis limits should change, but the y-axis limits shouldn't.
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
+
+    dash_duo.zoom_in_graph_by_ratio(graph_overview, zoom_box_fraction=0.2)
+    # Give a second to sort itself out
+    time.sleep(0.5)
+
+    # x-tick values of all plots should change
+    assert_graph_ticks_not_equal(graphs, xticks_compare=graphs_xticks_prev)
+    # y-ticks should not have changed.
+    assert_graph_ticks_equal(graphs, yticks_expected=graphs_yticks_prev)
+
+    # Zoom in via entity graph.
+    # This has the side-effect of locking the y-axis zoom too.
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
+
+    dash_duo.zoom_in_graph_by_ratio(graph_entity_split, zoom_box_fraction=0.2)
+    # Give a second to sort itself out
+    time.sleep(0.5)
+
+    assert_graph_ticks_not_equal(
+        graphs, xticks_compare=graphs_xticks_prev, yticks_compare=graphs_yticks_prev
+    )
+    assert_ticks_consistent_across_graphs(
+        graphs=graphs,
+        check_xticks=True,
+        check_yticks=True,
+    )
+
+    # Click to next country.
+    # This has the side-effect of unlocking the y-axis zoom.
+    graphs_xticks_prev = [get_xtick_values(graph) for graph in graphs]
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
+
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
+    button_country_next.click()
+    # Give a second to sort itself out
+    time.sleep(1)
+
+    # Re-size the window
+    # This seems to make the ticks behave for some reason
+    dash_duo.driver.set_window_size(1200, 948)
+    # Give a second to sort itself out
+    time.sleep(0.5)
+
+    dash_duo.driver.set_window_size(1400, 948)
+    # Give a second to sort itself out
+    time.sleep(0.5)
+
+    # x-tick values of all plots should be unchanged,
+    # but y-tick values should update
+    # because changing country causes the y-axis
+    # limit to reset.
+    assert_graph_ticks_equal(graphs, xticks_expected=graphs_xticks_prev)
+    assert_graph_ticks_not_equal(graphs, yticks_compare=graphs_yticks_prev)
+
+
+@pytest.mark.parametrize(
+    "source_scenario_element_to_alter",
+    (
+        "dropdown-source-scenario",
+        "dropdown-source-scenario-dashed",
+    ),
+)
+def test_023_zoom_source_scenario_dropdown_change(
+    dash_duo, tmp_path, source_scenario_element_to_alter
+):
+    """
+    Test the behaviour of the zoom's reset as we cycle through source-scenarios
+    """
+    test_file = TEST_DS_FILE
+
+    test_ds = pm.open_dataset(test_file)
+
+    tmp_db = tmp_path / "023_notes_database.db"
+
+    dash_duo = setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
+    # Give time to set up
+    time.sleep(2)
+
+    # Make sure that expected elements are on the page before continuing
+    graph_overview = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    graph_entity_split = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-entity-split", timeout=5
+    )
+    graph_category_split = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-category-split", timeout=5
+    )
+    graphs = [graph_overview, graph_category_split, graph_entity_split]
+
+    # Re-size the window.
+    # This ensures consistent behaviour of the ticks.
+    # A much nicer way to handle this would be to get the actual Python objects
+    # that correspond to the app's state, then just check them directly.
+    # However, I can't work out how to do that right now, so I'm using this hack instead.
+    dash_duo.driver.set_window_size(1400, 948)
+    # Give time to respond to new size
+    time.sleep(1)
+
+    # Zoom in on category graph
+    dash_duo.zoom_in_graph_by_ratio(graph_category_split, zoom_box_fraction=0.2)
+    # Give a second to sort itself out
+    time.sleep(1)
+
+    xticks_prev = get_xtick_values(graph_overview)
+    graphs_yticks_prev = [get_ytick_values(graph) for graph in graphs]
+
+    # Alter the dropdown
+    dropdown_source_scenario_div = dash_duo.driver.find_element(
+        By.ID, source_scenario_element_to_alter
+    )
+
+    # Find the arrow that expands the dropdown options and click on it
+    dropdown_source_scenario_div.find_element(
+        By.CLASS_NAME, "Select-arrow-zone"
+    ).click()
+
+    # simulate keyboard
+    action = ActionChains(dash_duo.driver)
+    action.send_keys(Keys.ARROW_DOWN)
+    action.send_keys(Keys.ARROW_DOWN)
+    action.send_keys(Keys.ENTER)
+    action.perform()
+    time.sleep(0.3)
+
+    dash_duo.wait_for_contains_text(
+        f"#{source_scenario_element_to_alter}",
+        "UNFCCC NAI, 231015",
+    )
+
+    # x-tick and y-tick values of all plots should be unchanged.
+    assert_graph_ticks_equal(
+        graphs,
+        xticks_expected=[xticks_prev for _ in graphs],
+        yticks_expected=graphs_yticks_prev,
     )

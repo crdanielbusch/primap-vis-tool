@@ -4,9 +4,9 @@ Callback definitions
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import plotly.graph_objects as go  # type: ignore
 import xarray as xr
@@ -36,6 +36,7 @@ from primap_visualisation_tool_stateless_app.figures import (
     create_entity_figure,
     create_overview_figure,
 )
+from primap_visualisation_tool_stateless_app.iso_mapping import name_to_iso3
 from primap_visualisation_tool_stateless_app.notes import (
     get_country_notes_from_notes_db,
     get_note_save_confirmation_string,
@@ -155,6 +156,33 @@ def update_source_scenario_options(
     return tuple(new_source_scenario_options)
 
 
+def get_xyrange_for_figure_update(
+    xyrange: dict[str, Any], axes_to_grab: Iterable[str]
+) -> dict[str, Any]:
+    """
+    Get xyrange to use when updating a figure
+
+    Parameters
+    ----------
+    xyrange
+        `xyrange` in the app's state
+
+    axes_to_grab
+        Axes from `xyrange` we wish to copy out
+
+    Returns
+    -------
+    :
+        `xyrange` to use when updating the figure
+    """
+    res = {}
+    for key in axes_to_grab:
+        if key in xyrange and xyrange[key] != "autorange":
+            res[key] = xyrange[key]
+
+    return res
+
+
 def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     """
     Register callbacks onto an app
@@ -237,6 +265,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Input("dropdown-entity", "value"),
         Input("xyrange", "data"),
         State(dict(name="graph-overview", type="graph"), "figure"),
+        State("source-scenario-visible", "data"),
     )
     def update_overview_figure(  # noqa: PLR0913
         country: str,
@@ -244,6 +273,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         entity: str,
         xyrange: dict[str, int],
         figure_current: go.Figure,
+        source_scenario_visible: dict[str, bool | str],
         app_dataset: xr.Dataset | None = None,
     ) -> go.Figure:
         """
@@ -262,6 +292,12 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
         xyrange
             The x- and y-range to apply to the figure
+
+        source_scenario_visible
+            Whether each source-scenario should be visible or not.
+
+            We attempt to preserve this as we move through different views,
+            to avoid the user having to reset what is shown every time.
 
         figure_current
             Current state of the figure
@@ -283,11 +319,33 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # User cleared one of the selections in the dropdown, do nothing
             return figure_current
 
+        xyrange_create = None
+        if xyrange is not None and ctx.triggered_id.startswith("dropdown"):
+            # If we're creating a new figure
+            # because we changed a dropdown,
+            # then keep the x-axis if they're set
+            # (which then gets propagated to all other figures).
+            xyrange_create = get_xyrange_for_figure_update(
+                xyrange=xyrange,
+                axes_to_grab=["xaxis"],
+            )
+            if ctx.triggered_id.startswith("dropdown-source-scenario"):
+                # Retain the y-axis limits too.
+                xyrange_create = {
+                    **xyrange_create,
+                    **get_xyrange_for_figure_update(
+                        xyrange=xyrange,
+                        axes_to_grab=["yaxis"],
+                    ),
+                }
+
         return create_overview_figure(
             country=country,
             category=category,
             entity=entity,
             dataset=app_dataset,
+            xyrange=xyrange_create,
+            source_scenario_visible=source_scenario_visible,
         )
 
     @app.callback(  # type: ignore
@@ -336,9 +394,10 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         # memory_data shares information between callbacks
         # to make sure they are executed sequentially.
         # When the user changes country, category, entity
-        # first the dropdown will be updated and then category and
-        # entity figure.
-        # The actual value of memory_data is irrelevant, but it must be JSON enumerable
+        # first the dropdown will be updated
+        # and then the category and entity figures.
+        # The actual value of memory_data is irrelevant,
+        # but it must be JSON enumerable.
         if not memory_data:
             memory_data = {"_": 0}
         else:
@@ -426,6 +485,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         """
         if app_dataset is None:
             app_dataset = get_application_dataset()
+
         if ctx.triggered_id == "xyrange" and xyrange:
             fig = update_xy_range(xyrange=xyrange, figure=figure_current)
             return fig
@@ -443,6 +503,26 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # User cleared one of the selections in the dropdown, do nothing
             return figure_current
 
+        xyrange_create = None
+        if xyrange is not None and ctx.triggered_id.startswith("dropdown"):
+            # If we're creating a new figure
+            # because we changed a dropdown,
+            # then keep the x-axis if they're set
+            # (which then gets propagated to all other figures).
+            xyrange_create = get_xyrange_for_figure_update(
+                xyrange=xyrange,
+                axes_to_grab=["xaxis"],
+            )
+            if ctx.triggered_id.startswith("dropdown-source-scenario"):
+                # Retain the y-axis limits too.
+                xyrange_create = {
+                    **xyrange_create,
+                    **get_xyrange_for_figure_update(
+                        xyrange=xyrange,
+                        axes_to_grab=["yaxis"],
+                    ),
+                }
+
         return create_category_figure(
             country=country,
             category=category,
@@ -450,6 +530,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             source_scenario=source_scenario,
             source_scenario_dashed=source_scenario_dashed,
             dataset=app_dataset,
+            xyrange=xyrange_create,
         )
 
     @app.callback(  # type: ignore
@@ -524,6 +605,26 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # User cleared one of the selections in the dropdown, do nothing
             return figure_current
 
+        xyrange_create = None
+        if xyrange is not None and ctx.triggered_id.startswith("dropdown"):
+            # If we're creating a new figure
+            # because we changed a dropdown,
+            # then keep the x-axis if they're set
+            # (which then gets propagated to all other figures).
+            xyrange_create = get_xyrange_for_figure_update(
+                xyrange=xyrange,
+                axes_to_grab=["xaxis"],
+            )
+            if ctx.triggered_id.startswith("dropdown-source-scenario"):
+                # Retain the y-axis limits too.
+                xyrange_create = {
+                    **xyrange_create,
+                    **get_xyrange_for_figure_update(
+                        xyrange=xyrange,
+                        axes_to_grab=["yaxis"],
+                    ),
+                }
+
         return create_entity_figure(
             country=country,
             category=category,
@@ -531,6 +632,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             source_scenario=source_scenario,
             source_scenario_dashed=source_scenario_dashed,
             dataset=app_dataset,
+            xyrange=xyrange_create,
         )
 
     @app.callback(  # type: ignore
@@ -562,8 +664,11 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return {}, all_relayout_data
 
         if len(changed_l) > 1:
-            msg = "How did more than one element change?"
-            raise NotImplementedError(msg)
+            changed_l_zero = changed_l[0]
+            for element in changed_l[1:]:
+                if changed_l_zero != element:
+                    msg = "How did more than one element change?"
+                    raise NotImplementedError(msg)
 
         changed = changed_l[0]
         figure_that_changed = all_figures[all_relayout_data.index(changed)]
@@ -580,6 +685,67 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             res["yaxis"] = figure_that_changed["layout"]["yaxis"]["range"]
 
         return res, all_relayout_data
+
+    @app.callback(  # type: ignore
+        Output("source-scenario-visible", "data"),
+        Input(dict(name="graph-overview", type="graph"), "restyleData"),
+        State(dict(name="graph-overview", type="graph"), "figure"),
+        State("source-scenario-visible", "data"),
+        prevent_initial_call=True,
+    )
+    def update_visible_sources_dict(
+        click_toggle_data: list[dict[str, list[str | bool]] | list[int]],
+        overview_figure: dict[str, Any],
+        source_scenario_visible: dict[str, bool | str] | None,
+        app_dataset: xr.Dataset | None = None,
+    ) -> dict[str, str | bool]:
+        """
+        Update which lines are visible in the legend of overview plot.
+
+        Parameters
+        ----------
+        click_toggle_data
+            Information about new style property for trace
+
+        overview_figure
+            The overview plot
+
+        source_scenario_visible
+            Whether each source-scenario should be visible or not.
+
+            We attempt to preserve this as we move through different views,
+            to avoid the user having to reset what is shown every time.
+
+        app_dataset
+            The app dataset to use. If not provided, we use get_app_dataset()
+
+        Returns
+        -------
+            Updated visible sources.
+        """
+        if app_dataset is None:
+            app_dataset = get_application_dataset()
+
+        # get all available options from data set in first execution of this callback
+        if not source_scenario_visible:
+            all_source_scenario_options = tuple(app_dataset["SourceScen"].to_numpy())
+            source_scenario_visible = {k: True for k in all_source_scenario_options}
+
+        # click_toggle_data is a list with the new style property of the trace
+        # and the number of the trace that is to be changed, e.g. [{'visible': ['legendonly']}, [6]]
+        # or [{'visible': [True]}, [7]]
+        # We need to explicitly cast the types to make mypy happy
+        first_element = cast(dict[str, list[str | bool]], click_toggle_data[0])
+        second_element = cast(list[int], click_toggle_data[1])
+        new_value = first_element["visible"][0]
+        trace_index = second_element[0]
+
+        traces = [i["name"] for i in overview_figure["data"]]
+        trace_to_change = traces[trace_index]
+
+        source_scenario_visible[trace_to_change] = new_value
+
+        return source_scenario_visible
 
     @app.callback(
         Output("note-saved-div", "children"),
@@ -662,10 +828,12 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             # hence do nothing.
             return "", "", country_store
 
+        dropdown_country_current_iso3 = name_to_iso3(dropdown_country_current)
+
         with notes_db_cursor(db_filepath=notes_db_filepath) as db_cursor:
             save_country_notes_in_notes_db(
                 db_cursor=db_cursor,
-                country=dropdown_country_current,
+                country_iso3=dropdown_country_current_iso3,
                 notes_to_save=notes_value,
             )
 
@@ -753,20 +921,22 @@ def save_notes_and_load_existing_notes_after_dropdown_country_change(
         Information about which notes were saved/loaded (first element)
         and the new value to show in the notes input field (second element).
     """
+    country_current_iso3 = name_to_iso3(country_current)
+
     if not notes_value:
         note_saved_info = ""
 
     else:
         note_saved_info = ensure_existing_note_saved(
             notes_value=notes_value,
-            country_notes=country_notes,
+            country=country_notes,
             notes_db_filepath=notes_db_filepath,
         )
 
     # Load any notes for the country that is now being displayed
     with notes_db_cursor(db_filepath=notes_db_filepath) as db_cursor:
         new_country_notes_value_in_db = get_country_notes_from_notes_db(
-            db_cursor=db_cursor, country=country_current
+            db_cursor=db_cursor, country_iso3=country_current_iso3
         )
 
     if new_country_notes_value_in_db is None:
@@ -788,7 +958,7 @@ def save_notes_and_load_existing_notes_after_dropdown_country_change(
 
 def ensure_existing_note_saved(
     notes_value: str,
-    country_notes: str,
+    country: str,
     notes_db_filepath: Path,
 ) -> str:
     """
@@ -802,7 +972,7 @@ def ensure_existing_note_saved(
     notes_value
         Notes to save
 
-    country_notes
+    country
         The country to which the notes apply
 
     notes_db_filepath
@@ -812,27 +982,29 @@ def ensure_existing_note_saved(
     -------
         Information about how the notes were saved.
     """
+    country_iso3 = name_to_iso3(country)
+
     with notes_db_cursor(db_filepath=notes_db_filepath) as db_cursor:
         current_country_notes_value_in_db = get_country_notes_from_notes_db(
-            db_cursor=db_cursor, country=country_notes
+            db_cursor=db_cursor, country_iso3=country_iso3
         )
         if notes_value == current_country_notes_value_in_db:
             # The note has already been saved, don't need to do anything more
-            note_saved_info = f"Notes for {country_notes} already saved"
+            note_saved_info = f"Notes for {country} already saved"
 
         else:
             # Note differs, hence must save first
             save_country_notes_in_notes_db(
                 db_cursor=db_cursor,
-                country=country_notes,
+                country_iso3=country_iso3,
                 notes_to_save=notes_value,
             )
 
             note_saved_info = ". ".join(
                 [
-                    f"Autosaved notes for {country_notes}",
+                    f"Autosaved notes for {country}",
                     get_note_save_confirmation_string(
-                        db_filepath=notes_db_filepath, country=country_notes
+                        db_filepath=notes_db_filepath, country=country
                     ),
                 ]
             )
