@@ -165,7 +165,7 @@ def create_layout(  # type: ignore  # noqa: PLR0913
                 "width": "90%",
                 "height": "100px",
                 "margin-left": "10px",
-                "fontSize": "8px",
+                "fontSize": "12px",
                 "line-height": "1",
             },
         ),
