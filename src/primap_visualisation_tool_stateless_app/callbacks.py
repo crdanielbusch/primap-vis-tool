@@ -751,16 +751,16 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Output("note-saved-div", "children"),
         Output("input-for-notes", "value"),
         Output("country-dropdown-store", "data"),
-        State("input-for-notes", "value"),
         State("country-dropdown-store", "data"),
-        Input("save-button", "n_clicks"),
         Input("dropdown-country", "value"),
+        Input("input-for-notes", "value"),
+        # Input("save-button", "n_clicks"),
     )  # type:ignore
     def save_note(
-        notes_value: str,
         country_store: dict[str, str],
-        save_button_clicks: int,
         dropdown_country_current: str,
+        notes_value: str,
+        # save_button_clicks: int,
         notes_db_filepath: Path | None = None,
     ) -> tuple[str, str, dict[str, str]]:
         """
