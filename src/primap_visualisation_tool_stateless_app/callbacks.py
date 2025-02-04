@@ -754,13 +754,11 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         State("country-dropdown-store", "data"),
         Input("dropdown-country", "value"),
         Input("input-for-notes", "value"),
-        # Input("save-button", "n_clicks"),
     )  # type:ignore
     def save_note(
         country_store: dict[str, str],
         dropdown_country_current: str,
         notes_value: str,
-        # save_button_clicks: int,
         notes_db_filepath: Path | None = None,
     ) -> tuple[str, str, dict[str, str]]:
         """
@@ -777,9 +775,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             We use this to store the country dropdown value before it was changed.
             This is required because the country dropdown has already changed
             by the time this callback is triggered.
-
-        save_button_clicks
-            The number of times the save button was pressed.
 
         dropdown_country_current
             The current value of the country dropdown.
@@ -878,15 +873,15 @@ def save_notes_and_load_existing_notes_after_dropdown_country_change(
     """
     country_current_iso3 = name_to_iso3(country_current)
 
-    if not notes_value:
-        note_saved_info = ""
-
-    else:
-        note_saved_info = ensure_existing_note_saved(
-            notes_value=notes_value,
-            country=country_notes,
-            notes_db_filepath=notes_db_filepath,
-        )
+    # if not notes_value:
+    #     note_saved_info = ""
+    #
+    # else:
+    #     note_saved_info = ensure_existing_note_saved(
+    #         notes_value=notes_value,
+    #         country=country_notes,
+    #         notes_db_filepath=notes_db_filepath,
+    #     )
 
     # Load any notes for the country that is now being displayed
     with notes_db_cursor(db_filepath=notes_db_filepath) as db_cursor:
@@ -902,13 +897,13 @@ def save_notes_and_load_existing_notes_after_dropdown_country_change(
         new_input_for_notes_value = new_country_notes_value_in_db
         note_loaded_info = f"Loaded existing notes for {country_current}"
 
-    note_saved_div_new_value_l = [v for v in [note_saved_info, note_loaded_info] if v]
-    if note_saved_div_new_value_l:
-        note_saved_div_new_value = ". ".join(note_saved_div_new_value_l)
-    else:
-        note_saved_div_new_value = ""
+    # note_saved_div_new_value_l = [v for v in [note_saved_info, note_loaded_info] if v]
+    # if note_saved_div_new_value_l:
+    #     note_saved_div_new_value = ". ".join(note_saved_div_new_value_l)
+    # else:
+    #     note_saved_div_new_value = ""
 
-    return note_saved_div_new_value, new_input_for_notes_value
+    return note_loaded_info, new_input_for_notes_value
 
 
 def ensure_existing_note_saved(
