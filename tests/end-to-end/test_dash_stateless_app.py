@@ -553,31 +553,6 @@ def get_dropdown_value(
     return dropdown_element.text.splitlines()[0]
 
 
-def test_014_notes_save_no_input(dash_duo, tmp_path):
-    test_ds_file = TEST_DS_FILE
-    test_ds = pm.open_dataset(test_ds_file)
-
-    tmp_db = tmp_path / "013_notes_database.db"
-
-    dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("save-button", timeout=2)
-
-    # Re-size the window to ensure buttons don't overlap.
-    # Will be fixed once we update the layout.
-    dash_duo.driver.set_window_size(2000, 1500)
-
-    # Click without anything in the field
-    save_button = dash_duo.driver.find_element(By.ID, "save-button")
-    save_button.click()
-
-    # Should get no output
-    note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
-    assert not note_saved_div.text
-
-    # Give time to sort out and shut down
-    time.sleep(2)
-
-
 def test_015_notes_save_basic(dash_duo, tmp_path):
     time.sleep(2)
     test_ds_file = TEST_DS_FILE
@@ -586,7 +561,6 @@ def test_015_notes_save_basic(dash_duo, tmp_path):
     tmp_db = tmp_path / "014_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("save-button", timeout=2)
 
     # Add some input
     input_for_first_country = "All looks great!"
@@ -596,10 +570,6 @@ def test_015_notes_save_basic(dash_duo, tmp_path):
     # Re-size the window to ensure buttons don't overlap.
     # Will be fixed once we update the layout.
     dash_duo.driver.set_window_size(2000, 1500)
-
-    # Save
-    save_button = dash_duo.driver.find_element(By.ID, "save-button")
-    save_button.click()
 
     # Make sure database save operation has finished and been confirmed to the user
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
@@ -632,13 +602,9 @@ def test_015_notes_save_basic(dash_duo, tmp_path):
 
     # Add some input
     input_for_second_country = "All looks great again!"
-    # input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
     input_for_notes.send_keys(input_for_second_country)
 
     time.sleep(2)
-
-    # Save
-    save_button.click()
 
     # Make sure database save operation has finished and been confirmed to the user
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
@@ -669,17 +635,12 @@ def test_016_notes_save_and_step(dash_duo, tmp_path):
     tmp_db = tmp_path / "015_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("save-button", timeout=2)
     dash_duo.driver.set_window_size(2000, 1500)
 
     # Add some input
     note_to_save = "All looks great!"
     input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
     input_for_notes.send_keys(note_to_save)
-
-    # Save
-    save_button = dash_duo.driver.find_element(By.ID, "save-button")
-    save_button.click()
 
     # Make sure database save operation has finished and been confirmed to the user
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
@@ -691,12 +652,6 @@ def test_016_notes_save_and_step(dash_duo, tmp_path):
     # Click forward one country
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
-
-    # We saved before clicking, hence inputs should be cleared and a confirmation shown
-    dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
-    assert not input_for_notes.text
-    note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
-    assert note_saved_div.text == f"Notes for {current_country} already saved"
 
     # Output should be in the database too
     db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
@@ -715,6 +670,7 @@ def test_016_notes_save_and_step(dash_duo, tmp_path):
     # The previous note should be reloaded
     dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
     current_country = get_dropdown_value(dropdown_country)
+    note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
     assert note_saved_div.text == f"Loaded existing notes for {current_country}"
 
     # Give time to sort out and shut down
@@ -729,7 +685,6 @@ def test_017_notes_step_without_user_save(dash_duo, tmp_path):
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.driver.set_window_size(2000, 1500)
-    dash_duo.wait_for_element_by_id("save-button", timeout=2)
 
     # Add some input
     note_to_save = "All looks great!"
@@ -739,22 +694,20 @@ def test_017_notes_step_without_user_save(dash_duo, tmp_path):
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
     country_before_click = get_dropdown_value(dropdown_country)
 
-    # Click forward one country without saving
+    # Click forward one country
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
 
-    # We saved without clicking,
-    # hence a warming should appear,
-    # the note should be saved automatically
+    # The note was saved automatically
     # and the inputs should be cleared.
     dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
     assert not input_for_notes.text
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
-    # assert re.match(
-    #     f"Autosaved notes for {country_before_click}. "
-    #     rf"Notes for {country_before_click} saved at .* in {tmp_db}",
-    #     note_saved_div.text,
-    # )
+    # The notification is empty
+    assert re.match(
+        "",
+        note_saved_div.text,
+    )
 
     # Output should be in the database too
     db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
@@ -805,10 +758,6 @@ def test_018_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
     input_for_notes.send_keys(note_to_save)
 
-    # Save
-    save_button = dash_duo.driver.find_element(By.ID, "save-button")
-    save_button.click()
-
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
     country_with_notes = get_dropdown_value(dropdown_country)
 
@@ -857,8 +806,6 @@ def test_019_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     # Give time to set up
     time.sleep(2)
 
-    dash_duo.wait_for_element_by_id("save-button", timeout=2)
-
     # Go to a country
     dropdown_country_input = dash_duo.find_element("#dropdown-country input")
     country_with_notes = "Egypt"
@@ -873,9 +820,6 @@ def test_019_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
     input_for_notes.send_keys(note_to_save)
     dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
-
-    save_button = dash_duo.driver.find_element(By.ID, "save-button")
-    save_button.click()
 
     dash_duo.wait_for_contains_text(
         "#note-saved-div", f"Notes for {country_with_notes} saved at", timeout=2
@@ -900,14 +844,13 @@ def test_019_notes_load_from_dropdown_selection(dash_duo, tmp_path):
     time.sleep(2)
 
 
-def test_020_notes_multi_step_flow(dash_duo, tmp_path):  # noqa: PLR0915
+def test_020_notes_multi_step_flow(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
     tmp_db = tmp_path / "019_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("save-button", timeout=2)
     dash_duo.driver.set_window_size(2000, 1500)
 
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
@@ -921,10 +864,6 @@ def test_020_notes_multi_step_flow(dash_duo, tmp_path):  # noqa: PLR0915
         "#input-for-notes", input_for_first_country, timeout=2
     )
 
-    # Save
-    save_button = dash_duo.driver.find_element(By.ID, "save-button")
-    time.sleep(1)
-    save_button.click()
     dash_duo.wait_for_contains_text(
         "#note-saved-div", f"Notes for {first_country} saved at", timeout=2
     )
@@ -947,8 +886,6 @@ def test_020_notes_multi_step_flow(dash_duo, tmp_path):  # noqa: PLR0915
         "#input-for-notes", input_for_second_country, timeout=2
     )
     time.sleep(1)
-    # Save
-    save_button.click()
 
     # Make sure database has finished before checking
     dash_duo.wait_for_contains_text(
@@ -980,10 +917,7 @@ def test_020_notes_multi_step_flow(dash_duo, tmp_path):  # noqa: PLR0915
     )
     assert input_for_notes.text == input_for_first_country
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
-    assert note_saved_div.text == (
-        f"Notes for {second_country} already saved. "
-        f"Loaded existing notes for {first_country}"
-    )
+    assert note_saved_div.text == (f"Loaded existing notes for {first_country}")
 
     # Click back one more country
     time.sleep(1)
@@ -1026,7 +960,6 @@ def test_021_auto_save_and_load_existing(dash_duo, tmp_path):
     dash_duo.driver.set_window_size(2000, 1500)
     # Give time to set up
     time.sleep(2)
-    dash_duo.wait_for_element_by_id("save-button", timeout=2)
 
     # Go to a country
     dropdown_country_input = dash_duo.find_element("#dropdown-country input")
@@ -1044,10 +977,6 @@ def test_021_auto_save_and_load_existing(dash_duo, tmp_path):
     dash_duo.wait_for_text_to_equal(
         "#input-for-notes", input_for_first_country, timeout=2
     )
-
-    # Save
-    save_button = dash_duo.driver.find_element(By.ID, "save-button")
-    save_button.click()
 
     # Click forward a country
     button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
@@ -1074,9 +1003,7 @@ def test_021_auto_save_and_load_existing(dash_duo, tmp_path):
     # Check information provided to the user
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
     assert re.match(
-        f"Autosaved notes for {second_country}. "
-        rf"Notes for {second_country} saved at .* in {tmp_db}. "
-        f"Loaded existing notes for {first_country}",
+        "",
         note_saved_div.text,
     )
 
