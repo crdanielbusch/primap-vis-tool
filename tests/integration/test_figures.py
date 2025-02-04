@@ -1,6 +1,7 @@
 """
 Tests of {py:mod}`primap_visualisation_tool_stateless_app.figures`
 """
+
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -21,10 +22,10 @@ from primap_visualisation_tool_stateless_app.figures import (
     (
         pytest.param(
             SourceScenarioDefinition(
-                primap_old_cr="PRIMAP-hist_v2.5.1, HISTCR",
-                primap_old_tp="PRIMAP-hist_v2.5.1, HISTTP",
-                primap_new_cr="PRIMAP-hist_v3.0, HISTCR",
-                primap_new_tp="PRIMAP-hist_v3.0, HISTTP",
+                primap_versions=(
+                    "PRIMAP-hist_v3.0",
+                    "PRIMAP-hist_v2.5.1",
+                ),
                 other_source_scenarios=(
                     "SSPs",
                     "RCMIP v2.4, SSP126",

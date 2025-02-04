@@ -179,10 +179,12 @@ def test_infer_source_scenarios(  # noqa: PLR0913
 
     res = infer_source_scenarios(inp_ds)
 
-    assert res.primap_old_cr == exp_primap_old_cr
-    assert res.primap_old_tp == exp_primap_old_tp
-    assert res.primap_new_cr == exp_primap_new_cr
-    assert res.primap_new_tp == exp_primap_new_tp
+    assert res.primap_scenarios == (
+        exp_primap_new_cr,
+        exp_primap_new_tp,
+        exp_primap_old_cr,
+        exp_primap_old_tp,
+    )
     assert res.other_source_scenarios == exp_other_source_scenarios
 
 
