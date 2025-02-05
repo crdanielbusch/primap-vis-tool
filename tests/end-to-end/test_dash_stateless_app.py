@@ -670,6 +670,8 @@ def test_016_notes_save_and_step(dash_duo, tmp_path):
     # The previous note should be reloaded
     dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
     current_country = get_dropdown_value(dropdown_country)
+    # give time to update save notification
+    time.sleep(2)
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
     assert note_saved_div.text == f"Loaded existing notes for {current_country}"
 
