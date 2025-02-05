@@ -632,7 +632,7 @@ def test_016_notes_save_and_step(dash_duo, tmp_path):
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
 
-    tmp_db = tmp_path / "015_notes_database.db"
+    tmp_db = tmp_path / "016_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
     dash_duo.driver.set_window_size(2000, 1500)
@@ -670,6 +670,7 @@ def test_016_notes_save_and_step(dash_duo, tmp_path):
     # The previous note should be reloaded
     dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
     current_country = get_dropdown_value(dropdown_country)
+
     # give time to update save notification
     time.sleep(2)
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
