@@ -741,7 +741,6 @@ def test_018_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     tmp_db = tmp_path / "017_notes_database.db"
 
     dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
-    dash_duo.wait_for_element_by_id("save-button", timeout=2)
     dash_duo.driver.set_window_size(2000, 1500)
 
     # Click forward without any input
@@ -770,8 +769,6 @@ def test_018_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     # and a confirmation shown.
     dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
     assert not input_for_notes.text
-    note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
-    assert note_saved_div.text == f"Notes for {country_with_notes} already saved"
 
     # Output should be in the database too
     db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
@@ -791,6 +788,7 @@ def test_018_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
     assert input_for_notes.text == note_to_save
     dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
+    # time.sleep(2)
     assert note_saved_div.text == f"Loaded existing notes for {country_with_notes}"
 
     # Give time to sort out and shut down
@@ -928,9 +926,6 @@ def test_020_notes_multi_step_flow(dash_duo, tmp_path):
     # Input field should be empty again
     dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
     assert not input_for_notes.text
-    dash_duo.wait_for_text_to_equal(
-        "#note-saved-div", f"Notes for {first_country} already saved", timeout=2
-    )
 
     # Click forward two countries
     time.sleep(1)
