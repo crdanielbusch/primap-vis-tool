@@ -221,15 +221,20 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         State("dropdown-entity", "value"),
         Input("next_entity", "n_clicks"),
         Input("prev_entity", "n_clicks"),
+        Input("reset-button", "n_clicks"),
     )
     def update_dropdown_entity(
         dropdown_entity_current: str,
         n_clicks_next_entity: int,
         n_clicks_previous_entity: int,
+        n_clicks_reset_button: int,
         app_dataset: xr.Dataset | None = None,
     ) -> str:
         if app_dataset is None:
             app_dataset = get_application_dataset()
+
+        if ctx.triggered_id == "reset-button":
+            return "CO2"  # TODO: Replace hardcoded default value.
 
         return update_dropdown_within_context(
             value_current=dropdown_entity_current,
@@ -242,15 +247,20 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         State("dropdown-category", "value"),
         Input("next_category", "n_clicks"),
         Input("prev_category", "n_clicks"),
+        Input("reset-button", "n_clicks"),
     )
     def update_dropdown_category(
         dropdown_category_current: str,
         n_clicks_next_category: int,
         n_clicks_previous_category: int,
+        n_clicks_reset_button: int,
         app_dataset: xr.Dataset | None = None,
     ) -> str:
         if app_dataset is None:
             app_dataset = get_application_dataset()
+
+        if ctx.triggered_id == "reset-button":
+            return "M.0.EL"  # TODO: Replace hardcoded default value.
 
         return update_dropdown_within_context(
             value_current=dropdown_category_current,
