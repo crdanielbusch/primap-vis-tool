@@ -818,12 +818,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
             return (note_saved_div, input_field_value, country_store)
 
-        # If we get here, the user deleted everything
-        if not notes_value:
-            # User hit save with no input (e.g. at initial callback),
-            # hence do nothing.
-            return "", "", country_store
-
         dropdown_country_current_iso3 = name_to_iso3(dropdown_country_current)
 
         with notes_db_cursor(db_filepath=notes_db_filepath) as db_cursor:

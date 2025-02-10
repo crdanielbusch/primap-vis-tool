@@ -755,7 +755,7 @@ def test_018_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
     assert not note_saved_div.text
 
-    # Add some input
+    # Add some input for country A
     note_to_save = "All looks great!"
     input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
     input_for_notes.send_keys(note_to_save)
@@ -763,15 +763,17 @@ def test_018_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
     country_with_notes = get_dropdown_value(dropdown_country)
 
-    # Click forward one country
+    # Click forward to country B
+    button_country_next = dash_duo.driver.find_element(By.ID, "next_country")
     button_country_next.click()
 
+    time.sleep(2)
     # We saved before clicking, hence inputs should be cleared
     # and a confirmation shown.
     dash_duo.wait_for_text_to_equal("#input-for-notes", "", timeout=2)
     assert not input_for_notes.text
 
-    # Output should be in the database too
+    # Output for country A should be in the database too
     db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
         tmp_db
     )
@@ -781,16 +783,33 @@ def test_018_notes_step_without_input_is_quiet(dash_duo, tmp_path):
         == note_to_save
     )
 
-    # Click back one country
+    # Click back to country A
     button_country_previous = dash_duo.driver.find_element(By.ID, "prev_country")
     button_country_previous.click()
 
-    # The previous note should be reloaded
+    # Country A's note should be reloaded
     dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
     assert input_for_notes.text == note_to_save
     dash_duo.wait_for_text_to_equal("#input-for-notes", note_to_save, timeout=2)
     # time.sleep(2)
     assert note_saved_div.text == f"Loaded existing notes for {country_with_notes}"
+
+    # Delete the note for country A
+    input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
+    for i in note_to_save:
+        input_for_notes.send_keys(Keys.BACK_SPACE)
+
+    # Go to country B again
+    button_country_next.click()
+
+    # check the note for country A i.e. country A now has no note
+    db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
+        tmp_db
+    )
+    assert db.shape[0] == 1
+    assert not db.set_index("country_iso3")["notes"].loc[
+        name_to_iso3(country_with_notes)
+    ]
 
     # Give time to sort out and shut down
     time.sleep(2)
