@@ -553,7 +553,7 @@ def get_dropdown_value(
     return dropdown_element.text.splitlines()[0]
 
 
-def test_015_notes_save_basic(dash_duo, tmp_path):
+def test_014_notes_save_basic(dash_duo, tmp_path):
     time.sleep(2)
     test_ds_file = TEST_DS_FILE
     test_ds = pm.open_dataset(test_ds_file)
@@ -626,6 +626,65 @@ def test_015_notes_save_basic(dash_duo, tmp_path):
 
     # Give time to sort out and shut down
     time.sleep(2)
+
+
+def test_015_notes_save_and_alter(dash_duo, tmp_path):
+    test_ds_file = TEST_DS_FILE
+    test_ds = pm.open_dataset(test_ds_file)
+
+    tmp_db = tmp_path / "015_notes_database.db"
+
+    dash_duo = setup_app(dash_duo, ds=test_ds, db_path=tmp_db)
+
+    # Add some input
+    input_for_first_country = "All looks great!"
+    input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
+    input_for_notes.send_keys(input_for_first_country)
+
+    # Re-size the window to ensure buttons don't overlap.
+    # Will be fixed once we update the layout.
+    dash_duo.driver.set_window_size(2000, 1500)
+
+    # Make sure database save operation has finished and been confirmed to the user
+    dropdown_country = dash_duo.driver.find_element(By.ID, "dropdown-country")
+    current_country = get_dropdown_value(dropdown_country)
+    current_country_iso3 = name_to_iso3(current_country)
+    dash_duo.wait_for_contains_text(
+        "#note-saved-div", f"Notes for {current_country} saved", timeout=2
+    )
+    # Output should now be in the database
+    db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
+        tmp_db
+    )
+    assert db.shape[0] == 1
+    assert (
+        db.set_index("country_iso3")["notes"].loc[current_country_iso3]
+        == input_for_first_country
+    )
+    # and user should be notified with path in which data is saved too
+    note_saved_div = dash_duo.driver.find_element(By.ID, "note-saved-div")
+    assert re.match(
+        rf"Notes for {current_country} saved at .* in {tmp_db}", note_saved_div.text
+    )
+
+    input_for_notes = dash_duo.driver.find_element(By.ID, "input-for-notes")
+    input_for_notes.send_keys(Keys.BACK_SPACE)
+    input_for_notes.send_keys(" again!")
+
+    # Make sure database save operation has finished and been confirmed to the user
+    assert re.match(
+        rf"Notes for {current_country} saved at .* in {tmp_db}", note_saved_div.text
+    )
+
+    # New should now be in the database
+    db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
+        tmp_db
+    )
+    assert db.shape[0] == 1
+    assert (
+        db.set_index("country_iso3")["notes"].loc[current_country_iso3]
+        == "All looks great again!"
+    )
 
 
 def test_016_notes_save_and_step(dash_duo, tmp_path):
