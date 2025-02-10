@@ -136,6 +136,10 @@ def create_layout(  # type: ignore  # noqa: PLR0913
         ),
     ]
 
+    reset_button = dbc.Button(
+        children="reset selection", id="reset-button", **BUTTON_STYLING_INITIAL
+    )
+
     notes = [
         html.B(children="Notes", **HEADLINES_STYLING_INITIAL),
         dbc.Button(
@@ -229,7 +233,7 @@ def create_layout(  # type: ignore  # noqa: PLR0913
                                     ),
                                 ),
                                 dbc.Col(
-                                    dbc.Stack([*other_dropdowns], gap=1),
+                                    dbc.Stack([*other_dropdowns, reset_button], gap=1),
                                 ),
                             ]
                         ),
