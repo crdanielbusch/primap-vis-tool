@@ -676,7 +676,7 @@ def test_015_notes_save_and_alter(dash_duo, tmp_path):
         rf"Notes for {current_country} saved at .* in {tmp_db}", note_saved_div.text
     )
 
-    # New should now be in the database
+    # New note should now be in the database
     db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
         tmp_db
     )
@@ -861,7 +861,7 @@ def test_018_notes_step_without_input_is_quiet(dash_duo, tmp_path):
     # Go to country B again
     button_country_next.click()
 
-    # check the note for country A i.e. country A now has no note
+    # check the country A now has no note
     db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
         tmp_db
     )
