@@ -169,19 +169,6 @@ def create_layout(  # type: ignore  # noqa: PLR0913
                 "line-height": "1",
             },
         ),
-        dbc.Button(
-            children="Save",
-            id="save-button",
-            color="light",
-            n_clicks=0,
-            style={
-                "fontSize": 12,
-                "height": "37px",
-                "width": "90%",
-                "margin-left": "10px",
-                "margin-right": "10px",
-            },
-        ),
         html.H4(
             id="note-saved-div",
             children="",
