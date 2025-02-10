@@ -1614,3 +1614,64 @@ def test_024_change_font_size(dash_duo, tmp_path):
     button_fontsize_down.click()
 
     assert "font-size: 14px" in input_for_notes.get_attribute("style")
+
+
+@pytest.mark.parametrize(
+    "gwp",
+    (
+        "AR4GWP100",
+        "AR5GWP100",
+        "AR6GWP100",
+        "SARGWP100",
+    ),
+)
+def test_single_gwp_filter(gwp, dash_duo, tmp_path):
+    """Test the GWP filter buttons"""
+    test_file = TEST_DS_FILE
+
+    test_ds = pm.open_dataset(test_file)
+
+    tmp_db = tmp_path / "023_notes_database.db"
+
+    dash_duo = setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
+    dash_duo.driver.set_window_size(2000, 1500)
+
+    # Give time to set up
+    time.sleep(2)
+
+    # Make sure that expected elements are on the page before continuing
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=4)
+    dash_duo.wait_for_contains_text("#dropdown-gwp", "AR6GWP", timeout=4)
+
+    # de-select initial value
+    dropdown_gwp_div = dash_duo.driver.find_element(By.ID, "dropdown-gwp")
+    dropdown_gwp_div.find_element(By.CLASS_NAME, "Select-clear").click()
+
+    # select AR6GWP100
+    dropdown_gwp_div.find_element(By.CLASS_NAME, "Select-arrow-zone").click()
+
+    dropdown_gwp_div.find_element("xpath", f"//div[contains(text(), '{gwp}')]").click()
+
+    # check if dropdown is filtered correctly
+    dropdown_entity_div = dash_duo.driver.find_element(By.ID, "dropdown-entity")
+
+    dropdown_entity_div.click()
+    time.sleep(1)  # Allow time for options to render
+
+    # Find all dropdown options
+    options_web_element = dropdown_entity_div.find_elements(
+        By.CLASS_NAME, "Select-menu-outer"
+    )
+
+    # Extract and print available options
+    options = options_web_element[0].text.split("\n")
+    expected_options = [
+        "CH4",
+        "CO2",
+        f"FGASES ({gwp})",
+        f"HFCS ({gwp})",
+        f"KYOTOGHG ({gwp})",
+        "N2O",
+        "NF3",
+    ]
+    assert options == expected_options

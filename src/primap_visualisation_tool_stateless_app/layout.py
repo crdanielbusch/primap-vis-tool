@@ -128,7 +128,7 @@ def create_layout(  # type: ignore  # noqa: PLR0913
         # html.Br(),
         html.B(children="GWP to use", **HEADLINES_STYLING_INITIAL),
         dcc.Dropdown(
-            ["AR6GWP100", "AR5GWP100", "AR4GWP100"],
+            ["AR4GWP100", "AR5GWP100", "AR6GWP100", "SARGWP100"],
             value=["AR6GWP100"],
             multi=True,
             id="dropdown-gwp",
