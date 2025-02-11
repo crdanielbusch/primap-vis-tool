@@ -880,12 +880,15 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
     @app.callback(
         Output("dropdown-entity", "options"),
+        State("all-entity-options", "data"),
         State("dropdown-entity", "options"),
         Input("dropdown-gwp", "value"),
     )  # type:ignore
     def filter_entity_dropdown(
-        current_entity_options, allowed_gwp: list[str], gwp_identifier: str = "GWP100"
-    ) -> list[dict[str, str]]:
+        all_entity_options: dict[str, list[str]],
+        current_entity_options,
+        allowed_gwp: list[str],
+    ) -> list[str]:
         """
         Filter the entity dropdown according to the selected GWP
 
@@ -898,40 +901,18 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         -------
             The filtered entity dropdown options
         """
-        # TODO get this from somewhere else
-        # non-gwp entities
-        non_gwp_entities = ["CH4", "CO2", "N2O", "NF3", "SF6"]
-
-        # TODO get this from somewhere else
-        gwp_entities = [
-            "FGASES (AR4GWP100)",
-            "FGASES (AR5GWP100)",
-            "FGASES (AR6GWP100)",
-            "FGASES (SARGWP100)",
-            "HFCS (AR4GWP100)",
-            "HFCS (AR5GWP100)",
-            "HFCS (AR6GWP100)",
-            "HFCS (SARGWP100)",
-            "KYOTOGHG (AR4GWP100)",
-            "KYOTOGHG (AR5GWP100)",
-            "KYOTOGHG (AR6GWP100)",
-            "KYOTOGHG (SARGWP100)",
-            "PFCS (AR4GWP100)",
-            "PFCS (AR5GWP100)",
-            "PFCS (AR6GWP100)",
-            "PFCS (SARGWP100)",
-        ]
-
         # when user clicks on 'x' - clear selection
         if not allowed_gwp:
-            return non_gwp_entities + gwp_entities
+            return sorted(
+                all_entity_options["with_gwp"] + all_entity_options["without_gwp"]
+            )
 
         new_entity_options = []
-        for entity in gwp_entities:
+        for entity in all_entity_options["with_gwp"]:
             if any(i in entity for i in allowed_gwp):
                 new_entity_options.append(entity)
 
-        return non_gwp_entities + new_entity_options
+        return sorted(all_entity_options["without_gwp"] + new_entity_options)
 
 
 def load_existing_notes_after_dropdown_country_change(

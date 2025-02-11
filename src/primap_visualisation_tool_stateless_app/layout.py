@@ -8,6 +8,10 @@ from typing import Any
 import dash_bootstrap_components as dbc  # type: ignore
 from dash import dcc, html  # type: ignore
 
+from primap_visualisation_tool_stateless_app.dataset_handling import (
+    split_by_gwp_annotation,
+)
+
 BUTTON_STYLING_INITIAL: dict[str, Any] = dict(
     color="light",
     n_clicks=0,
@@ -44,11 +48,16 @@ def create_layout(  # type: ignore  # noqa: PLR0913
     """
     Create the layout for our app
     """
+    all_entities_by_gwp = split_by_gwp_annotation(entity_options)
+
     stores = [
         dcc.Store(id="country-dropdown-store", storage_type="memory"),
         dcc.Store(id="relayout-store", storage_type="memory"),
         dcc.Store(id="xyrange", storage_type="memory", data={}),
         dcc.Store(id="source-scenario-visible", storage_type="memory", data={}),
+        dcc.Store(
+            id="all-entity-options", storage_type="memory", data=all_entities_by_gwp
+        ),
     ]
     country_category_entity_dropdowns = [
         html.B(children="Country", **HEADLINES_STYLING_INITIAL),

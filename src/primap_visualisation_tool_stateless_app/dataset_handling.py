@@ -147,6 +147,26 @@ def get_entity_options(dataset: xr.Dataset) -> tuple[str, ...]:
     return tuple(sorted(str(i) for i in dataset.data_vars))
 
 
+def split_by_gwp_annotation(
+    gases: list[str], gwp_identifier: str = "GWP100"
+) -> dict[str, list[str]]:
+    """
+    Split a list of gases into those with a GWP100 annotation and those without.
+
+    Parameters
+    ----------
+    gases
+        List of gas names.
+
+    Returns
+    -------
+        Dictionary with two keys: "with_gwp" and "without_gwp".
+    """
+    with_gwp = [gas for gas in gases if gwp_identifier in gas]
+    without_gwp = [gas for gas in gases if gwp_identifier not in gas]
+    return {"with_gwp": with_gwp, "without_gwp": without_gwp}
+
+
 def get_country_code_mapping(dataset: xr.Dataset) -> dict[str, str]:
     """
     Get mapping from country names to country codes
