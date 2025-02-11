@@ -1625,6 +1625,7 @@ def test_024_change_font_size(dash_duo, tmp_path):
         ["SARGWP100"],
         ["AR4GWP100", "AR5GWP100"],
         ["AR5GWP100", "SARGWP100"],
+        [],  # nothing selected
     ),
 )
 def test_025_gwp_filter(gwps, dash_duo, tmp_path):
@@ -1657,31 +1658,55 @@ def test_025_gwp_filter(gwps, dash_duo, tmp_path):
     dropdown_gwp_div = dash_duo.driver.find_element(By.ID, "dropdown-gwp")
     dropdown_gwp_div.find_element(By.CLASS_NAME, "Select-clear").click()
 
-    for gwp in gwps:
-        # open dropdown options
-        dropdown_gwp_div.find_element(By.CLASS_NAME, "Select-arrow-zone").click()
-        # click on gwp
-        dropdown_gwp_div.find_element(
-            "xpath", f"//div[contains(text(), '{gwp}')]"
-        ).click()
+    if gwps:
+        for gwp in gwps:
+            # open dropdown options
+            dropdown_gwp_div.find_element(By.CLASS_NAME, "Select-arrow-zone").click()
+            # click on gwp
+            dropdown_gwp_div.find_element(
+                "xpath", f"//div[contains(text(), '{gwp}')]"
+            ).click()
 
-        expected_options.extend(
-            [
-                f"FGASES ({gwp})",
-                f"HFCS ({gwp})",
-                f"KYOTOGHG ({gwp})",
-            ]
-        )
+            expected_options.extend(
+                [
+                    f"FGASES ({gwp})",
+                    f"HFCS ({gwp})",
+                    f"KYOTOGHG ({gwp})",
+                    f"PFCS ({gwp})",
+                ]
+            )
+    else:
+        # if nothing is selected, all gwps should be displayed
+        for gwp in ["AR4GWP100", "AR5GWP100", "AR6GWP100", "SARGWP100"]:
+            expected_options.extend(
+                [
+                    f"FGASES ({gwp})",
+                    f"HFCS ({gwp})",
+                    f"KYOTOGHG ({gwp})",
+                    f"PFCS ({gwp})",
+                ]
+            )
 
     # click on entity dropdown
     dropdown_entity_div = dash_duo.driver.find_element(By.ID, "dropdown-entity")
     dropdown_entity_div.click()
-    time.sleep(1)
+    time.sleep(2)
+
+    action = ActionChains(dash_duo.driver)
+    # for _ in range(2) :  # Adjust the range as needed to ensure all options are loaded
+    #     action.send_keys(Keys.END).perform()
+    #     time.sleep(1)
 
     # Find all dropdown options
-    options_web_element = dropdown_entity_div.find_elements(
-        By.CLASS_NAME, "Select-menu-outer"
-    )
-    options = options_web_element[0].text.split("\n")
+    options = []
+    for _ in range(2):
+        options_web_element = dropdown_entity_div.find_elements(
+            By.CLASS_NAME, "Select-menu-outer"
+        )
+        options.extend(options_web_element[0].text.split("\n"))
+        # we may need to scroll down to load all options into the DOM
+        action.send_keys(Keys.END).perform()
 
-    assert options == expected_options
+        time.sleep(1)
+
+    assert set(options) == set(expected_options)
