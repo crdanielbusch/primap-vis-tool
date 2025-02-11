@@ -1641,6 +1641,14 @@ def test_025_gwp_filter(gwps, dash_duo, tmp_path):
     # Give time to set up
     time.sleep(2)
 
+    expected_options = [
+        "CH4",
+        "CO2",
+        "N2O",
+        "NF3",
+        "SF6",
+    ]
+
     # Make sure that expected elements are on the page before continuing
     dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=4)
     dash_duo.wait_for_contains_text("#dropdown-gwp", "AR6GWP", timeout=4)
@@ -1649,16 +1657,10 @@ def test_025_gwp_filter(gwps, dash_duo, tmp_path):
     dropdown_gwp_div = dash_duo.driver.find_element(By.ID, "dropdown-gwp")
     dropdown_gwp_div.find_element(By.CLASS_NAME, "Select-clear").click()
 
-    # select gwp
-    expected_options = [
-        "CH4",
-        "CO2",
-        "N2O",
-        "NF3",
-        "SF6",
-    ]
     for gwp in gwps:
+        # open dropdown options
         dropdown_gwp_div.find_element(By.CLASS_NAME, "Select-arrow-zone").click()
+        # click on gwp
         dropdown_gwp_div.find_element(
             "xpath", f"//div[contains(text(), '{gwp}')]"
         ).click()
