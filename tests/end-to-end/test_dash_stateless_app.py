@@ -1617,15 +1617,17 @@ def test_024_change_font_size(dash_duo, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "gwp",
+    "gwps",
     (
-        "AR4GWP100",
-        "AR5GWP100",
-        "AR6GWP100",
-        "SARGWP100",
+        ["AR4GWP100"],
+        ["AR5GWP100"],
+        ["AR6GWP100"],
+        ["SARGWP100"],
+        ["AR4GWP100", "AR5GWP100"],
+        ["AR5GWP100", "SARGWP100"],
     ),
 )
-def test_025_single_gwp_filter(gwp, dash_duo, tmp_path):
+def test_025_gwp_filter(gwps, dash_duo, tmp_path):
     """Test the GWP filter buttons"""
     test_file = TEST_DS_FILE
 
@@ -1648,8 +1650,26 @@ def test_025_single_gwp_filter(gwp, dash_duo, tmp_path):
     dropdown_gwp_div.find_element(By.CLASS_NAME, "Select-clear").click()
 
     # select gwp
-    dropdown_gwp_div.find_element(By.CLASS_NAME, "Select-arrow-zone").click()
-    dropdown_gwp_div.find_element("xpath", f"//div[contains(text(), '{gwp}')]").click()
+    expected_options = [
+        "CH4",
+        "CO2",
+        "N2O",
+        "NF3",
+        "SF6",
+    ]
+    for gwp in gwps:
+        dropdown_gwp_div.find_element(By.CLASS_NAME, "Select-arrow-zone").click()
+        dropdown_gwp_div.find_element(
+            "xpath", f"//div[contains(text(), '{gwp}')]"
+        ).click()
+
+        expected_options.extend(
+            [
+                f"FGASES ({gwp})",
+                f"HFCS ({gwp})",
+                f"KYOTOGHG ({gwp})",
+            ]
+        )
 
     # click on entity dropdown
     dropdown_entity_div = dash_duo.driver.find_element(By.ID, "dropdown-entity")
@@ -1661,15 +1681,5 @@ def test_025_single_gwp_filter(gwp, dash_duo, tmp_path):
         By.CLASS_NAME, "Select-menu-outer"
     )
     options = options_web_element[0].text.split("\n")
-
-    expected_options = [
-        "CH4",
-        "CO2",
-        f"FGASES ({gwp})",
-        f"HFCS ({gwp})",
-        f"KYOTOGHG ({gwp})",
-        "N2O",
-        "NF3",
-    ]
 
     assert options == expected_options
