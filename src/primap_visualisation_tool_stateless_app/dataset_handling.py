@@ -150,7 +150,7 @@ def get_entity_options(dataset: xr.Dataset) -> tuple[str, ...]:
 def get_entity_option_split_by_gwp_annotation(
     dataset: xr.Dataset,
     gwp_identifier: str = "GWP100",
-) -> dict[str, list[str, ...]]:
+) -> dict[str, list[str]]:
     """
     Get all available entities split by whether they have a GWP annotation
 

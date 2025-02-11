@@ -38,7 +38,7 @@ def create_layout(  # type: ignore  # noqa: PLR0913
     category_options: tuple[str, ...],
     entity: str,
     entity_options: tuple[str, ...],
-    all_entities_by_gwp: dict[str, list[str, ...]],
+    all_entities_by_gwp: dict[str, list[str]],
     source_scenario: str,
     source_scenario_options: tuple[str, ...],
 ) -> list[dcc.Store | dbc.Row]:
