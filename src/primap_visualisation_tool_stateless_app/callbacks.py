@@ -886,7 +886,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     )  # type:ignore
     def filter_entity_dropdown(
         all_entity_options: dict[str, list[str]],
-        current_entity_options,
         allowed_gwp: list[str],
     ) -> list[str]:
         """
@@ -901,7 +900,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         -------
             The filtered entity dropdown options
         """
-        # when user clicks on 'x' - clear selection
+        # user clicks on 'x' or clears selection
         if not allowed_gwp:
             return sorted(
                 all_entity_options["with_gwp"] + all_entity_options["without_gwp"]

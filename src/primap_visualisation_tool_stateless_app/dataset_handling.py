@@ -147,23 +147,27 @@ def get_entity_options(dataset: xr.Dataset) -> tuple[str, ...]:
     return tuple(sorted(str(i) for i in dataset.data_vars))
 
 
-def split_by_gwp_annotation(
-    gases: list[str], gwp_identifier: str = "GWP100"
-) -> dict[str, list[str]]:
+def get_entity_option_split_by_gwp_annotation(
+    dataset: xr.Dataset,
+    gwp_identifier: str = "GWP100",
+) -> dict[str, list[str, ...]]:
     """
-    Split a list of gases into those with a GWP100 annotation and those without.
+    Get all available entities split by whether they have a GWP annotation
 
     Parameters
     ----------
-    gases
-        List of gas names.
+    dataset
+        Dataset from which to get the entity options
+    gwp_identifier
+        The string used to identify entities with a GWP annotation
 
     Returns
     -------
-        Dictionary with two keys: "with_gwp" and "without_gwp".
+        All avaiable entities in the data set split by whether they have a GWP annotation
     """
-    with_gwp = [gas for gas in gases if gwp_identifier in gas]
-    without_gwp = [gas for gas in gases if gwp_identifier not in gas]
+    entities = get_entity_options(dataset)
+    with_gwp = [gas for gas in entities if gwp_identifier in gas]
+    without_gwp = [gas for gas in entities if gwp_identifier not in gas]
     return {"with_gwp": with_gwp, "without_gwp": without_gwp}
 
 
