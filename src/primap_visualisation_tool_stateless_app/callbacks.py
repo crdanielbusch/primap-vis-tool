@@ -909,7 +909,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
         new_entity_options = []
         for entity in all_entity_options["with_gwp"]:
-            if any(i in entity for i in allowed_gwp):
+            if any(gwp in entity for gwp in allowed_gwp):
                 new_entity_options.append(entity)
 
         return sort_entity_options(
