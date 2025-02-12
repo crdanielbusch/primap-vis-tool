@@ -487,7 +487,7 @@ def test_011_entity_buttons(dash_duo):
     button_entity_prev.click()
 
     # Entity dropdown should update
-    dash_duo.wait_for_contains_text("#dropdown-entity", "CH4")
+    dash_duo.wait_for_contains_text("#dropdown-entity", "KYOTOGHG (AR6GWP100)")
 
     # Click next
     button_entity_next = dash_duo.driver.find_element(By.ID, "next_entity")
@@ -1238,7 +1238,7 @@ def assert_ticks_consistent_across_graphs(
                 assert exp_yticks == actual_yticks
 
 
-def test_022_linked_zoom(dash_duo, tmp_path):
+def test_022_linked_zoom(dash_duo, tmp_path):  # noqa: PLR0915
     test_file = TEST_DS_FILE
 
     test_ds = pm.open_dataset(test_file)
@@ -1277,7 +1277,17 @@ def test_022_linked_zoom(dash_duo, tmp_path):
 
     # Zoom in via entity graph
     dash_duo.zoom_in_graph_by_ratio(graph_entity_split, zoom_box_fraction=0.2)
-    time.sleep(1.0)
+    time.sleep(2)
+
+    # Re-size the window
+    # This seems to make the ticks behave for some reason
+    dash_duo.driver.set_window_size(1200, 948)
+    # Give a second to sort itself out
+    time.sleep(0.5)
+
+    dash_duo.driver.set_window_size(1400, 948)
+    # Give a second to sort itself out
+    time.sleep(0.5)
 
     # Limits of all graphs should update
     assert_ticks_consistent_across_graphs(
