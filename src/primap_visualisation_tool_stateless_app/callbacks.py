@@ -26,6 +26,7 @@ from primap_visualisation_tool_stateless_app.dataset_handling import (
     get_country_options,
     get_entity_options,
     get_not_all_nan_source_scenario_dfs,
+    sort_entity_options,
 )
 from primap_visualisation_tool_stateless_app.dataset_holder import (
     get_application_dataset,
@@ -881,7 +882,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     @app.callback(
         Output("dropdown-entity", "options"),
         State("all-entity-options", "data"),
-        State("dropdown-entity", "options"),
         Input("dropdown-gwp", "value"),
     )  # type:ignore
     def filter_entity_dropdown(
@@ -902,7 +902,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         """
         # user clicks on 'x' or clears selection
         if not allowed_gwp:
-            return sorted(
+            return sort_entity_options(
                 all_entity_options["with_gwp"] + all_entity_options["without_gwp"]
             )
 
@@ -911,7 +911,9 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             if any(i in entity for i in allowed_gwp):
                 new_entity_options.append(entity)
 
-        return sorted(all_entity_options["without_gwp"] + new_entity_options)
+        return sort_entity_options(
+            all_entity_options["without_gwp"] + new_entity_options
+        )
 
 
 def load_existing_notes_after_dropdown_country_change(

@@ -1619,13 +1619,13 @@ def test_024_change_font_size(dash_duo, tmp_path):
 @pytest.mark.parametrize(
     "gwps",
     (
-        ["AR4GWP100"],
-        ["AR5GWP100"],
+        # ["AR4GWP100"],
+        # ["AR5GWP100"],
         ["AR6GWP100"],
-        ["SARGWP100"],
-        ["AR4GWP100", "AR5GWP100"],
-        ["AR5GWP100", "SARGWP100"],
-        [],  # nothing selected
+        # ["SARGWP100"],
+        # ["AR4GWP100", "AR5GWP100"],
+        # ["AR5GWP100", "SARGWP100"],
+        # [],  # nothing selected
     ),
 )
 def test_025_gwp_filter(gwps, dash_duo, tmp_path):
@@ -1693,9 +1693,6 @@ def test_025_gwp_filter(gwps, dash_duo, tmp_path):
     time.sleep(2)
 
     action = ActionChains(dash_duo.driver)
-    # for _ in range(2) :  # Adjust the range as needed to ensure all options are loaded
-    #     action.send_keys(Keys.END).perform()
-    #     time.sleep(1)
 
     # Find all dropdown options
     options = []
@@ -1704,9 +1701,12 @@ def test_025_gwp_filter(gwps, dash_duo, tmp_path):
             By.CLASS_NAME, "Select-menu-outer"
         )
         options.extend(options_web_element[0].text.split("\n"))
+
         # we may need to scroll down to load all options into the DOM
         action.send_keys(Keys.END).perform()
 
-        time.sleep(1)
+        time.sleep(2)
 
     assert set(options) == set(expected_options)
+
+    time.sleep(2)

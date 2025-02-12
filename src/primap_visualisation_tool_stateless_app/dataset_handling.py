@@ -417,3 +417,42 @@ def attempt_to_sort_source_scenarios_in_group(inp: Iterable[str]) -> tuple[str, 
     res = tuple([v[1] for v in versions_names_sorted])
 
     return res
+
+
+def sort_entity_options(
+    entity_options: Iterable[str],
+    preferred_order: list[str] = [
+        "KYOTOGHG",
+        "CO2",
+        "CH4",
+        "N2O",
+        "FGASES",
+        "HFCS",
+        "PFCS",
+        "SF6",
+        "NF3",
+    ],
+) -> Iterable[str]:
+    """
+    Sort entity options
+
+    Parameters
+    ----------
+    entity_options
+        Entity options to sort
+
+    preferred_order
+        The preferred order of the entities
+
+    Returns
+    -------
+        Sorted entity options
+    """
+
+    def sort_key(item: str) -> int:
+        for index, preferred in enumerate(preferred_order):
+            if preferred in item:
+                return index
+        return len(preferred_order)
+
+    return sorted(entity_options, key=sort_key)

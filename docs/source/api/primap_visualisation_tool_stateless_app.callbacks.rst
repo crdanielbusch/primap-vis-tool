@@ -25,19 +25,19 @@ update\_source\_scenario\_options
 .. autofunction:: update_source_scenario_options
 
 
+get\_xyrange\_for\_figure\_update
+=================================
+
+.. autofunction:: get_xyrange_for_figure_update
+
+
 register\_callbacks
 ===================
 
 .. autofunction:: register_callbacks
 
 
-save\_notes\_and\_load\_existing\_notes\_after\_dropdown\_country\_change
-=========================================================================
+load\_existing\_notes\_after\_dropdown\_country\_change
+=======================================================
 
-.. autofunction:: save_notes_and_load_existing_notes_after_dropdown_country_change
-
-
-ensure\_existing\_note\_saved
-=============================
-
-.. autofunction:: ensure_existing_note_saved
+.. autofunction:: load_existing_notes_after_dropdown_country_change
