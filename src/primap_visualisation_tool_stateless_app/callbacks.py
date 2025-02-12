@@ -894,13 +894,13 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Parameters
         ----------
         gwp
-            The selected GWP(s)
+            One or more selected GWP(s) in the GWP dropdown menu
 
         Returns
         -------
             The filtered entity dropdown options
         """
-        # user clicks on 'x' or clears selection
+        # user clicks on 'x' or clears selection -> show all entities
         if not allowed_gwp:
             return sort_entity_options(
                 all_entity_options["with_gwp"] + all_entity_options["without_gwp"]
