@@ -224,7 +224,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Input("prev_entity", "n_clicks"),
         Input("reset-button", "n_clicks"),
     )
-    def update_dropdown_entity(
+    def update_dropdown_entity(  # noqa: PLR0913
         dropdown_entity_current: str,
         dropdown_entity_options: tuple[str, ...],
         n_clicks_next_entity: int,
@@ -700,12 +700,14 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
     @app.callback(  # type: ignore
         Output("source-scenario-visible", "data"),
+        Input("reset-button", "n_clicks"),
         Input(dict(name="graph-overview", type="graph"), "restyleData"),
         State(dict(name="graph-overview", type="graph"), "figure"),
         State("source-scenario-visible", "data"),
         prevent_initial_call=True,
     )
     def update_visible_sources_dict(
+        n_clicks_reset_button: int,
         click_toggle_data: list[dict[str, list[str | bool]] | list[int]],
         overview_figure: dict[str, Any],
         source_scenario_visible: dict[str, bool | str] | None,
@@ -716,6 +718,9 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
         Parameters
         ----------
+        n_clicks_reset_button
+            Clicks on reset button
+
         click_toggle_data
             Information about new style property for trace
 
@@ -742,6 +747,9 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         if not source_scenario_visible:
             all_source_scenario_options = tuple(app_dataset["SourceScen"].to_numpy())
             source_scenario_visible = {k: True for k in all_source_scenario_options}
+
+        if ctx.triggered_id == "reset-button":
+            return {k: True for k in source_scenario_visible.keys()}
 
         # click_toggle_data is a list with the new style property of the trace
         # and the number of the trace that is to be changed, e.g. [{'visible': ['legendonly']}, [6]]
@@ -925,6 +933,25 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         return sort_entity_options(
             all_entity_options["without_gwp"] + new_entity_options
         )
+
+    @app.callback(
+        Output("dropdown-gwp", "value"),
+        Input("reset-button", "n_clicks"),
+    )
+    def reset_gwp_dropdown(n_clicks: int) -> str:
+        """
+        Reset the GWP dropdown
+
+        Parameters
+        ----------
+        n_clicks
+            Number of clicks on the reset button
+
+        Returns
+        -------
+            Default value for GWP dropdown
+        """
+        return ["AR6GWP100"]
 
 
 def load_existing_notes_after_dropdown_country_change(
