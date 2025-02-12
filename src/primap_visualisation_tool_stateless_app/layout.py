@@ -53,6 +53,16 @@ def create_layout(  # type: ignore  # noqa: PLR0913
         dcc.Store(
             id="all-entity-options", storage_type="memory", data=all_entities_by_gwp
         ),
+        dcc.Store(
+            id="start-dropdown-values",
+            storage_type="memory",
+            data={
+                "country": country,
+                "category": category,
+                "entity": entity,
+                "gwp": ["AR6GWP100"],
+            },
+        ),
     ]
     country_category_entity_dropdowns = [
         html.B(children="Country", **HEADLINES_STYLING_INITIAL),
@@ -121,7 +131,6 @@ def create_layout(  # type: ignore  # noqa: PLR0913
             id="dropdown-source-scenario",
             **DROPDOWN_STYLING_INITIAL,
         ),
-        # html.Br(),
         html.B(children="Source Scenario dashed", **HEADLINES_STYLING_INITIAL),
         dcc.Dropdown(
             source_scenario_options,
@@ -129,7 +138,6 @@ def create_layout(  # type: ignore  # noqa: PLR0913
             id="dropdown-source-scenario-dashed",
             **DROPDOWN_STYLING_INITIAL,
         ),
-        # html.Br(),
         html.B(children="GWP to use", **HEADLINES_STYLING_INITIAL),
         dcc.Dropdown(
             ["AR4GWP100", "AR5GWP100", "AR6GWP100", "SARGWP100"],

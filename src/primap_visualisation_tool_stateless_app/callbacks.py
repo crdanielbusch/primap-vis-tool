@@ -218,6 +218,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
     @app.callback(  # type: ignore
         Output("dropdown-entity", "value"),
+        State("start-dropdown-values", "data"),
         State("dropdown-entity", "value"),
         State("dropdown-entity", "options"),
         Input("next_entity", "n_clicks"),
@@ -225,6 +226,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Input("reset-button", "n_clicks"),
     )
     def update_dropdown_entity(  # noqa: PLR0913
+        start_dropdown_values: dict[str, str],
         dropdown_entity_current: str,
         dropdown_entity_options: tuple[str, ...],
         n_clicks_next_entity: int,
@@ -236,7 +238,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             app_dataset = get_application_dataset()
 
         if ctx.triggered_id == "reset-button":
-            return "CO2"  # TODO: Replace hardcoded default value.
+            return start_dropdown_values["entity"]
 
         return update_dropdown_within_context(
             value_current=dropdown_entity_current,
@@ -246,12 +248,14 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
     @app.callback(  # type: ignore
         Output("dropdown-category", "value"),
+        State("start-dropdown-values", "data"),
         State("dropdown-category", "value"),
         Input("next_category", "n_clicks"),
         Input("prev_category", "n_clicks"),
         Input("reset-button", "n_clicks"),
     )
-    def update_dropdown_category(
+    def update_dropdown_category(  # noqa: PLR0913
+        start_dropdown_values: dict[str, str],
         dropdown_category_current: str,
         n_clicks_next_category: int,
         n_clicks_previous_category: int,
@@ -262,7 +266,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             app_dataset = get_application_dataset()
 
         if ctx.triggered_id == "reset-button":
-            return "M.0.EL"  # TODO: Replace hardcoded default value.
+            return start_dropdown_values["category"]
 
         return update_dropdown_within_context(
             value_current=dropdown_category_current,
@@ -941,9 +945,10 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
     @app.callback(
         Output("dropdown-gwp", "value"),
+        State("start-dropdown-values", "data"),
         Input("reset-button", "n_clicks"),
     )  # type:ignore
-    def reset_gwp_dropdown(n_clicks: int) -> str:
+    def reset_gwp_dropdown(start_dropdown_values: dict[str, str], n_clicks: int) -> str:
         """
         Reset the GWP dropdown
 
@@ -956,7 +961,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         -------
             Default value for GWP dropdown
         """
-        return "AR6GWP100"
+        return start_dropdown_values["gwp"]
 
 
 def load_existing_notes_after_dropdown_country_change(
