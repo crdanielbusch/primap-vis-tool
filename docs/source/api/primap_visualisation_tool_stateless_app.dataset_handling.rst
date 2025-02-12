@@ -50,6 +50,12 @@ get\_entity\_options
 .. autofunction:: get_entity_options
 
 
+get\_entity\_option\_split\_by\_gwp\_annotation
+===============================================
+
+.. autofunction:: get_entity_option_split_by_gwp_annotation
+
+
 get\_country\_code\_mapping
 ===========================
 

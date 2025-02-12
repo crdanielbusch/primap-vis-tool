@@ -13,6 +13,18 @@ BUTTON\_STYLING\_INITIAL
 .. autodata:: BUTTON_STYLING_INITIAL
 
 
+DROPDOWN\_STYLING\_INITIAL
+==========================
+
+.. autodata:: DROPDOWN_STYLING_INITIAL
+
+
+HEADLINES\_STYLING\_INITIAL
+===========================
+
+.. autodata:: HEADLINES_STYLING_INITIAL
+
+
 create\_layout
 ==============
 

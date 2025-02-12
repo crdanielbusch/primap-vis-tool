@@ -11,6 +11,7 @@ from primap_visualisation_tool_stateless_app.dataset_handling import (
     get_category_start,
     get_country_options,
     get_country_start,
+    get_entity_option_split_by_gwp_annotation,
     get_entity_options,
     get_entity_start,
     get_source_scenario_options,
@@ -45,6 +46,7 @@ def create_app() -> Dash:  # type: ignore
         category_options=get_category_options(dataset),
         entity=get_entity_start(dataset),
         entity_options=get_entity_options(dataset),
+        all_entities_by_gwp=get_entity_option_split_by_gwp_annotation(dataset),
         source_scenario=get_source_scenario_start(dataset),
         source_scenario_options=get_source_scenario_options(dataset),
     )

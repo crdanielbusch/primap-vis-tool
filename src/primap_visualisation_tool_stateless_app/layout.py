@@ -38,6 +38,7 @@ def create_layout(  # type: ignore  # noqa: PLR0913
     category_options: tuple[str, ...],
     entity: str,
     entity_options: tuple[str, ...],
+    all_entities_by_gwp: dict[str, list[str]],
     source_scenario: str,
     source_scenario_options: tuple[str, ...],
 ) -> list[dcc.Store | dbc.Row]:
@@ -49,6 +50,9 @@ def create_layout(  # type: ignore  # noqa: PLR0913
         dcc.Store(id="relayout-store", storage_type="memory"),
         dcc.Store(id="xyrange", storage_type="memory", data={}),
         dcc.Store(id="source-scenario-visible", storage_type="memory", data={}),
+        dcc.Store(
+            id="all-entity-options", storage_type="memory", data=all_entities_by_gwp
+        ),
     ]
     country_category_entity_dropdowns = [
         html.B(children="Country", **HEADLINES_STYLING_INITIAL),
@@ -128,7 +132,7 @@ def create_layout(  # type: ignore  # noqa: PLR0913
         # html.Br(),
         html.B(children="GWP to use", **HEADLINES_STYLING_INITIAL),
         dcc.Dropdown(
-            ["AR6GWP100", "AR5GWP100", "AR4GWP100"],
+            ["AR4GWP100", "AR5GWP100", "AR6GWP100", "SARGWP100"],
             value=["AR6GWP100"],
             multi=True,
             id="dropdown-gwp",
@@ -171,19 +175,6 @@ def create_layout(  # type: ignore  # noqa: PLR0913
                 "margin-left": "10px",
                 "fontSize": "12px",
                 "line-height": "1",
-            },
-        ),
-        dbc.Button(
-            children="Save",
-            id="save-button",
-            color="light",
-            n_clicks=0,
-            style={
-                "fontSize": 12,
-                "height": "37px",
-                "width": "90%",
-                "margin-left": "10px",
-                "margin-right": "10px",
             },
         ),
         html.H4(
