@@ -650,12 +650,14 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     @app.callback(  # type: ignore
         Output("xyrange", "data"),
         Output("relayout-store", "data"),
+        Input("reset-button", "n_clicks"),
         Input({"type": "graph", "name": ALL}, "relayoutData"),
         State({"type": "graph", "name": ALL}, "figure"),
         State("relayout-store", "data"),
         prevent_initial_call=True,
     )
     def update_shared_xy_range(
+        n_clicks_reset_button: int,
         all_relayout_data: list[None | dict[str, str | bool]],
         all_figures: list[dict[str, Any]],
         all_relayout_data_prev: None | list[None | dict[str, str | bool]],
@@ -663,6 +665,9 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         # first time this callback runs, set current relayout data as reference
         if all_relayout_data_prev is None:
             all_relayout_data_prev = all_relayout_data
+
+        if ctx.triggered_id == "reset-button":
+            return {"xaxis": "autorange"}, all_relayout_data
 
         # find out which figure triggered the callback
         # relayoutData of that figure is now different to the previous version
@@ -937,7 +942,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     @app.callback(
         Output("dropdown-gwp", "value"),
         Input("reset-button", "n_clicks"),
-    )
+    )  # type:ignore
     def reset_gwp_dropdown(n_clicks: int) -> str:
         """
         Reset the GWP dropdown
@@ -951,7 +956,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         -------
             Default value for GWP dropdown
         """
-        return ["AR6GWP100"]
+        return "AR6GWP100"
 
 
 def load_existing_notes_after_dropdown_country_change(
