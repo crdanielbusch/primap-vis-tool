@@ -421,7 +421,7 @@ def attempt_to_sort_source_scenarios_in_group(inp: Iterable[str]) -> tuple[str, 
 
 def sort_entity_options(
     entity_options: list[str] | tuple[str],
-    preferred_order: list[str] = [
+    preferred_order: tuple[str, ...] = (
         "KYOTOGHG",
         "CO2",
         "CH4",
@@ -431,7 +431,7 @@ def sort_entity_options(
         "PFCS",
         "SF6",
         "NF3",
-    ],
+    ),
 ) -> list[str]:
     """
     Sort entity options
