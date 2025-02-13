@@ -1720,3 +1720,106 @@ def test_025_gwp_filter(gwps, dash_duo, tmp_path):
     assert set(options) == set(expected_options)
 
     time.sleep(2)
+
+
+def test_026_reset_button(dash_duo, tmp_path):  # noqa: PLR0915
+    test_file = TEST_DS_FILE
+
+    test_ds = pm.open_dataset(test_file)
+
+    tmp_db = tmp_path / "025_notes_database.db"
+
+    dash_duo = setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
+    dash_duo.driver.set_window_size(2000, 1500)
+
+    # Give time to set up
+    time.sleep(2)
+
+    # check the starting values of all relevant dropdowns
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL", timeout=2)
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=2)
+    dash_duo.wait_for_contains_text("#dropdown-gwp", "AR6GWP100", timeout=2)
+
+    # next category
+    button_category_next = dash_duo.driver.find_element(By.ID, "next_category")
+    button_category_next.click()
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.AG", timeout=2)
+
+    time.sleep(1)
+
+    # next entity
+    button_entity_next = dash_duo.driver.find_element(By.ID, "next_entity")
+    button_entity_next.click()
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CH4", timeout=2)
+
+    time.sleep(1)
+
+    # another GWP
+    # de-select initial value
+    dropdown_gwp_div = dash_duo.driver.find_element(By.ID, "dropdown-gwp")
+    dropdown_gwp_div.find_element(By.CLASS_NAME, "Select-clear").click()
+    # open dropdown options
+    dropdown_gwp_div.find_element(By.CLASS_NAME, "Select-arrow-zone").click()
+    time.sleep(1)
+    # click on gwp
+    gwp = "SARGWP100"
+    dropdown_gwp_div.find_element("xpath", f"//div[contains(text(), '{gwp}')]").click()
+    dash_duo.wait_for_contains_text("#dropdown-gwp", "SARGWP100", timeout=2)
+
+    # change visible source scenario
+    figure_overview = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    wait = WebDriverWait(dash_duo.driver, timeout=4)
+
+    time.sleep(2)
+    # find all traces in the plot
+    scatter_layer = figure_overview.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    traces = scatter_layer.find_elements(By.TAG_NAME, "path")
+    assert len(traces) == 9
+
+    wait.until(lambda d: figure_overview.find_elements(By.CLASS_NAME, "legend"))
+    legend = figure_overview.find_element(By.CLASS_NAME, "legend")
+    traces = legend.find_elements(By.CLASS_NAME, "traces")
+    for trace in traces:
+        if trace.text != "EDGAR 7.0, HISTORY":
+            continue
+
+        toggles = trace.find_elements(By.CLASS_NAME, "legendtoggle")
+        assert len(toggles) == 1
+        toggle = toggles[0]
+        toggle.click()
+    time.sleep(2)
+    # after clicking the legend toggle, one trace should disappear
+    scatter_layer = figure_overview.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    traces = scatter_layer.find_elements(By.TAG_NAME, "path")
+    assert len(traces) == 8
+
+    # Zoom in on overview graph
+    xticks_initial = get_xtick_values(figure_overview)
+    dash_duo.zoom_in_graph_by_ratio(figure_overview, zoom_box_fraction=0.2)
+    xticks_changed = get_xtick_values(figure_overview)
+    assert xticks_changed != xticks_initial
+
+    # click on reset button
+    reset_button = dash_duo.driver.find_element(By.ID, "reset-button")
+    # TODO currently only works if clicked twice
+    reset_button.click()
+    reset_button.click()
+
+    time.sleep(2)
+
+    # check initial view is restored
+    xticks_reset = get_xtick_values(figure_overview)
+    assert xticks_reset == xticks_initial
+
+    # all traces should be restored
+    time.sleep(2)
+    figure_overview = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    scatter_layer = figure_overview.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    traces = scatter_layer.find_elements(By.TAG_NAME, "path")
+    assert len(traces) == 9
+
+    # check that the main plot is reset to its initial view
