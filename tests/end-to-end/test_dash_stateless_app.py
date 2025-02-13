@@ -1803,8 +1803,9 @@ def test_026_reset_button(dash_duo, tmp_path):  # noqa: PLR0915
 
     # click on reset button
     reset_button = dash_duo.driver.find_element(By.ID, "reset-button")
+    time.sleep(2)
     # TODO currently only works if clicked twice
-    reset_button.click()
+    # reset_button.click()
     reset_button.click()
 
     time.sleep(2)

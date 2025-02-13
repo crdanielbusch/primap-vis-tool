@@ -63,6 +63,7 @@ def create_layout(  # type: ignore  # noqa: PLR0913
                 "gwp": ["AR6GWP100"],
             },
         ),
+        dcc.Store("reset-button-clicked", storage_type="memory", data=0),
     ]
     country_category_entity_dropdowns = [
         html.B(children="Country", **HEADLINES_STYLING_INITIAL),
