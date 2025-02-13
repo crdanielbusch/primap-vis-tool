@@ -24,8 +24,8 @@ from primap_visualisation_tool_stateless_app.dataset_handling import (
     get_category_options,
     get_country_code_mapping,
     get_country_options,
-    get_entity_options,
     get_not_all_nan_source_scenario_dfs,
+    sort_entity_options,
 )
 from primap_visualisation_tool_stateless_app.dataset_holder import (
     get_application_dataset,
@@ -219,11 +219,13 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     @app.callback(  # type: ignore
         Output("dropdown-entity", "value"),
         State("dropdown-entity", "value"),
+        State("dropdown-entity", "options"),
         Input("next_entity", "n_clicks"),
         Input("prev_entity", "n_clicks"),
     )
     def update_dropdown_entity(
         dropdown_entity_current: str,
+        dropdown_entity_options: tuple[str, ...],
         n_clicks_next_entity: int,
         n_clicks_previous_entity: int,
         app_dataset: xr.Dataset | None = None,
@@ -233,7 +235,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
         return update_dropdown_within_context(
             value_current=dropdown_entity_current,
-            options=get_entity_options(app_dataset),
+            options=dropdown_entity_options,
             context=ctx,
         )
 
@@ -877,6 +879,42 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         style["fontSize"] = f"{new_font_size}px"
 
         return style
+
+    @app.callback(
+        Output("dropdown-entity", "options"),
+        State("all-entity-options", "data"),
+        Input("dropdown-gwp", "value"),
+    )  # type:ignore
+    def filter_entity_dropdown(
+        all_entity_options: dict[str, list[str]],
+        allowed_gwp: list[str],
+    ) -> list[str]:
+        """
+        Filter the entity dropdown according to the selected GWP
+
+        Parameters
+        ----------
+        gwp
+            One or more selected GWP(s) in the GWP dropdown menu
+
+        Returns
+        -------
+            The filtered entity dropdown options
+        """
+        # user clicks on 'x' or clears selection -> show all entities
+        if not allowed_gwp:
+            return sort_entity_options(
+                all_entity_options["with_gwp"] + all_entity_options["without_gwp"]
+            )
+
+        new_entity_options = []
+        for entity in all_entity_options["with_gwp"]:
+            if any(gwp in entity for gwp in allowed_gwp):
+                new_entity_options.append(entity)
+
+        return sort_entity_options(
+            all_entity_options["without_gwp"] + new_entity_options
+        )
 
 
 def load_existing_notes_after_dropdown_country_change(

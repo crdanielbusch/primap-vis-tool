@@ -147,6 +147,30 @@ def get_entity_options(dataset: xr.Dataset) -> tuple[str, ...]:
     return tuple(sorted(str(i) for i in dataset.data_vars))
 
 
+def get_entity_option_split_by_gwp_annotation(
+    dataset: xr.Dataset,
+    gwp_identifier: str = "GWP100",
+) -> dict[str, list[str]]:
+    """
+    Get all available entities split by whether they have a GWP annotation
+
+    Parameters
+    ----------
+    dataset
+        Dataset from which to get the entity options
+    gwp_identifier
+        The string used to identify entities with a GWP annotation
+
+    Returns
+    -------
+        All avaiable entities in the data set split by whether they have a GWP annotation
+    """
+    entities = get_entity_options(dataset)
+    with_gwp = [gas for gas in entities if gwp_identifier in gas]
+    without_gwp = [gas for gas in entities if gwp_identifier not in gas]
+    return {"with_gwp": with_gwp, "without_gwp": without_gwp}
+
+
 def get_country_code_mapping(dataset: xr.Dataset) -> dict[str, str]:
     """
     Get mapping from country names to country codes
@@ -393,3 +417,42 @@ def attempt_to_sort_source_scenarios_in_group(inp: Iterable[str]) -> tuple[str, 
     res = tuple([v[1] for v in versions_names_sorted])
 
     return res
+
+
+def sort_entity_options(
+    entity_options: list[str] | tuple[str],
+    preferred_order: tuple[str, ...] = (
+        "KYOTOGHG",
+        "CO2",
+        "CH4",
+        "N2O",
+        "FGASES",
+        "HFCS",
+        "PFCS",
+        "SF6",
+        "NF3",
+    ),
+) -> list[str]:
+    """
+    Sort entity options
+
+    Parameters
+    ----------
+    entity_options
+        Entity options to sort
+
+    preferred_order
+        The preferred order of the entities
+
+    Returns
+    -------
+        Sorted entity options
+    """
+
+    def sort_key(item: str) -> int:
+        for index, preferred in enumerate(preferred_order):
+            if preferred in item:
+                return index
+        return len(preferred_order)
+
+    return sorted(entity_options, key=sort_key)
