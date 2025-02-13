@@ -72,12 +72,4 @@ from primap_visualisation_tool_stateless_app.dataset_handling import sort_entity
     ),
 )
 def test_sort_entity_options(unsorted, expected):
-    """
-    Test the sorting of entity options
-
-    Note: We don't need a test case for sorting multiple GWP entities,
-    because they are stored alphabetically in the "all-entity-options" memory,
-    -> AR4GWP100, AR5GWP100, AR6GWP100, SARGWP100
-    """
-
     assert sort_entity_options(unsorted) == expected
