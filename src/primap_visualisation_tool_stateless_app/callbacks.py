@@ -982,7 +982,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         -------
             Data for the reset button clicked
         """
-        return {"clicked": "yes"}
+        return {"clicked": n_clicks}
 
 
 def load_existing_notes_after_dropdown_country_change(
