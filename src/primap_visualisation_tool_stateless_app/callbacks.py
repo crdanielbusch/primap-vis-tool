@@ -671,7 +671,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             all_relayout_data_prev = all_relayout_data
 
         if ctx.triggered_id == "reset-button-clicked" and all(all_relayout_data):
-            print(all_relayout_data)
             return {"xaxis": "autorange"}, all_relayout_data
 
         # find out which figure triggered the callback
@@ -955,6 +954,8 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
         Parameters
         ----------
+        start_dropdown_values
+            The start dropdown values
         n_clicks
             Number of clicks on the reset button
 
@@ -971,16 +972,20 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     )  # type:ignore
     def reset_button_clicked(n_clicks: int) -> dict[str, int]:
         """
-        Set the reset button clicked data
+        Change the state of the reset button clicked element.
+
+        This is used to trigger other callbacks.
 
         Parameters
         ----------
         n_clicks
-            Number of clicks on the reset button
+            Number of clicks on the reset button.
+
 
         Returns
         -------
-            Data for the reset button clicked
+            Data for the reset button clicked.
+            It's only used to trigger the callback.
         """
         return {"clicked": n_clicks}
 

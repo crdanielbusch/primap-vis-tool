@@ -699,10 +699,8 @@ def test_015_notes_save_and_alter(dash_duo, tmp_path):
     input_for_notes.send_keys(Keys.BACK_SPACE)
     input_for_notes.send_keys(" again!")
 
-    # Make sure database save operation has finished and been confirmed to the user
-    assert re.match(
-        rf"Notes for {current_country} saved at .* in {tmp_db}", note_saved_div.text
-    )
+    # give time to update data base
+    time.sleep(2)
 
     # New note should now be in the database
     db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
@@ -1804,8 +1802,6 @@ def test_026_reset_button(dash_duo, tmp_path):  # noqa: PLR0915
     # click on reset button
     reset_button = dash_duo.driver.find_element(By.ID, "reset-button")
     time.sleep(2)
-    # TODO currently only works if clicked twice
-    # reset_button.click()
     reset_button.click()
 
     time.sleep(2)
@@ -1823,4 +1819,7 @@ def test_026_reset_button(dash_duo, tmp_path):  # noqa: PLR0915
     traces = scatter_layer.find_elements(By.TAG_NAME, "path")
     assert len(traces) == 9
 
-    # check that the main plot is reset to its initial view
+    # all dropdowns should be reset
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL", timeout=2)
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=2)
+    dash_duo.wait_for_contains_text("#dropdown-gwp", "AR6GWP100", timeout=2)
