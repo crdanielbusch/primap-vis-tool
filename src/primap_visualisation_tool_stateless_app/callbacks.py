@@ -281,7 +281,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Input("dropdown-entity", "value"),
         Input("xyrange", "data"),
         Input("reset-button", "n_clicks"),
-        State("source-scenario-visible", "data"),
+        Input("source-scenario-visible", "data"),
         State(dict(name="graph-overview", type="graph"), "figure"),
         State("start-dropdown-values", "data"),
     )
@@ -335,6 +335,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         if ctx.triggered_id == "xyrange" and xyrange:
             return update_xy_range(xyrange=xyrange, figure=figure_current)
 
+        xyrange_create = None
         if ctx.triggered_id == "reset_button":
             xyrange_create = get_xyrange_for_figure_update(
                 xyrange=xyrange,
@@ -351,11 +352,24 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
                 },
             )
 
+        if ctx.triggered_id == "source-scenario-visible":
+            xyrange_create = get_xyrange_for_figure_update(
+                xyrange=xyrange,
+                axes_to_grab=["xaxis"],
+            )
+            return create_overview_figure(
+                country=country,
+                category=category,
+                entity=entity,
+                dataset=app_dataset,
+                xyrange=xyrange_create,
+                source_scenario_visible=source_scenario_visible,
+            )
+
         if any(v is None for v in (country, category, entity)):
             # User cleared one of the selections in the dropdown, do nothing
             return figure_current
 
-        xyrange_create = None
         if xyrange is not None and ctx.triggered_id.startswith("dropdown"):
             # If we're creating a new figure
             # because we changed a dropdown,
