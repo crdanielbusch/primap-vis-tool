@@ -506,7 +506,7 @@ def test_011_entity_buttons(dash_duo):
     button_entity_prev.click()
 
     # Entity dropdown should update
-    dash_duo.wait_for_contains_text("#dropdown-entity", "KYOTOGHG (AR6GWP100)")
+    dash_duo.wait_for_contains_text("#dropdown-entity", "KYOTOGHG (SARGWP100)")
 
     # Click next
     button_entity_next = dash_duo.driver.find_element(By.ID, "next_entity")
