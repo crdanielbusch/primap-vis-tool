@@ -23,11 +23,10 @@ from primap_visualisation_tool_stateless_app.dataset_holder import (
 from primap_visualisation_tool_stateless_app.dropdown_defaults import (
     get_dropdown_defaults,
 )
-from primap_visualisation_tool_stateless_app.figures import PlottingConfig
 from primap_visualisation_tool_stateless_app.layout import create_layout
 
 
-def create_app(plotting_config: PlottingConfig) -> Dash:  # type: ignore
+def create_app() -> Dash:  # type: ignore
     """
     Create an instance of the app
 

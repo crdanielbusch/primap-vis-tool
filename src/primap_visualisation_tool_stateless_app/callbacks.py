@@ -966,8 +966,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
         Parameters
         ----------
-        start_dropdown_values
-            The start dropdown values
         n_clicks
             Number of clicks on the reset button
 

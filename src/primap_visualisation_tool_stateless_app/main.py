@@ -174,7 +174,7 @@ def run_app(
         notes_db
     )
 
-    app = create_app(plotting_config)
+    app = create_app()
     logger.info("Created app")
     register_callbacks(app)
     logger.info("Running app")
