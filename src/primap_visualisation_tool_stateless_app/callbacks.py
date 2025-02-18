@@ -221,7 +221,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
     @app.callback(  # type: ignore
         Output("dropdown-entity", "value"),
-        State("start-dropdown-values", "data"),
         State("dropdown-entity", "value"),
         State("dropdown-entity", "options"),
         Input("next_entity", "n_clicks"),
@@ -229,7 +228,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Input("reset-button", "n_clicks"),
     )
     def update_dropdown_entity(  # noqa: PLR0913
-        start_dropdown_values: dict[str, str],
         dropdown_entity_current: str,
         dropdown_entity_options: tuple[str, ...],
         n_clicks_next_entity: int,
@@ -251,14 +249,12 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
     @app.callback(  # type: ignore
         Output("dropdown-category", "value"),
-        State("start-dropdown-values", "data"),
         State("dropdown-category", "value"),
         Input("next_category", "n_clicks"),
         Input("prev_category", "n_clicks"),
         Input("reset-button", "n_clicks"),
     )
-    def update_dropdown_category(  # noqa: PLR0913
-        start_dropdown_values: dict[str, str],
+    def update_dropdown_category(
         dropdown_category_current: str,
         n_clicks_next_category: int,
         n_clicks_previous_category: int,
@@ -285,7 +281,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Input("xyrange", "data"),
         Input("source-scenario-visible", "data"),
         State(dict(name="graph-overview", type="graph"), "figure"),
-        State("start-dropdown-values", "data"),
     )
     def update_overview_figure(  # noqa: PLR0913
         country: str,
@@ -294,7 +289,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         xyrange: dict[str, int],
         source_scenario_visible: dict[str, bool | str],
         figure_current: go.Figure,
-        start_dropdown_values: dict[str, str],
         app_dataset: xr.Dataset | None = None,
     ) -> go.Figure:
         """
@@ -964,10 +958,9 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
     @app.callback(
         Output("dropdown-gwp", "value"),
-        State("start-dropdown-values", "data"),
         Input("reset-button", "n_clicks"),
     )  # type:ignore
-    def reset_gwp_dropdown(start_dropdown_values: dict[str, str], n_clicks: int) -> str:
+    def reset_gwp_dropdown(n_clicks: int) -> str:
         """
         Reset the GWP dropdown
 
