@@ -142,7 +142,7 @@ def create_default_plotting_config(  # noqa: PLR0913
                 **primap_config,  # type: ignore # something funny here
                 **source_scenario_settings_non_primap,
             }
-        )
+        ),
     )
 
 

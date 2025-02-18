@@ -30,6 +30,9 @@ from primap_visualisation_tool_stateless_app.dataset_handling import (
 from primap_visualisation_tool_stateless_app.dataset_holder import (
     get_application_dataset,
 )
+from primap_visualisation_tool_stateless_app.dropdown_defaults import (
+    get_dropdown_defaults,
+)
 from primap_visualisation_tool_stateless_app.figure_views import update_xy_range
 from primap_visualisation_tool_stateless_app.figures import (
     create_category_figure,
@@ -238,7 +241,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             app_dataset = get_application_dataset()
 
         if ctx.triggered_id == "reset-button":
-            return start_dropdown_values["entity"]
+            return get_dropdown_defaults().entity
 
         return update_dropdown_within_context(
             value_current=dropdown_entity_current,
@@ -266,7 +269,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             app_dataset = get_application_dataset()
 
         if ctx.triggered_id == "reset-button":
-            return start_dropdown_values["category"]
+            return get_dropdown_defaults().category
 
         return update_dropdown_within_context(
             value_current=dropdown_category_current,
@@ -280,7 +283,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Input("dropdown-category", "value"),
         Input("dropdown-entity", "value"),
         Input("xyrange", "data"),
-        Input("reset-button", "n_clicks"),
         Input("source-scenario-visible", "data"),
         State(dict(name="graph-overview", type="graph"), "figure"),
         State("start-dropdown-values", "data"),
@@ -290,7 +292,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         category: str,
         entity: str,
         xyrange: dict[str, int],
-        n_clicks_reset_button: int,
         source_scenario_visible: dict[str, bool | str],
         figure_current: go.Figure,
         start_dropdown_values: dict[str, str],
@@ -336,22 +337,6 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return update_xy_range(xyrange=xyrange, figure=figure_current)
 
         xyrange_create = None
-        if ctx.triggered_id == "reset_button":
-            xyrange_create = get_xyrange_for_figure_update(
-                xyrange=xyrange,
-                axes_to_grab=["xaxis"],
-            )
-            return create_overview_figure(
-                country=country,
-                category=start_dropdown_values["category"],
-                entity=start_dropdown_values["entity"],
-                dataset=app_dataset,
-                xyrange=xyrange_create,
-                source_scenario_visible={
-                    k: True for k in source_scenario_visible.keys()
-                },
-            )
-
         if ctx.triggered_id == "source-scenario-visible":
             xyrange_create = get_xyrange_for_figure_update(
                 xyrange=xyrange,
@@ -997,7 +982,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         -------
             Default value for GWP dropdown
         """
-        return start_dropdown_values["gwp"]
+        return get_dropdown_defaults().gwp
 
 
 def load_existing_notes_after_dropdown_country_change(
