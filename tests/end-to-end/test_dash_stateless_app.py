@@ -138,6 +138,15 @@ def setup_app(
             db_path
         )
 
+    primap_visualisation_tool_stateless_app.dropdown_defaults.DROPDOWN_DEFAULTS = (
+        primap_visualisation_tool_stateless_app.dropdown_defaults.DropdownDefaults(
+            country="EARTH",
+            category="M.0.EL",
+            entity="CO2",
+            gwp="AR6GWP100",
+        )
+    )
+
     app = primap_visualisation_tool_stateless_app.create_app.create_app()
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
     dash_duo.start_server(app)
