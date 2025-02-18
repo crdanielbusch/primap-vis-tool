@@ -26,7 +26,7 @@ class DropdownDefaults:
 DROPDOWN_DEFAULTS: DropdownDefaults | None = None
 
 
-def get_dropdown_defaults() -> DropdownDefaults | None:
+def get_dropdown_defaults() -> DropdownDefaults:
     """
     Get the default values for dropdown
 
@@ -34,4 +34,8 @@ def get_dropdown_defaults() -> DropdownDefaults | None:
     -------
         Object that holds the default values for dropdowns
     """
+    if DROPDOWN_DEFAULTS is None:
+        msg = "Dropdown defaults have not been set yet"
+        raise ValueError(msg)
+
     return DROPDOWN_DEFAULTS
