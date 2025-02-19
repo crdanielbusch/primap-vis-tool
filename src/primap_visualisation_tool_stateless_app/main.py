@@ -12,6 +12,7 @@ import click
 import primap2 as pm  # type: ignore
 from loguru import logger
 
+import primap_visualisation_tool_stateless_app.dropdown_defaults
 import primap_visualisation_tool_stateless_app.figures
 import primap_visualisation_tool_stateless_app.notes.db_filepath_holder
 from primap_visualisation_tool_stateless_app.callbacks import register_callbacks
@@ -153,6 +154,16 @@ def run_app(
         )
 
     primap_visualisation_tool_stateless_app.figures.PLOTTING_CONFIG = plotting_config
+
+    # In the future we can make this customisable, for now it's hardcoded
+    primap_visualisation_tool_stateless_app.dropdown_defaults.DROPDOWN_DEFAULTS = (
+        primap_visualisation_tool_stateless_app.dropdown_defaults.DropdownDefaults(
+            country="EARTH",
+            category="M.0.EL",
+            entity="CO2",
+            gwp="AR6GWP100",
+        )
+    )
 
     if notes_db is None:
         notes_db_p = dataset_p.with_suffix(".db")

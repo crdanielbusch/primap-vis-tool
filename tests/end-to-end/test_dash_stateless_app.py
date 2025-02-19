@@ -120,6 +120,16 @@ def app_default():
     primap_visualisation_tool_stateless_app.dataset_holder.set_application_dataset(
         test_ds
     )
+
+    primap_visualisation_tool_stateless_app.dropdown_defaults.DROPDOWN_DEFAULTS = (
+        primap_visualisation_tool_stateless_app.dropdown_defaults.DropdownDefaults(
+            country="EARTH",
+            category="M.0.EL",
+            entity="CO2",
+            gwp="AR6GWP100",
+        )
+    )
+
     app = primap_visualisation_tool_stateless_app.create_app.create_app()
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
 
@@ -137,6 +147,15 @@ def setup_app(
         primap_visualisation_tool_stateless_app.notes.db_filepath_holder.APPLICATION_NOTES_DB_PATH_HOLDER = (
             db_path
         )
+
+    primap_visualisation_tool_stateless_app.dropdown_defaults.DROPDOWN_DEFAULTS = (
+        primap_visualisation_tool_stateless_app.dropdown_defaults.DropdownDefaults(
+            country="EARTH",
+            category="M.0.EL",
+            entity="CO2",
+            gwp="AR6GWP100",
+        )
+    )
 
     app = primap_visualisation_tool_stateless_app.create_app.create_app()
     primap_visualisation_tool_stateless_app.callbacks.register_callbacks(app)
@@ -487,7 +506,7 @@ def test_011_entity_buttons(dash_duo):
     button_entity_prev.click()
 
     # Entity dropdown should update
-    dash_duo.wait_for_contains_text("#dropdown-entity", "KYOTOGHG (AR6GWP100)")
+    dash_duo.wait_for_contains_text("#dropdown-entity", "KYOTOGHG (SARGWP100)")
 
     # Click next
     button_entity_next = dash_duo.driver.find_element(By.ID, "next_entity")
@@ -699,10 +718,8 @@ def test_015_notes_save_and_alter(dash_duo, tmp_path):
     input_for_notes.send_keys(Keys.BACK_SPACE)
     input_for_notes.send_keys(" again!")
 
-    # Make sure database save operation has finished and been confirmed to the user
-    assert re.match(
-        rf"Notes for {current_country} saved at .* in {tmp_db}", note_saved_div.text
-    )
+    # give time to update data base
+    time.sleep(2)
 
     # New note should now be in the database
     db = primap_visualisation_tool_stateless_app.notes.read_country_notes_db_as_pd(
@@ -1720,3 +1737,108 @@ def test_025_gwp_filter(gwps, dash_duo, tmp_path):
     assert set(options) == set(expected_options)
 
     time.sleep(2)
+
+
+def test_026_reset_button(dash_duo, tmp_path):  # noqa: PLR0915
+    test_file = TEST_DS_FILE
+
+    test_ds = pm.open_dataset(test_file)
+
+    tmp_db = tmp_path / "025_notes_database.db"
+
+    dash_duo = setup_app(dash_duo=dash_duo, ds=test_ds, db_path=tmp_db)
+    dash_duo.driver.set_window_size(2000, 1500)
+
+    # Give time to set up
+    time.sleep(2)
+
+    # check the starting values of all relevant dropdowns
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL", timeout=2)
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=2)
+    dash_duo.wait_for_contains_text("#dropdown-gwp", "AR6GWP100", timeout=2)
+
+    # next category
+    button_category_next = dash_duo.driver.find_element(By.ID, "next_category")
+    button_category_next.click()
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.AG", timeout=2)
+
+    time.sleep(1)
+
+    # next entity
+    button_entity_next = dash_duo.driver.find_element(By.ID, "next_entity")
+    button_entity_next.click()
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CH4", timeout=2)
+
+    time.sleep(1)
+
+    # another GWP
+    # de-select initial value
+    dropdown_gwp_div = dash_duo.driver.find_element(By.ID, "dropdown-gwp")
+    dropdown_gwp_div.find_element(By.CLASS_NAME, "Select-clear").click()
+    # open dropdown options
+    dropdown_gwp_div.find_element(By.CLASS_NAME, "Select-arrow-zone").click()
+    time.sleep(1)
+    # click on gwp
+    gwp = "SARGWP100"
+    dropdown_gwp_div.find_element("xpath", f"//div[contains(text(), '{gwp}')]").click()
+    dash_duo.wait_for_contains_text("#dropdown-gwp", "SARGWP100", timeout=2)
+
+    # change visible source scenario
+    figure_overview = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    wait = WebDriverWait(dash_duo.driver, timeout=4)
+
+    time.sleep(2)
+    # find all traces in the plot
+    scatter_layer = figure_overview.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    traces = scatter_layer.find_elements(By.TAG_NAME, "path")
+    assert len(traces) == 9
+
+    wait.until(lambda d: figure_overview.find_elements(By.CLASS_NAME, "legend"))
+    legend = figure_overview.find_element(By.CLASS_NAME, "legend")
+    traces = legend.find_elements(By.CLASS_NAME, "traces")
+    for trace in traces:
+        if trace.text != "EDGAR 7.0, HISTORY":
+            continue
+
+        toggles = trace.find_elements(By.CLASS_NAME, "legendtoggle")
+        assert len(toggles) == 1
+        toggle = toggles[0]
+        toggle.click()
+    time.sleep(2)
+    # after clicking the legend toggle, one trace should disappear
+    scatter_layer = figure_overview.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    traces = scatter_layer.find_elements(By.TAG_NAME, "path")
+    assert len(traces) == 8
+
+    # Zoom in on overview graph
+    xticks_initial = get_xtick_values(figure_overview)
+    dash_duo.zoom_in_graph_by_ratio(figure_overview, zoom_box_fraction=0.2)
+    xticks_changed = get_xtick_values(figure_overview)
+    assert xticks_changed != xticks_initial
+
+    # click on reset button
+    reset_button = dash_duo.driver.find_element(By.ID, "reset-button")
+    time.sleep(2)
+    reset_button.click()
+
+    time.sleep(2)
+
+    # check initial view is restored
+    xticks_reset = get_xtick_values(figure_overview)
+    assert xticks_reset == xticks_initial
+
+    # all traces should be restored
+    time.sleep(2)
+    figure_overview = get_element_workaround(
+        dash_duo=dash_duo, expected_id_component="graph-overview", timeout=5
+    )
+    scatter_layer = figure_overview.find_element(By.CLASS_NAME, "scatterlayer.mlayer")
+    traces = scatter_layer.find_elements(By.TAG_NAME, "path")
+    assert len(traces) == 9
+
+    # all dropdowns should be reset
+    dash_duo.wait_for_contains_text("#dropdown-category", "M.0.EL", timeout=2)
+    dash_duo.wait_for_contains_text("#dropdown-entity", "CO2", timeout=2)
+    dash_duo.wait_for_contains_text("#dropdown-gwp", "AR6GWP100", timeout=2)

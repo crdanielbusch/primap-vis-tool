@@ -30,6 +30,9 @@ from primap_visualisation_tool_stateless_app.dataset_handling import (
 from primap_visualisation_tool_stateless_app.dataset_holder import (
     get_application_dataset,
 )
+from primap_visualisation_tool_stateless_app.dropdown_defaults import (
+    get_dropdown_defaults,
+)
 from primap_visualisation_tool_stateless_app.figure_views import update_xy_range
 from primap_visualisation_tool_stateless_app.figures import (
     create_category_figure,
@@ -222,16 +225,21 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         State("dropdown-entity", "options"),
         Input("next_entity", "n_clicks"),
         Input("prev_entity", "n_clicks"),
+        Input("reset-button", "n_clicks"),
     )
-    def update_dropdown_entity(
+    def update_dropdown_entity(  # noqa: PLR0913
         dropdown_entity_current: str,
         dropdown_entity_options: tuple[str, ...],
         n_clicks_next_entity: int,
         n_clicks_previous_entity: int,
+        n_clicks_reset_button: int,
         app_dataset: xr.Dataset | None = None,
     ) -> str:
         if app_dataset is None:
             app_dataset = get_application_dataset()
+
+        if ctx.triggered_id == "reset-button":
+            return get_dropdown_defaults().entity
 
         return update_dropdown_within_context(
             value_current=dropdown_entity_current,
@@ -244,15 +252,20 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         State("dropdown-category", "value"),
         Input("next_category", "n_clicks"),
         Input("prev_category", "n_clicks"),
+        Input("reset-button", "n_clicks"),
     )
     def update_dropdown_category(
         dropdown_category_current: str,
         n_clicks_next_category: int,
         n_clicks_previous_category: int,
+        n_clicks_reset_button: int,
         app_dataset: xr.Dataset | None = None,
     ) -> str:
         if app_dataset is None:
             app_dataset = get_application_dataset()
+
+        if ctx.triggered_id == "reset-button":
+            return get_dropdown_defaults().category
 
         return update_dropdown_within_context(
             value_current=dropdown_category_current,
@@ -266,16 +279,16 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         Input("dropdown-category", "value"),
         Input("dropdown-entity", "value"),
         Input("xyrange", "data"),
+        Input("source-scenario-visible", "data"),
         State(dict(name="graph-overview", type="graph"), "figure"),
-        State("source-scenario-visible", "data"),
     )
     def update_overview_figure(  # noqa: PLR0913
         country: str,
         category: str,
         entity: str,
         xyrange: dict[str, int],
-        figure_current: go.Figure,
         source_scenario_visible: dict[str, bool | str],
+        figure_current: go.Figure,
         app_dataset: xr.Dataset | None = None,
     ) -> go.Figure:
         """
@@ -317,11 +330,25 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         if ctx.triggered_id == "xyrange" and xyrange:
             return update_xy_range(xyrange=xyrange, figure=figure_current)
 
+        xyrange_create = None
+        if ctx.triggered_id == "source-scenario-visible":
+            xyrange_create = get_xyrange_for_figure_update(
+                xyrange=xyrange,
+                axes_to_grab=["xaxis"],
+            )
+            return create_overview_figure(
+                country=country,
+                category=category,
+                entity=entity,
+                dataset=app_dataset,
+                xyrange=xyrange_create,
+                source_scenario_visible=source_scenario_visible,
+            )
+
         if any(v is None for v in (country, category, entity)):
             # User cleared one of the selections in the dropdown, do nothing
             return figure_current
 
-        xyrange_create = None
         if xyrange is not None and ctx.triggered_id.startswith("dropdown"):
             # If we're creating a new figure
             # because we changed a dropdown,
@@ -640,12 +667,14 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     @app.callback(  # type: ignore
         Output("xyrange", "data"),
         Output("relayout-store", "data"),
+        Input("reset-button", "n_clicks"),
         Input({"type": "graph", "name": ALL}, "relayoutData"),
         State({"type": "graph", "name": ALL}, "figure"),
         State("relayout-store", "data"),
         prevent_initial_call=True,
     )
     def update_shared_xy_range(
+        n_clicks_reset_button: int,
         all_relayout_data: list[None | dict[str, str | bool]],
         all_figures: list[dict[str, Any]],
         all_relayout_data_prev: None | list[None | dict[str, str | bool]],
@@ -653,6 +682,9 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         # first time this callback runs, set current relayout data as reference
         if all_relayout_data_prev is None:
             all_relayout_data_prev = all_relayout_data
+
+        if ctx.triggered_id == "reset-button" and all(all_relayout_data):
+            return {"xaxis": "autorange"}, all_relayout_data
 
         # find out which figure triggered the callback
         # relayoutData of that figure is now different to the previous version
@@ -690,12 +722,14 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
     @app.callback(  # type: ignore
         Output("source-scenario-visible", "data"),
+        Input("reset-button", "n_clicks"),
         Input(dict(name="graph-overview", type="graph"), "restyleData"),
         State(dict(name="graph-overview", type="graph"), "figure"),
         State("source-scenario-visible", "data"),
         prevent_initial_call=True,
     )
     def update_visible_sources_dict(
+        n_clicks_reset_button: int,
         click_toggle_data: list[dict[str, list[str | bool]] | list[int]],
         overview_figure: dict[str, Any],
         source_scenario_visible: dict[str, bool | str] | None,
@@ -706,6 +740,9 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
 
         Parameters
         ----------
+        n_clicks_reset_button
+            Clicks on reset button
+
         click_toggle_data
             Information about new style property for trace
 
@@ -732,6 +769,9 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         if not source_scenario_visible:
             all_source_scenario_options = tuple(app_dataset["SourceScen"].to_numpy())
             source_scenario_visible = {k: True for k in all_source_scenario_options}
+
+        if ctx.triggered_id == "reset-button":
+            return {k: True for k in source_scenario_visible.keys()}
 
         # click_toggle_data is a list with the new style property of the trace
         # and the number of the trace that is to be changed, e.g. [{'visible': ['legendonly']}, [6]]
@@ -915,6 +955,25 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
         return sort_entity_options(
             all_entity_options["without_gwp"] + new_entity_options
         )
+
+    @app.callback(
+        Output("dropdown-gwp", "value"),
+        Input("reset-button", "n_clicks"),
+    )  # type:ignore
+    def reset_gwp_dropdown(n_clicks: int) -> str:
+        """
+        Reset the GWP dropdown
+
+        Parameters
+        ----------
+        n_clicks
+            Number of clicks on the reset button
+
+        Returns
+        -------
+            Default value for GWP dropdown
+        """
+        return get_dropdown_defaults().gwp
 
 
 def load_existing_notes_after_dropdown_country_change(

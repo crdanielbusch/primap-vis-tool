@@ -20,6 +20,9 @@ from primap_visualisation_tool_stateless_app.dataset_handling import (
 from primap_visualisation_tool_stateless_app.dataset_holder import (
     get_application_dataset,
 )
+from primap_visualisation_tool_stateless_app.dropdown_defaults import (
+    get_dropdown_defaults,
+)
 from primap_visualisation_tool_stateless_app.layout import create_layout
 
 
@@ -40,13 +43,20 @@ def create_app() -> Dash:  # type: ignore
     dataset = get_application_dataset()
 
     layout = create_layout(
-        country=get_country_start(dataset),
+        country=get_country_start(
+            dataset, preferred_starting_country=get_dropdown_defaults().country
+        ),
         country_options=get_country_options(dataset),
-        category=get_category_start(dataset),
+        category=get_category_start(
+            dataset, preferred_starting_category=get_dropdown_defaults().category
+        ),
         category_options=get_category_options(dataset),
-        entity=get_entity_start(dataset),
+        entity=get_entity_start(
+            dataset, preferred_starting_entity=get_dropdown_defaults().entity
+        ),
         entity_options=get_entity_options(dataset),
         all_entities_by_gwp=get_entity_option_split_by_gwp_annotation(dataset),
+        gwp=get_dropdown_defaults().gwp,
         source_scenario=get_source_scenario_start(dataset),
         source_scenario_options=get_source_scenario_options(dataset),
     )
