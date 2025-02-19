@@ -391,10 +391,16 @@ def create_overview_figure(  # type: ignore # noqa: PLR0913 PLR0912
             )
         )
 
+        # Calculate x-axis range with a small margin
+        x_values = [x for trace in fig.data for x in trace["x"]]
+        x_margin = (max(x_values) - min(x_values)) * 0.05
+        x_range = [min(x_values) - x_margin, max(x_values) + x_margin]
+
     fig.update_layout(
         xaxis=dict(
             rangeslider=dict(visible=True, thickness=0.05),
             type="date",
+            range=x_range,
         ),
         yaxis=dict(
             autorange=True,
