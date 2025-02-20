@@ -391,9 +391,8 @@ def create_overview_figure(  # type: ignore # noqa: PLR0913 PLR0912
             )
         )
 
-        # Calculate x-axis range with a small margin
-        x_values = [x for trace in fig.data for x in trace["x"]]
-        x_range = [min(x_values), max(x_values)]
+    x_values = [x for trace in fig.data for x in trace["x"]]
+    x_range = [min(x_values), max(x_values)] if x_values else None
 
     fig.update_layout(
         xaxis=dict(

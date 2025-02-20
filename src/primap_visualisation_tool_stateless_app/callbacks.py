@@ -947,6 +947,12 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
                 all_entity_options["with_gwp"] + all_entity_options["without_gwp"]
             )
 
+        # When starting the app, allowed_gwp is a string
+        # Even when you set a list of one element as the starting value,
+        # it will be a string here.
+        if isinstance(allowed_gwp, str):
+            allowed_gwp = [allowed_gwp]
+
         new_entity_options = []
         for entity in all_entity_options["with_gwp"]:
             if any(gwp in entity for gwp in allowed_gwp):

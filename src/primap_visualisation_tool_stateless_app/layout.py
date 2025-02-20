@@ -8,6 +8,10 @@ from typing import Any
 import dash_bootstrap_components as dbc  # type: ignore
 from dash import dcc, html  # type: ignore
 
+from primap_visualisation_tool_stateless_app.dataset_handling import (
+    filter_entities_by_gwp,
+)
+
 BUTTON_STYLING_INITIAL: dict[str, Any] = dict(
     color="light",
     n_clicks=0,
@@ -54,8 +58,8 @@ def create_layout(  # type: ignore  # noqa: PLR0913
         dcc.Store(
             id="all-entity-options", storage_type="memory", data=all_entities_by_gwp
         ),
-        dcc.Store("reset-button-clicked", storage_type="memory", data={"clicked": 0}),
     ]
+
     country_category_entity_dropdowns = [
         html.B(children="Country", **HEADLINES_STYLING_INITIAL),
         dcc.Dropdown(
@@ -99,7 +103,7 @@ def create_layout(  # type: ignore  # noqa: PLR0913
         ),
         html.B(children="Entity", **HEADLINES_STYLING_INITIAL),
         dcc.Dropdown(
-            options=entity_options,
+            options=filter_entities_by_gwp(all_entities_by_gwp, [gwp]),
             value=entity,
             id="dropdown-entity",
             **DROPDOWN_STYLING_INITIAL,
@@ -133,7 +137,7 @@ def create_layout(  # type: ignore  # noqa: PLR0913
         html.B(children="GWP to use", **HEADLINES_STYLING_INITIAL),
         dcc.Dropdown(
             ["AR4GWP100", "AR5GWP100", "AR6GWP100", "SARGWP100"],
-            value=[gwp],
+            value=gwp,
             multi=True,
             id="dropdown-gwp",
             **DROPDOWN_STYLING_INITIAL,

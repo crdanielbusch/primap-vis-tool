@@ -419,6 +419,35 @@ def attempt_to_sort_source_scenarios_in_group(inp: Iterable[str]) -> tuple[str, 
     return res
 
 
+def filter_entities_by_gwp(
+    all_entity_options: dict[str, list[str]],
+    allowed_gwp: list[str],
+) -> list[str]:
+    """
+    Filter the entity dropdown according to the selected GWP
+
+    Parameters
+    ----------
+    gwp
+        One or more selected GWP(s) in the GWP dropdown menu
+
+    Returns
+    -------
+        The filtered entity dropdown options
+    """
+    if not allowed_gwp:
+        return sort_entity_options(
+            all_entity_options["with_gwp"] + all_entity_options["without_gwp"]
+        )
+
+    new_entity_options = []
+    for entity in all_entity_options["with_gwp"]:
+        if any(gwp in entity for gwp in allowed_gwp):
+            new_entity_options.append(entity)
+
+    return sort_entity_options(all_entity_options["without_gwp"] + new_entity_options)
+
+
 def sort_entity_options(
     entity_options: list[str] | tuple[str],
     preferred_order: tuple[str, ...] = (
