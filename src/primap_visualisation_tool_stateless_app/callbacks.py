@@ -927,7 +927,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     )  # type:ignore
     def filter_entity_dropdown(
         all_entity_options: dict[str, list[str]],
-        allowed_gwp: list[str],
+        allowed_gwp: list[str] | str,
     ) -> list[str]:
         """
         Filter the entity dropdown according to the selected GWP
