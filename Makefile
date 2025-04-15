@@ -82,3 +82,14 @@ run-app:  ## run the app
 .PHONY: run-app-stateless
 run-app-stateless:  ## run the stateless version of the app
 	poetry run python src/primap_visualisation_tool_stateless_app/main.py --dataset "data/test_ds.nc" --port 8051
+
+.PHONY: combine-imf-primap
+combine-imf-primap:  ## copy IMF file and combine with latest primap-hist release
+	rm data/IMF_out.nc
+	cp ../primap2/scripts/IMF_out.nc data
+	rm data/imf_primap_comparison.nc
+	poetry run scripts/combine_imf_primap.py
+
+.PHONY: run-app-imf
+run-app-imf:  ## run the stateless version of the app
+	poetry run python src/primap_visualisation_tool_stateless_app/main.py --dataset "data/imf_primap_comparison.nc" --port 8051
