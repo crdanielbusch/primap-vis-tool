@@ -18,6 +18,8 @@ imf = pm.open_dataset("../data/IMF_out.nc")
 imf = imf.drop_vars(["scenario (IMF)"])
 # rename so it will be merged with primap source dimension
 imf = imf.rename({"source": "scenario (PRIMAP-hist)"})
+# to merge the categories (although IMF may not strictly follow IPCC2006)
+imf = imf.rename({"category (IMF)": "category (IPCC2006_PRIMAP)"})
 
 # read primap data
 ds = primap_25.pr.merge(imf)

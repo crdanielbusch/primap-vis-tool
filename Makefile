@@ -88,7 +88,7 @@ combine-imf-primap:  ## copy IMF file and combine with latest primap-hist releas
 	rm data/IMF_out.nc
 	cp ../primap2/scripts/IMF_out.nc data
 	rm data/imf_primap_comparison.nc
-	poetry run scripts/combine_imf_primap.py
+	poetry run python scripts/combine_primap_IMF.py
 
 .PHONY: run-app-imf
 run-app-imf:  ## run the stateless version of the app
