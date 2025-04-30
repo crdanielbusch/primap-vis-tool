@@ -8,6 +8,7 @@ packages = [
     {include = "primap_visualisation_tool_stateless_app", from = "src"},
     {include = "primap_visualisation_tool", from = "src"},
 ]
+license = "Apache-2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
