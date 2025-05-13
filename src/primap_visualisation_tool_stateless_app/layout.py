@@ -54,8 +54,8 @@ def create_layout(  # type: ignore  # noqa: PLR0913
         dcc.Store(
             id="all-entity-options", storage_type="memory", data=all_entities_by_gwp
         ),
-        dcc.Store("reset-button-clicked", storage_type="memory", data={"clicked": 0}),
     ]
+
     country_category_entity_dropdowns = [
         html.B(children="Country", **HEADLINES_STYLING_INITIAL),
         dcc.Dropdown(
@@ -133,7 +133,7 @@ def create_layout(  # type: ignore  # noqa: PLR0913
         html.B(children="GWP to use", **HEADLINES_STYLING_INITIAL),
         dcc.Dropdown(
             ["AR4GWP100", "AR5GWP100", "AR6GWP100", "SARGWP100"],
-            value=[gwp],
+            value=gwp,
             multi=True,
             id="dropdown-gwp",
             **DROPDOWN_STYLING_INITIAL,

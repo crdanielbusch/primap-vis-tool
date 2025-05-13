@@ -391,10 +391,14 @@ def create_overview_figure(  # type: ignore # noqa: PLR0913 PLR0912
             )
         )
 
+    x_values = [x for trace in fig.data for x in trace["x"]]
+    x_range = [min(x_values), max(x_values)] if x_values else None
+
     fig.update_layout(
         xaxis=dict(
             rangeslider=dict(visible=True, thickness=0.05),
             type="date",
+            range=x_range,
         ),
         yaxis=dict(
             autorange=True,

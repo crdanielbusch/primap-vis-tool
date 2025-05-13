@@ -927,7 +927,7 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
     )  # type:ignore
     def filter_entity_dropdown(
         all_entity_options: dict[str, list[str]],
-        allowed_gwp: list[str],
+        allowed_gwp: list[str] | str,
     ) -> list[str]:
         """
         Filter the entity dropdown according to the selected GWP
@@ -946,6 +946,12 @@ def register_callbacks(app: Dash) -> None:  # type: ignore  # noqa: PLR0915
             return sort_entity_options(
                 all_entity_options["with_gwp"] + all_entity_options["without_gwp"]
             )
+
+        # When starting the app, allowed_gwp is a string
+        # Even when you set a list of one element as the starting value,
+        # it will be a string here.
+        if isinstance(allowed_gwp, str):
+            allowed_gwp = [allowed_gwp]
 
         new_entity_options = []
         for entity in all_entity_options["with_gwp"]:
